@@ -217,7 +217,7 @@ export default function EjecutarEntrenamientoPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Cargando...</p>
         </div>
       </div>
@@ -274,7 +274,7 @@ export default function EjecutarEntrenamientoPage() {
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className="bg-orange-600 h-2 rounded-full transition-all"
+              className="bg-primary-600 h-2 rounded-full transition-all"
               style={{ width: `${((ejercicioActual + 1) / plan.ejercicios.length) * 100}%` }}
             />
           </div>
@@ -301,9 +301,9 @@ export default function EjecutarEntrenamientoPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Meta del ejercicio */}
-                <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                <div className="p-4 bg-primary-50 border border-primary-200 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-semibold text-orange-900">
+                    <p className="text-sm font-semibold text-primary-900">
                       <Target className="inline h-4 w-4 mr-1" />
                       Meta: {ejercicio.meta.cantidad} {ejercicio.meta.unidad}
                     </p>
@@ -317,7 +317,7 @@ export default function EjecutarEntrenamientoPage() {
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-orange-700">
+                  <div className="flex items-center gap-2 text-sm text-primary-700">
                     <Clock className="h-4 w-4" />
                     <span>Duración estimada: {ejercicio.duracion} minutos</span>
                   </div>
@@ -345,7 +345,7 @@ export default function EjecutarEntrenamientoPage() {
                       <div key={idx} className="border border-gray-200 rounded-lg p-4 bg-white">
                         <div className="flex items-center justify-between mb-3">
                           <h4 className="font-medium text-gray-900">{getNombrePunto(punto.posicion)}</h4>
-                          <span className="text-sm font-semibold text-orange-600">
+                          <span className="text-sm font-semibold text-primary-600">
                             Meta: {punto.cantidad} convertidos{punto.amboLados && ' por lado'}
                           </span>
                         </div>
@@ -404,7 +404,7 @@ export default function EjecutarEntrenamientoPage() {
                       [ejercicio.id]: { ...prev[ejercicio.id], notas: e.target.value }
                     }))}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-gray-900"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-gray-900"
                     placeholder="Observaciones, dificultades, logros..."
                   />
                 </div>
@@ -443,7 +443,7 @@ export default function EjecutarEntrenamientoPage() {
                       onClick={() => setEjercicioActual(idx)}
                       className={`w-full text-left p-3 rounded-lg border-2 transition ${
                         idx === ejercicioActual
-                          ? 'border-orange-500 bg-orange-50'
+                          ? 'border-primary-500 bg-primary-50'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >

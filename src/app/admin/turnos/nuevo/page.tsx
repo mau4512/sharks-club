@@ -18,7 +18,6 @@ export default function NuevoTurnoPage() {
     tipo: 'diurno',
     hora: '',
     modalidad: 'interdiario',
-    seccion: 'preparacion_fisica',
     entrenadorId: '',
     activo: true
   })
@@ -101,7 +100,7 @@ export default function NuevoTurnoPage() {
                 required
                 value={formData.nombre}
                 onChange={handleChange}
-                placeholder="Ej: Turno Mañana - Preparación Física"
+                placeholder="Ej: Turno Mañana"
               />
             </div>
 
@@ -157,28 +156,6 @@ export default function NuevoTurnoPage() {
             </div>
 
             <div>
-              <label htmlFor="seccion" className="block text-sm font-medium text-gray-700 mb-2">
-                Sección *
-              </label>
-              <Select
-                id="seccion"
-                name="seccion"
-                required
-                value={formData.seccion}
-                onChange={handleChange}
-              >
-                <option value="preparacion_fisica">Preparación Física (10 deportistas)</option>
-                <option value="tecnica_individual">Técnica Individual (10 deportistas)</option>
-                <option value="personalizado">Personalizado (5 deportistas)</option>
-              </Select>
-              <p className="text-xs text-gray-500 mt-1">
-                {formData.seccion === 'personalizado' 
-                  ? 'Capacidad máxima: 5 deportistas' 
-                  : 'Capacidad máxima: 10 deportistas'}
-              </p>
-            </div>
-
-            <div>
               <label htmlFor="entrenadorId" className="block text-sm font-medium text-gray-700 mb-2">
                 Entrenador Asignado
               </label>
@@ -207,18 +184,18 @@ export default function NuevoTurnoPage() {
                 type="checkbox"
                 checked={formData.activo}
                 onChange={handleChange}
-                className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
               />
               <label htmlFor="activo" className="ml-2 block text-sm text-gray-700">
                 Turno activo
               </label>
             </div>
 
-            <div className="flex gap-4 pt-4 border-t">
-              <Button type="submit" disabled={loading} className="flex-1">
+            <div className="flex flex-col-reverse gap-3 pt-4 border-t sm:flex-row">
+              <Button type="submit" disabled={loading} className="w-full sm:flex-1">
                 {loading ? 'Creando...' : 'Crear Turno'}
               </Button>
-              <Link href="/admin/turnos" className="flex-1">
+              <Link href="/admin/turnos" className="w-full sm:flex-1">
                 <Button type="button" variant="outline" className="w-full">
                   Cancelar
                 </Button>

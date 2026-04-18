@@ -13,23 +13,23 @@ export default function HomePage() {
       {/* Navbar */}
       <nav className="bg-white shadow-sm fixed w-full top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <div className="flex items-center">
+          <div className="flex flex-col gap-3 py-3 sm:h-20 sm:flex-row sm:items-center sm:justify-between sm:py-0">
+            <div className="flex items-center justify-center sm:justify-start">
               <Image 
-                src="/images/mvpskills.png" 
-                alt="MVP Skills Logo" 
-                width={60} 
-                height={60} 
-                className="object-contain" 
+                src="/images/sharks-transparent.png" 
+                alt="Faraday Sharks Logo" 
+                width={72} 
+                height={72} 
+                className="object-contain bg-white/95 rounded-md p-1 shadow-sm" 
               />
-              <span className="ml-3 text-2xl font-bold text-gray-900">MVP Skills</span>
+              <span className="ml-3 text-center text-lg font-bold text-gray-900 sm:text-left sm:text-2xl">Sharks Basketball</span>
             </div>
-            <div className="flex items-center gap-4">
-              <Link href="#matricula">
-                <Button variant="outline">Matricúlate</Button>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+              <Link href="#matricula" className="w-full sm:w-auto">
+                <Button variant="outline" className="w-full sm:w-auto">Únete al Club</Button>
               </Link>
-              <Link href="/login">
-                <Button>Iniciar Sesión</Button>
+              <Link href="/portal-del-club" className="w-full sm:w-auto">
+                <Button className="w-full sm:w-auto">Portal del Club</Button>
               </Link>
             </div>
           </div>
@@ -37,39 +37,38 @@ export default function HomePage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 bg-gradient-to-br from-orange-50 to-white">
+      <section className="pt-44 pb-20 sm:pt-32 bg-gradient-to-br from-primary-50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
-                Desarrolla tu <span className="text-orange-600">Máximo Potencial</span> en el Basketball
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
+                Formamos Jugadores para <span className="text-primary-600">Competir y Crecer</span>
               </h1>
-              <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                MVP Skills es una academia de alto rendimiento dedicada a formar jugadores de basketball de élite. 
-                Con entrenadores especializados, tecnología de última generación y programas personalizados, 
-                llevamos tu juego al siguiente nivel.
+              <p className="text-lg sm:text-xl text-gray-600 mb-8 leading-relaxed">
+                Sharks Basketball es un club enfocado en formación integral: fundamentos técnicos, preparación física,
+                disciplina táctica y desarrollo personal. Trabajamos por categorías y objetivos reales de competencia.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="#matricula">
-                  <Button size="lg" className="text-lg px-8">
-                    Comienza Ahora
+                <Link href="#matricula" className="w-full sm:w-auto">
+                  <Button size="lg" className="w-full text-base sm:text-lg px-8">
+                    Sumarme al Club
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
-                <Link href="#programas">
-                  <Button variant="outline" size="lg" className="text-lg px-8">
-                    Ver Programas
+                <Link href="#programas" className="w-full sm:w-auto">
+                  <Button variant="outline" size="lg" className="w-full text-base sm:text-lg px-8">
+                    Ver Planteles
                   </Button>
                 </Link>
               </div>
             </div>
             <div className="relative h-[400px] lg:h-[500px]">
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-orange-600 rounded-3xl transform rotate-3"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-primary-400 to-primary-600 rounded-3xl transform rotate-3"></div>
               <div className="absolute inset-0 bg-gray-900 rounded-3xl overflow-hidden">
                 <div className="w-full h-full flex items-center justify-center text-white">
                   <div className="text-center">
-                    <Trophy className="h-32 w-32 mx-auto mb-4 text-orange-400" />
-                    <p className="text-2xl font-bold">Excelencia en Basketball</p>
+                    <Trophy className="h-32 w-32 mx-auto mb-4 text-primary-400" />
+                    <p className="text-2xl font-bold">Identidad, Equipo y Competencia</p>
                   </div>
                 </div>
               </div>
@@ -83,58 +82,58 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              ¿Por qué elegir MVP Skills?
+              ¿Por qué Sharks Basketball?
             </h2>
             <p className="text-xl text-gray-600">
-              Formación integral para jugadores comprometidos con la excelencia
+              Un modelo de club para formar deportistas completos dentro y fuera de la cancha
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <Card className="border-2 hover:border-orange-400 transition-all hover:shadow-xl">
+            <Card className="border-2 hover:border-primary-400 transition-all hover:shadow-xl">
               <CardContent className="pt-6 text-center">
-                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="h-8 w-8 text-orange-600" />
+                <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Users className="h-8 w-8 text-primary-600" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Entrenadores Profesionales</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Cuerpo Técnico de Club</h3>
                 <p className="text-gray-600">
-                  Personal altamente calificado con experiencia en competencias nacionales e internacionales
+                  Entrenadores con metodología por categorías, planificación semanal y seguimiento individual.
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="border-2 hover:border-orange-400 transition-all hover:shadow-xl">
+            <Card className="border-2 hover:border-primary-400 transition-all hover:shadow-xl">
               <CardContent className="pt-6 text-center">
-                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Target className="h-8 w-8 text-orange-600" />
+                <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Target className="h-8 w-8 text-primary-600" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Entrenamiento Personalizado</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Desarrollo Técnico-Táctico</h3>
                 <p className="text-gray-600">
-                  Programas adaptados a tu nivel y objetivos, con seguimiento individualizado
+                  Trabajo de fundamentos, lectura de juego y toma de decisiones aplicada al partido.
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="border-2 hover:border-orange-400 transition-all hover:shadow-xl">
+            <Card className="border-2 hover:border-primary-400 transition-all hover:shadow-xl">
               <CardContent className="pt-6 text-center">
-                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Calendar className="h-8 w-8 text-orange-600" />
+                <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Calendar className="h-8 w-8 text-primary-600" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Horarios Flexibles</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Microciclos de Entrenamiento</h3>
                 <p className="text-gray-600">
-                  Turnos diurnos y nocturnos para adaptarnos a tu agenda
+                  Organización semanal por objetivos: volumen, intensidad, recuperación y evaluación.
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="border-2 hover:border-orange-400 transition-all hover:shadow-xl">
+            <Card className="border-2 hover:border-primary-400 transition-all hover:shadow-xl">
               <CardContent className="pt-6 text-center">
-                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Trophy className="h-8 w-8 text-orange-600" />
+                <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Trophy className="h-8 w-8 text-primary-600" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Resultados Comprobados</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Competencia y Proyección</h3>
                 <p className="text-gray-600">
-                  Mejora medible en técnica, físico y rendimiento en competencias
+                  Participación en torneos, preparación para pruebas y progresión deportiva medible.
                 </p>
               </CardContent>
             </Card>
@@ -147,97 +146,97 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Nuestros Programas
+              Planteles del Club
             </h2>
             <p className="text-xl text-gray-600">
-              Elige el plan que mejor se adapte a tus objetivos
+              Entrenamiento estructurado según etapa formativa y nivel competitivo
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <Card className="border-2 hover:shadow-2xl transition-all">
               <CardContent className="pt-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">Preparación Física</h3>
-                <div className="text-4xl font-bold text-orange-600 mb-6">20 Sesiones</div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">Formativo U13-U15</h3>
+                <div className="text-4xl font-bold text-primary-600 mb-6">3 Días / Semana</div>
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-start">
                     <CheckCircle className="h-5 w-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-600">Acondicionamiento físico general</span>
+                    <span className="text-gray-600">Fundamentos técnicos y coordinación</span>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle className="h-5 w-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-600">Desarrollo de fuerza y resistencia</span>
+                    <span className="text-gray-600">Desarrollo de hábitos deportivos y disciplina</span>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle className="h-5 w-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-600">Prevención de lesiones</span>
+                    <span className="text-gray-600">Introducción a conceptos tácticos colectivos</span>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle className="h-5 w-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-600">Grupos de hasta 10 jugadores</span>
+                    <span className="text-gray-600">Competencias internas y amistosos</span>
                   </li>
                 </ul>
                 <Link href="#matricula">
-                  <Button className="w-full" variant="outline">Matricularme</Button>
+                  <Button className="w-full" variant="outline">Quiero este plantel</Button>
                 </Link>
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-orange-400 hover:shadow-2xl transition-all transform scale-105">
-              <div className="bg-orange-600 text-white text-center py-2 font-semibold rounded-t-lg">
-                MÁS POPULAR
+            <Card className="border-2 border-primary-400 hover:shadow-2xl transition-all transform scale-105">
+              <div className="bg-primary-600 text-white text-center py-2 font-semibold rounded-t-lg">
+                PLANTEL PRINCIPAL
               </div>
               <CardContent className="pt-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">Técnica Individual</h3>
-                <div className="text-4xl font-bold text-orange-600 mb-6">12 Sesiones</div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">Competitivo U16-U19</h3>
+                <div className="text-4xl font-bold text-primary-600 mb-6">5 Días / Semana</div>
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-start">
                     <CheckCircle className="h-5 w-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-600">Perfeccionamiento técnico</span>
+                    <span className="text-gray-600">Perfeccionamiento técnico por posición</span>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle className="h-5 w-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-600">Ejercicios de tiro y manejo</span>
+                    <span className="text-gray-600">Sistemas ofensivos y ajustes defensivos</span>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle className="h-5 w-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-600">Análisis de video personalizado</span>
+                    <span className="text-gray-600">Análisis de video y métricas de rendimiento</span>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle className="h-5 w-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-600">Grupos de hasta 10 jugadores</span>
+                    <span className="text-gray-600">Preparación para torneos y selectivos</span>
                   </li>
                 </ul>
                 <Link href="#matricula">
-                  <Button className="w-full">Matricularme</Button>
+                  <Button className="w-full">Unirme al principal</Button>
                 </Link>
               </CardContent>
             </Card>
 
             <Card className="border-2 hover:shadow-2xl transition-all">
               <CardContent className="pt-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">Personalizado</h3>
-                <div className="text-4xl font-bold text-orange-600 mb-6">12 Sesiones</div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">Desarrollo Individual</h3>
+                <div className="text-4xl font-bold text-primary-600 mb-6">Plan Personalizado</div>
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-start">
                     <CheckCircle className="h-5 w-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-600">Atención 1 a 1 con entrenador</span>
+                    <span className="text-gray-600">Trabajo 1 a 1 técnico y físico</span>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle className="h-5 w-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-600">Plan totalmente personalizado</span>
+                    <span className="text-gray-600">Objetivos por fase y control de carga</span>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle className="h-5 w-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-600">Seguimiento detallado</span>
+                    <span className="text-gray-600">Reportes de progreso y retroalimentación</span>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle className="h-5 w-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-600">Grupos reducidos (máx. 5)</span>
+                    <span className="text-gray-600">Integración al plantel competitivo</span>
                   </li>
                 </ul>
                 <Link href="#matricula">
-                  <Button className="w-full" variant="outline">Matricularme</Button>
+                  <Button className="w-full" variant="outline">Solicitar evaluación</Button>
                 </Link>
               </CardContent>
             </Card>
@@ -250,10 +249,10 @@ export default function HomePage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Matricúlate Ahora
+              Inscripción Sharks Basketball
             </h2>
             <p className="text-xl text-gray-600">
-              Completa el formulario y nos pondremos en contacto contigo
+              Completa el formulario y el cuerpo técnico te contactará para evaluación y asignación de plantel.
             </p>
           </div>
 
@@ -268,25 +267,25 @@ export default function HomePage() {
             <div>
               <div className="flex items-center mb-4">
                 <Image 
-                  src="/images/mvpskills.png" 
-                  alt="MVP Skills Logo" 
-                  width={50} 
-                  height={50} 
-                  className="object-contain" 
+                  src="/images/sharks-transparent.png" 
+                  alt="Faraday Sharks Logo" 
+                  width={64} 
+                  height={64} 
+                  className="object-contain bg-white/95 rounded-md p-1 shadow-sm" 
                 />
-                <span className="ml-3 text-xl font-bold">MVP Skills</span>
+                <span className="ml-3 text-xl font-bold">Sharks Basketball</span>
               </div>
               <p className="text-gray-400">
-                Academia de Basketball de Alto Rendimiento
+                Club de desarrollo y competencia en baloncesto
               </p>
             </div>
             
             <div>
               <h3 className="text-lg font-semibold mb-4">Contacto</h3>
               <ul className="space-y-2 text-gray-400">
-                <li>Email: info@mvpskills.com</li>
-                <li>Teléfono: +34 600 000 000</li>
-                <li>Dirección: Calle Ejemplo, 123</li>
+                <li>Email: contacto@sharksbasketball.com</li>
+                <li>Teléfono: +52 000 000 0000</li>
+                <li>Dirección: Sede Club Faraday</li>
               </ul>
             </div>
             
@@ -294,18 +293,18 @@ export default function HomePage() {
               <h3 className="text-lg font-semibold mb-4">Enlaces</h3>
               <ul className="space-y-2">
                 <li>
-                  <Link href="#programas" className="text-gray-400 hover:text-orange-400">
-                    Programas
+                  <Link href="#programas" className="text-gray-400 hover:text-primary-400">
+                    Planteles
                   </Link>
                 </li>
                 <li>
-                  <Link href="#matricula" className="text-gray-400 hover:text-orange-400">
-                    Matrícula
+                  <Link href="#matricula" className="text-gray-400 hover:text-primary-400">
+                    Inscripción
                   </Link>
                 </li>
                 <li>
-                  <Link href="/login" className="text-gray-400 hover:text-orange-400">
-                    Iniciar Sesión
+                  <Link href="/portal-del-club" className="text-gray-400 hover:text-primary-400">
+                    Portal del Club
                   </Link>
                 </li>
               </ul>
@@ -313,7 +312,7 @@ export default function HomePage() {
           </div>
           
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; {new Date().getFullYear()} MVP Skills. Todos los derechos reservados.</p>
+            <p>&copy; {new Date().getFullYear()} Sharks Basketball. Todos los derechos reservados.</p>
           </div>
         </div>
       </footer>

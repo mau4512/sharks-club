@@ -31,6 +31,8 @@ model Deportista {
   documentoIdentidad String   @unique
   email         String        @unique
   celular       String?
+  nombreApoderado String
+  telefonoApoderado String
   password      String?
   fechaNacimiento DateTime
   altura        Float?        // en cm
@@ -49,6 +51,7 @@ model Deportista {
   asistencias   Asistencia[]
   registrosTiro RegistroTiro[]
   sesionesEntrenamiento SesionEntrenamiento[]
+  pagos         PagoDeportista[]
   turnoId       String?
   turno         Turno?        @relation(fields: [turnoId], references: [id], onDelete: SetNull)
   
@@ -96,8 +99,38 @@ model Entrenador {
   // Relaciones
   turnos        Turno[]
   planes        PlanEntrenamiento[]
+  ejerciciosCreados EjercicioBiblioteca[]
   
   @@map("entrenadores")
+}
+
+// BIBLIOTECA DE EJERCICIOS (compartida entre entrenadores)
+model EjercicioBiblioteca {
+  id            String        @id @default(cuid())
+  nombre        String        // Nombre del ejercicio
+  descripcion   String?       @db.Text
+  categoria     String        // Tiro, Defensa, Físico, Técnico, Táctico, etc.
+  subcategoria  String?       // Más específico: Tiro libre, Triple, Bote, etc.
+  objetivos     String?       @db.Text // Qué se busca mejorar
+  materiales    String[]      // Array de materiales: ["Balón", "Conos", "Escalera"]
+  duracion      Int?          // Duración estimada en minutos
+  intensidad    String?       // Baja, Media, Alta
+  nivel         String?       // Principiante, Intermedio, Avanzado
+  series        Int?          // Series recomendadas
+  repeticiones  String?       // ej: "10-15", "Hasta fallo"
+  descanso      String?       // ej: "30 segundos", "1 minuto"
+  instrucciones String?       @db.Text // Paso a paso
+  videoUrl      String?       // URL de video demostrativo
+  imagenUrl     String?       // URL de imagen ilustrativa
+  consejos      String[]      // Array de consejos/tips
+  variantes     String[]      // Variantes del ejercicio
+  esPublico     Boolean       @default(true) // Si otros entrenadores pueden verlo
+  creadoPorId   String        // ID del entrenador que lo creó
+  creadoPor     Entrenador    @relation(fields: [creadoPorId], references: [id], onDelete: Cascade)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  @@map("ejercicios_biblioteca")
 }
 
 // Ejercicios y esquemas
@@ -256,17 +289,48 @@ model Matricula {
   id               Int      @id @default(autoincrement())
   nombre           String
   apellidos        String
-  email            String
-  telefono         String
+  documentoIdentidad String
   fechaNacimiento  DateTime
-  programa         String
-  nivel            String   @default("principiante")
-  mensaje          String?  @db.Text
+  tallaCamiseta    String
+  numeroCamiseta   String
+  nombreApoderado  String
+  telefonoApoderado String
   estado           String   @default("pendiente")
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   
   @@map("matriculas")
+}
+
+model PagoDeportista {
+  id            String      @id @default(cuid())
+  deportistaId  String
+  deportista    Deportista  @relation(fields: [deportistaId], references: [id], onDelete: Cascade)
+  concepto      String      // inscripcion, mensualidad, uniforme, otro
+  metodo        String      // efectivo, transferencia, yape, plin, otro
+  monto         Float
+  fechaPago     DateTime    @default(now())
+  observacion   String?     @db.Text
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([deportistaId, fechaPago])
+  @@map("pagos_deportistas")
+}
+
+model EgresoCaja {
+  id            String    @id @default(cuid())
+  categoria     String    // sueldos, alquiler, servicios, prestamos, impuestos, otros
+  metodo        String    // efectivo, transferencia, yape, plin, otro
+  beneficiario  String
+  monto         Float
+  fechaEgreso   DateTime  @default(now())
+  observacion   String?   @db.Text
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([fechaEgreso])
+  @@map("egresos_caja")
 }
 
 // Plan de Entrenamiento

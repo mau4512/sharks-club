@@ -176,7 +176,7 @@ export default function ResumenSesion() {
 
   const getColorPorcentaje = (porcentaje: number) => {
     if (porcentaje >= 70) return 'text-green-600 bg-green-50 border-green-200'
-    if (porcentaje >= 50) return 'text-orange-600 bg-orange-50 border-orange-200'
+    if (porcentaje >= 50) return 'text-primary-600 bg-primary-50 border-primary-200'
     return 'text-red-600 bg-red-50 border-red-200'
   }
 
@@ -184,7 +184,7 @@ export default function ResumenSesion() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Cargando resumen...</p>
         </div>
       </div>
@@ -203,7 +203,7 @@ export default function ResumenSesion() {
   const porcentajeCompletitud = Math.round((ejerciciosCompletados / sesion.resultados.length) * 100)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-gray-50">
       <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="text-center">
@@ -222,7 +222,7 @@ export default function ResumenSesion() {
           <Card>
             <CardContent className="pt-6">
               <div className="text-center">
-                <Award className="h-12 w-12 text-orange-600 mx-auto mb-3" />
+                <Award className="h-12 w-12 text-primary-600 mx-auto mb-3" />
                 <p className="text-3xl font-bold text-gray-900">{porcentajeCompletitud}%</p>
                 <p className="text-sm text-gray-600 mt-1">Completitud</p>
                 <p className="text-xs text-gray-500 mt-2">
@@ -306,7 +306,7 @@ export default function ResumenSesion() {
                             stat.mejora && stat.mejora > 0
                               ? 'bg-green-50 border-green-300'
                               : stat.mejora && stat.mejora < 0
-                              ? 'bg-orange-50 border-orange-300'
+                              ? 'bg-primary-50 border-primary-300'
                               : 'bg-blue-50 border-blue-300'
                           }`}>
                             <div className="flex items-center justify-between">
@@ -321,7 +321,7 @@ export default function ResumenSesion() {
                               <div className="text-right">
                                 {stat.mejora !== null && stat.mejora !== 0 && (
                                   <div className={`flex items-center gap-1 ${
-                                    stat.mejora > 0 ? 'text-green-600' : 'text-orange-600'
+                                    stat.mejora > 0 ? 'text-green-600' : 'text-primary-600'
                                   }`}>
                                     {stat.mejora > 0 ? (
                                       <TrendingUp className="h-5 w-5" />

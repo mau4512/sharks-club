@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { ArrowLeft, Plus, Trash2, Save, Clipboard, Edit, Calendar, Clock } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Save, Clipboard, Edit, Calendar, Clock, BookOpen } from 'lucide-react'
 import Link from 'next/link'
 import PizarraTactica from '@/components/PizarraTactica'
+import SelectorEjerciciosBiblioteca from '@/components/SelectorEjerciciosBiblioteca'
 
 interface PuntoTiro {
   posicion: 'esquina_izq' | 'codo_izq' | 'medio' | 'codo_der' | 'esquina_der'
@@ -77,6 +78,7 @@ export default function PrepararEntrenamientoPage() {
   })
 
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
+  const [mostrarSelectorBiblioteca, setMostrarSelectorBiblioteca] = useState(false)
 
   const categorias = [
     'Calentamiento',
@@ -174,6 +176,29 @@ export default function PrepararEntrenamientoPage() {
       ejercicios: [...plan.ejercicios, ejercicio]
     })
 
+    if (entrenador?.id) {
+      try {
+        await fetch('/api/ejercicios-biblioteca', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nombre: nuevoEjercicio.titulo,
+            descripcion: nuevoEjercicio.descripcion,
+            categoria: 'Técnico',
+            duracion: nuevoEjercicio.duracion,
+            series: nuevoEjercicio.metaTipo === 'repeticiones' ? nuevoEjercicio.metaCantidad : null,
+            repeticiones: nuevoEjercicio.metaUnidad,
+            instrucciones: nuevoEjercicio.descripcion,
+            videoUrl: ejercicio.videoUrl || null,
+            esPublico: true,
+            creadoPorId: entrenador.id,
+          }),
+        })
+      } catch (error) {
+        console.error('Error al sincronizar ejercicio con biblioteca:', error)
+      }
+    }
+
     // Resetear formulario
     setNuevoEjercicio({
       titulo: '',
@@ -198,6 +223,31 @@ export default function PrepararEntrenamientoPage() {
       ...plan,
       ejercicios: plan.ejercicios.filter(e => e.id !== id)
     })
+  }
+
+  const seleccionarEjercicioBiblioteca = (ejercicioBiblioteca: any) => {
+    // Convertir ejercicio de biblioteca a ejercicio del plan
+    const nuevoEjercicioDelPlan: Ejercicio = {
+      id: Date.now().toString(),
+      titulo: ejercicioBiblioteca.nombre,
+      descripcion: ejercicioBiblioteca.descripcion || ejercicioBiblioteca.instrucciones || '',
+      duracion: ejercicioBiblioteca.duracion || 15,
+      meta: {
+        tipo: 'repeticiones',
+        cantidad: ejercicioBiblioteca.series || 1,
+        unidad: ejercicioBiblioteca.repeticiones || 'repeticiones',
+      },
+      tipoRecurso: ejercicioBiblioteca.videoUrl ? 'video' : 'ninguno',
+      videoUrl: ejercicioBiblioteca.videoUrl || undefined,
+    };
+
+    setPlan({
+      ...plan,
+      ejercicios: [...plan.ejercicios, nuevoEjercicioDelPlan]
+    });
+
+    setMostrarSelectorBiblioteca(false);
+    alert(`Ejercicio "${ejercicioBiblioteca.nombre}" agregado al plan`);
   }
 
   const calcularDuracionTotal = () => {
@@ -324,7 +374,7 @@ export default function PrepararEntrenamientoPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Cargando...</p>
         </div>
       </div>
@@ -391,7 +441,7 @@ export default function PrepararEntrenamientoPage() {
                     <select
                       value={plan.turno}
                       onChange={(e) => setPlan({ ...plan, turno: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-gray-900"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-gray-900"
                     >
                       <option value="">Seleccionar turno</option>
                       {turnos.map((turno) => (
@@ -411,7 +461,7 @@ export default function PrepararEntrenamientoPage() {
                     value={plan.notas}
                     onChange={(e) => setPlan({ ...plan, notas: e.target.value })}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-gray-900"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-gray-900"
                     placeholder="Objetivos, observaciones o notas especiales..."
                   />
                 </div>
@@ -440,7 +490,7 @@ export default function PrepararEntrenamientoPage() {
                     {plan.ejercicios.map((ejercicio, index) => (
                       <div
                         key={ejercicio.id}
-                        className="border border-gray-200 rounded-lg p-4 hover:border-orange-300 transition"
+                        className="border border-gray-200 rounded-lg p-4 hover:border-primary-300 transition"
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex-1">
@@ -455,10 +505,10 @@ export default function PrepararEntrenamientoPage() {
                             )}
 
                             {/* Meta del ejercicio */}
-                            <div className="mb-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                              <p className="text-xs font-semibold text-orange-800 mb-1">Meta del Ejercicio:</p>
+                            <div className="mb-3 p-3 bg-primary-50 border border-primary-200 rounded-lg">
+                              <p className="text-xs font-semibold text-primary-800 mb-1">Meta del Ejercicio:</p>
                               <div className="flex items-center justify-between">
-                                <p className="text-sm text-orange-900">
+                                <p className="text-sm text-primary-900">
                                   {ejercicio.meta.cantidad} {ejercicio.meta.unidad}
                                 </p>
                                 {ejercicio.meta.tipoTiro && (
@@ -559,14 +609,23 @@ export default function PrepararEntrenamientoPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {!mostrarFormulario ? (
-                  <Button
-                    onClick={() => setMostrarFormulario(true)}
-                    className="w-full"
-                    variant="secondary"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nuevo Ejercicio
-                  </Button>
+                  <div className="space-y-2">
+                    <Button
+                      onClick={() => setMostrarFormulario(true)}
+                      className="w-full"
+                      variant="secondary"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Crear Nuevo Ejercicio
+                    </Button>
+                    <Button
+                      onClick={() => setMostrarSelectorBiblioteca(true)}
+                      className="w-full bg-green-600 hover:bg-green-700"
+                    >
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      Seleccionar de Biblioteca
+                    </Button>
+                  </div>
                 ) : (
                   <>
                     {/* Título */}
@@ -584,8 +643,8 @@ export default function PrepararEntrenamientoPage() {
                     </div>
 
                     {/* Meta del Ejercicio */}
-                    <div className="border-2 border-orange-200 bg-orange-50 rounded-lg p-4 space-y-3">
-                      <label className="block text-sm font-semibold text-orange-900 mb-2">
+                    <div className="border-2 border-primary-200 bg-primary-50 rounded-lg p-4 space-y-3">
+                      <label className="block text-sm font-semibold text-primary-900 mb-2">
                         Meta del Ejercicio *
                       </label>
                       
@@ -604,7 +663,7 @@ export default function PrepararEntrenamientoPage() {
                               metaUnidad: unidad
                             })
                           }}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-gray-900"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-gray-900"
                         >
                           <option value="conversiones">Conversiones (tiros, puntos, etc.)</option>
                           <option value="repeticiones">Repeticiones (series, ejercicios)</option>
@@ -641,12 +700,12 @@ export default function PrepararEntrenamientoPage() {
 
                       {/* Selector de tipo de tiro (2 o 3 puntos) */}
                       {nuevoEjercicio.metaTipo === 'conversiones' && (
-                        <div className="mt-3 pt-3 border-t border-orange-300">
-                          <label className="block text-xs font-semibold text-orange-900 mb-2">
+                        <div className="mt-3 pt-3 border-t border-primary-300">
+                          <label className="block text-xs font-semibold text-primary-900 mb-2">
                             Tipo de Tiro
                           </label>
                           <div className="flex gap-2">
-                            <label className="flex-1 flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer hover:bg-orange-100 transition">
+                            <label className="flex-1 flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer hover:bg-primary-100 transition">
                               <input
                                 type="radio"
                                 name="metaTipoTiro"
@@ -657,7 +716,7 @@ export default function PrepararEntrenamientoPage() {
                               />
                               <span className="text-sm font-medium text-gray-700">🏀 2 Puntos</span>
                             </label>
-                            <label className="flex-1 flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer hover:bg-orange-100 transition">
+                            <label className="flex-1 flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer hover:bg-primary-100 transition">
                               <input
                                 type="radio"
                                 name="metaTipoTiro"
@@ -669,14 +728,14 @@ export default function PrepararEntrenamientoPage() {
                               <span className="text-sm font-medium text-gray-700">🎯 3 Puntos</span>
                             </label>
                           </div>
-                          <p className="text-xs text-orange-700 mt-2">
+                          <p className="text-xs text-primary-700 mt-2">
                             Los porcentajes se calcularán por separado según el tipo de tiro
                           </p>
 
                           {/* Configuración de Puntos de Tiro */}
-                          <div className="mt-4 pt-4 border-t border-orange-300">
+                          <div className="mt-4 pt-4 border-t border-primary-300">
                             <div className="flex items-center justify-between mb-3">
-                              <label className="text-xs font-semibold text-orange-900">
+                              <label className="text-xs font-semibold text-primary-900">
                                 ¿Especificar puntos de tiro en la cancha?
                               </label>
                               <label className="relative inline-flex items-center cursor-pointer">
@@ -686,7 +745,7 @@ export default function PrepararEntrenamientoPage() {
                                   onChange={(e) => setNuevoEjercicio({ ...nuevoEjercicio, usarPuntosTiro: e.target.checked, puntosTiro: [] })}
                                   className="sr-only peer"
                                 />
-                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
                               </label>
                             </div>
 
@@ -727,7 +786,7 @@ export default function PrepararEntrenamientoPage() {
                                                 })
                                               }
                                             }}
-                                            className="mr-2 h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                                            className="mr-2 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                                           />
                                           <span className="text-sm font-medium text-gray-900">{punto.label}</span>
                                         </label>
@@ -766,7 +825,7 @@ export default function PrepararEntrenamientoPage() {
                                                   )
                                                 })
                                               }}
-                                              className="mr-2 h-3 w-3 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                                              className="mr-2 h-3 w-3 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                                             />
                                             <span>Lanzar a ambos lados (izq. y der.)</span>
                                           </label>
@@ -790,7 +849,7 @@ export default function PrepararEntrenamientoPage() {
                         </div>
                       )}
                       
-                      <p className="text-xs text-orange-700 mt-2">
+                      <p className="text-xs text-primary-700 mt-2">
                         Ejemplo: &quot;10 tiros libres&quot;, &quot;20 repeticiones&quot;, &quot;5 minutos&quot;
                       </p>
                     </div>
@@ -849,7 +908,7 @@ export default function PrepararEntrenamientoPage() {
                             onClick={() => setNuevoEjercicio({ ...nuevoEjercicio, tipoPizarra: 'media' })}
                             className={`flex-1 py-2 px-4 rounded-lg border-2 transition ${
                               nuevoEjercicio.tipoPizarra === 'media'
-                                ? 'border-orange-600 bg-orange-50 text-orange-700'
+                                ? 'border-primary-600 bg-primary-50 text-primary-700'
                                 : 'border-gray-300 hover:border-gray-400'
                             }`}
                           >
@@ -860,7 +919,7 @@ export default function PrepararEntrenamientoPage() {
                             onClick={() => setNuevoEjercicio({ ...nuevoEjercicio, tipoPizarra: 'completa' })}
                             className={`flex-1 py-2 px-4 rounded-lg border-2 transition ${
                               nuevoEjercicio.tipoPizarra === 'completa'
-                                ? 'border-orange-600 bg-orange-50 text-orange-700'
+                                ? 'border-primary-600 bg-primary-50 text-primary-700'
                                 : 'border-gray-300 hover:border-gray-400'
                             }`}
                           >
@@ -924,7 +983,7 @@ export default function PrepararEntrenamientoPage() {
                         value={nuevoEjercicio.descripcion}
                         onChange={(e) => setNuevoEjercicio({ ...nuevoEjercicio, descripcion: e.target.value })}
                         rows={3}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-gray-900"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-gray-900"
                         placeholder="Detalles del ejercicio, objetivos, instrucciones..."
                       />
                     </div>
@@ -998,7 +1057,7 @@ export default function PrepararEntrenamientoPage() {
               <h2 className="text-2xl font-bold text-gray-900">
                 Planes Guardados
               </h2>
-              <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-semibold">
+              <span className="px-3 py-1 bg-primary-100 text-primary-800 rounded-full text-sm font-semibold">
                 {planesGuardados.length} plan{planesGuardados.length !== 1 ? 'es' : ''}
               </span>
             </div>
@@ -1060,7 +1119,7 @@ export default function PrepararEntrenamientoPage() {
                       {Array.isArray(plan.ejercicios) && plan.ejercicios.length > 0 && (
                         <div className="mt-3 space-y-1">
                           {plan.ejercicios.slice(0, 3).map((ejercicio: any, idx: number) => (
-                            <div key={idx} className="flex items-center justify-between p-2 bg-orange-50 rounded text-xs">
+                            <div key={idx} className="flex items-center justify-between p-2 bg-primary-50 rounded text-xs">
                               <span className="font-medium text-gray-800">{ejercicio.titulo}</span>
                               {ejercicio.meta?.tipoTiro && (
                                 <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
@@ -1088,6 +1147,14 @@ export default function PrepararEntrenamientoPage() {
           </div>
         )}
       </div>
+
+      {/* Selector de Ejercicios de Biblioteca */}
+      {mostrarSelectorBiblioteca && (
+        <SelectorEjerciciosBiblioteca
+          onSeleccionar={seleccionarEjercicioBiblioteca}
+          onCerrar={() => setMostrarSelectorBiblioteca(false)}
+        />
+      )}
     </div>
   )
 }

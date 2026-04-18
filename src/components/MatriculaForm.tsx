@@ -9,12 +9,12 @@ export default function MatriculaForm() {
   const [formData, setFormData] = useState({
     nombre: '',
     apellidos: '',
-    email: '',
-    telefono: '',
+    documentoIdentidad: '',
     fechaNacimiento: '',
-    programa: '',
-    nivel: 'principiante',
-    mensaje: ''
+    tallaCamiseta: '',
+    numeroCamiseta: '',
+    nombreApoderado: '',
+    telefonoApoderado: '',
   })
   
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
@@ -49,12 +49,12 @@ export default function MatriculaForm() {
       setFormData({
         nombre: '',
         apellidos: '',
-        email: '',
-        telefono: '',
+        documentoIdentidad: '',
         fechaNacimiento: '',
-        programa: '',
-        nivel: 'principiante',
-        mensaje: ''
+        tallaCamiseta: '',
+        numeroCamiseta: '',
+        nombreApoderado: '',
+        telefonoApoderado: '',
       })
       
       // Resetear el estado después de 5 segundos
@@ -72,7 +72,7 @@ export default function MatriculaForm() {
           <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
           <h3 className="text-2xl font-bold text-gray-900 mb-2">¡Solicitud Enviada!</h3>
           <p className="text-gray-600 mb-6">
-            Gracias por tu interés. Nos pondremos en contacto contigo pronto para completar tu matrícula.
+            Tu solicitud fue registrada correctamente. Nos pondremos en contacto con el padre o apoderado para continuar el proceso.
           </p>
           <Button onClick={() => setStatus('idle')}>
             Enviar otra solicitud
@@ -89,7 +89,7 @@ export default function MatriculaForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-2">
-                Nombre *
+                Nombres completos *
               </label>
               <input
                 id="nombre"
@@ -98,8 +98,8 @@ export default function MatriculaForm() {
                 required
                 value={formData.nombre}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
-                placeholder="Tu nombre"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900"
+                placeholder="Ej: Juan Carlos"
               />
             </div>
             <div>
@@ -113,109 +113,121 @@ export default function MatriculaForm() {
                 required
                 value={formData.apellidos}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
-                placeholder="Tus apellidos"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900"
+                placeholder="Ej: Pérez Gómez"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email *
+              <label htmlFor="documentoIdentidad" className="block text-sm font-medium text-gray-700 mb-2">
+                Número de DNI *
               </label>
               <input
-                id="email"
-                name="email"
-                type="email"
+                id="documentoIdentidad"
+                name="documentoIdentidad"
+                type="text"
                 required
-                value={formData.email}
+                value={formData.documentoIdentidad}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
-                placeholder="tu@email.com"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900"
+                placeholder="Ej: 12345678"
               />
             </div>
             <div>
-              <label htmlFor="telefono" className="block text-sm font-medium text-gray-700 mb-2">
-                Teléfono *
+              <label htmlFor="fechaNacimiento" className="block text-sm font-medium text-gray-700 mb-2">
+                Fecha de Nacimiento *
               </label>
               <input
-                id="telefono"
-                name="telefono"
-                type="tel"
+                id="fechaNacimiento"
+                name="fechaNacimiento"
+                type="date"
                 required
-                value={formData.telefono}
+                value={formData.fechaNacimiento}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
-                placeholder="+34 600 000 000"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900"
               />
             </div>
           </div>
 
-          <div>
-            <label htmlFor="fechaNacimiento" className="block text-sm font-medium text-gray-700 mb-2">
-              Fecha de Nacimiento *
-            </label>
-            <input
-              id="fechaNacimiento"
-              name="fechaNacimiento"
-              type="date"
-              required
-              value={formData.fechaNacimiento}
-              onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="tallaCamiseta" className="block text-sm font-medium text-gray-700 mb-2">
+                Talla para la Camiseta *
+              </label>
+              <select
+                id="tallaCamiseta"
+                name="tallaCamiseta"
+                required
+                value={formData.tallaCamiseta}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900"
+              >
+                <option value="">Selecciona una talla</option>
+                <option value="4">4</option>
+                <option value="6">6</option>
+                <option value="8">8</option>
+                <option value="10">10</option>
+                <option value="12">12</option>
+                <option value="14">14</option>
+                <option value="16">16</option>
+                <option value="S">S</option>
+                <option value="M">M</option>
+                <option value="L">L</option>
+                <option value="XL">XL</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="numeroCamiseta" className="block text-sm font-medium text-gray-700 mb-2">
+                Número que le Gustaría *
+              </label>
+              <input
+                id="numeroCamiseta"
+                name="numeroCamiseta"
+                type="number"
+                min="0"
+                max="99"
+                required
+                value={formData.numeroCamiseta}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900"
+                placeholder="Ej: 23"
+              />
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="programa" className="block text-sm font-medium text-gray-700 mb-2">
-              Programa de Interés *
-            </label>
-            <select
-              id="programa"
-              name="programa"
-              required
-              value={formData.programa}
-              onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
-            >
-              <option value="">Selecciona un programa</option>
-              <option value="preparacion_fisica">Preparación Física (20 sesiones)</option>
-              <option value="tecnica_individual">Técnica Individual (12 sesiones)</option>
-              <option value="personalizado">Personalizado (12 sesiones)</option>
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="nivel" className="block text-sm font-medium text-gray-700 mb-2">
-              Nivel de Experiencia
-            </label>
-            <select
-              id="nivel"
-              name="nivel"
-              value={formData.nivel}
-              onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
-            >
-              <option value="principiante">Principiante</option>
-              <option value="intermedio">Intermedio</option>
-              <option value="avanzado">Avanzado</option>
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="mensaje" className="block text-sm font-medium text-gray-700 mb-2">
-              Mensaje o Consultas
-            </label>
-            <textarea
-              id="mensaje"
-              name="mensaje"
-              rows={4}
-              value={formData.mensaje}
-              onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
-              placeholder="Cuéntanos más sobre tus objetivos y expectativas..."
-            ></textarea>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="nombreApoderado" className="block text-sm font-medium text-gray-700 mb-2">
+                Nombre del Padre o Apoderado *
+              </label>
+              <input
+                id="nombreApoderado"
+                name="nombreApoderado"
+                type="text"
+                required
+                value={formData.nombreApoderado}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900"
+                placeholder="Ej: Carlos Pérez"
+              />
+            </div>
+            <div>
+              <label htmlFor="telefonoApoderado" className="block text-sm font-medium text-gray-700 mb-2">
+                Número del Padre o Apoderado *
+              </label>
+              <input
+                id="telefonoApoderado"
+                name="telefonoApoderado"
+                type="tel"
+                required
+                value={formData.telefonoApoderado}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900"
+                placeholder="Ej: 999 888 777"
+              />
+            </div>
           </div>
 
           {status === 'error' && (
@@ -236,8 +248,7 @@ export default function MatriculaForm() {
           </Button>
 
           <p className="text-sm text-gray-500 text-center">
-            Al enviar este formulario, aceptas que nos pongamos en contacto contigo para 
-            completar el proceso de matrícula.
+            Al enviar este formulario, autorizas al club a contactarse con el padre o apoderado para completar el proceso de inscripción.
           </p>
         </form>
       </CardContent>

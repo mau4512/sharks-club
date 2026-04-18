@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MVP Skills - Basketball Training Tracker",
-  description: "Aplicación de seguimiento de entrenamiento de baloncesto y preparación física",
+  title: "Sharks Basketball - Club Faraday",
+  description: "Club de baloncesto enfocado en formación, competencia y desarrollo integral",
 };
 
 export default function RootLayout({

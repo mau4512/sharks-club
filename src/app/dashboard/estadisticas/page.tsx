@@ -120,7 +120,7 @@ export default function EstadisticasPage() {
             <h3 className="text-sm font-medium text-gray-600">Mejor % Tiro Libre</h3>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-orange-600">80%</p>
+            <p className="text-3xl font-bold text-primary-600">80%</p>
             <p className="text-sm text-gray-500 mt-1">+8% vs inicio</p>
           </CardContent>
         </Card>

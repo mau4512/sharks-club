@@ -47,17 +47,14 @@ export async function POST(request: Request) {
     
     console.log('Datos recibidos:', body)
     
-    // Determinar capacidad máxima según la sección
-    const capacidadMaxima = body.seccion === 'personalizado' ? 5 : 10
-    
     const turno = await prisma.turno.create({
       data: {
         nombre: body.nombre,
         tipo: body.tipo,
         hora: body.hora,
         modalidad: body.modalidad,
-        seccion: body.seccion,
-        capacidadMaxima: capacidadMaxima,
+        seccion: 'general',
+        capacidadMaxima: 10,
         entrenadorId: body.entrenadorId || null,
         activo: body.activo !== false
       }

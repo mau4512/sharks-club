@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import Link from 'next/link'
-import { Users, Activity, TrendingUp, Calendar, Target } from 'lucide-react'
+import { Users, Activity, TrendingUp, Calendar, Target, Wallet } from 'lucide-react'
 import { prisma } from '@/lib/prisma'
 
 // Forzar rendering dinámico
@@ -75,7 +75,7 @@ export default async function AdminPage() {
                   <p className="text-3xl font-bold text-gray-900">{stats.totalDeportistas}</p>
                   <p className="text-xs text-gray-500 mt-1">{stats.deportistasActivos} Activos</p>
                 </div>
-                <Users className="h-10 w-10 text-orange-600" />
+                <Users className="h-10 w-10 text-primary-600" />
               </div>
             </CardContent>
           </Card>
@@ -129,7 +129,7 @@ export default async function AdminPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Link
               href="/admin/deportistas/nuevo"
-              className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition text-center"
+              className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition text-center"
             >
               <Users className="h-8 w-8 text-gray-400 mx-auto mb-2" />
               <p className="font-medium text-gray-900">Registrar Nuevo Deportista</p>
@@ -138,7 +138,7 @@ export default async function AdminPage() {
             
             <Link
               href="/admin/deportistas"
-              className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition text-center"
+              className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition text-center"
             >
               <Activity className="h-8 w-8 text-gray-400 mx-auto mb-2" />
               <p className="font-medium text-gray-900">Ver Lista de Deportistas</p>
@@ -147,7 +147,7 @@ export default async function AdminPage() {
 
             <Link
               href="/admin/turnos"
-              className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition text-center"
+              className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition text-center"
             >
               <Calendar className="h-8 w-8 text-gray-400 mx-auto mb-2" />
               <p className="font-medium text-gray-900">Gestionar Turnos</p>
@@ -156,11 +156,20 @@ export default async function AdminPage() {
 
             <Link
               href="/admin/ejercicios-tiro"
-              className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition text-center"
+              className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition text-center"
             >
               <Target className="h-8 w-8 text-gray-400 mx-auto mb-2" />
               <p className="font-medium text-gray-900">Ejercicios de Tiro</p>
               <p className="text-sm text-gray-600">Configurar ejercicios de tiro</p>
+            </Link>
+
+            <Link
+              href="/admin/caja"
+              className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition text-center"
+            >
+              <Wallet className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+              <p className="font-medium text-gray-900">Caja</p>
+              <p className="text-sm text-gray-600">Registrar y consultar pagos</p>
             </Link>
           </div>
         </CardContent>

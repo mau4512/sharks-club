@@ -122,8 +122,8 @@ export default function EntrenadoresPage() {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center">
-                      <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                        <UserCog className="h-6 w-6 text-orange-600" />
+                      <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
+                        <UserCog className="h-6 w-6 text-primary-600" />
                       </div>
                       <div className="ml-3">
                         <CardTitle className="text-lg">
@@ -160,7 +160,7 @@ export default function EntrenadoresPage() {
                         <Award className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
                         <div className="flex flex-wrap gap-1">
                           {entrenador.especialidad.map((esp, idx) => (
-                            <span key={idx} className="inline-block px-2 py-0.5 bg-orange-100 text-orange-800 rounded text-xs">
+                            <span key={idx} className="inline-block px-2 py-0.5 bg-primary-100 text-primary-800 rounded text-xs">
                               {esp}
                             </span>
                           ))}

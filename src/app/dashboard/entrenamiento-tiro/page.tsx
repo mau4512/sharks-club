@@ -141,8 +141,8 @@ export default function EntrenamientoTiroPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="text-center bg-orange-50 rounded-lg p-6">
-              <MapPin className="h-12 w-12 text-orange-600 mx-auto mb-3" />
+            <div className="text-center bg-primary-50 rounded-lg p-6">
+              <MapPin className="h-12 w-12 text-primary-600 mx-auto mb-3" />
               <h3 className="text-xl font-bold text-gray-900">{posicion.zona}</h3>
               <p className="text-sm text-gray-600 mt-1">Posición actual</p>
             </div>
@@ -150,13 +150,13 @@ export default function EntrenamientoTiroPage() {
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-gray-700">Progreso</span>
-                <span className="text-sm font-bold text-orange-600">
+                <span className="text-sm font-bold text-primary-600">
                   {aciertos} / {posicion.meta} aciertos
                 </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-4">
                 <div
-                  className="bg-orange-600 h-4 rounded-full transition-all duration-300"
+                  className="bg-primary-600 h-4 rounded-full transition-all duration-300"
                   style={{ width: `${progreso}%` }}
                 />
               </div>
@@ -218,7 +218,7 @@ export default function EntrenamientoTiroPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
-                        <Target className="h-5 w-5 text-orange-600" />
+                        <Target className="h-5 w-5 text-primary-600" />
                         <h3 className="font-semibold text-lg">{ejercicio.nombre}</h3>
                       </div>
                       <p className="text-sm text-gray-600 mt-1">Turno: {ejercicio.turno.nombre}</p>
@@ -226,7 +226,7 @@ export default function EntrenamientoTiroPage() {
                         <span className="text-gray-600">
                           {ejercicio.posiciones.length} posiciones
                         </span>
-                        <span className="text-orange-600 font-medium">
+                        <span className="text-primary-600 font-medium">
                           Meta: {ejercicio.metaTotal} aciertos
                         </span>
                       </div>
@@ -261,7 +261,7 @@ export default function EntrenamientoTiroPage() {
                         {registro.completado ? (
                           <CheckCircle className="h-5 w-5 text-green-600" />
                         ) : (
-                          <TrendingUp className="h-5 w-5 text-orange-600" />
+                          <TrendingUp className="h-5 w-5 text-primary-600" />
                         )}
                         <div>
                           <p className="font-medium text-gray-900">{registro.posicion}</p>

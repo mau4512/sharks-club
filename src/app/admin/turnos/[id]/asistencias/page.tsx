@@ -167,8 +167,8 @@ export default function AsistenciasTurnoPage() {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                          <User className="h-5 w-5 text-orange-600" />
+                        <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+                          <User className="h-5 w-5 text-primary-600" />
                         </div>
                         <div>
                           <h3 className="font-semibold text-gray-900">
@@ -223,7 +223,7 @@ export default function AsistenciasTurnoPage() {
         </Card>
 
         {/* Link al perfil de entrenador para tomar asistencia */}
-        <Card className="border-2 border-orange-200 bg-orange-50">
+        <Card className="border-2 border-primary-200 bg-primary-50">
           <CardContent className="py-6">
             <div className="flex items-center justify-between">
               <div>

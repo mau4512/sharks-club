@@ -16,6 +16,8 @@ interface DeportistaData {
   documentoIdentidad: string
   email: string
   celular: string
+  nombreApoderado: string
+  telefonoApoderado: string
   fechaNacimiento: string
   altura: string
   peso: string
@@ -49,6 +51,8 @@ export default function EditarDeportistaPage() {
     documentoIdentidad: '',
     email: '',
     celular: '',
+    nombreApoderado: '',
+    telefonoApoderado: '',
     fechaNacimiento: '',
     altura: '',
     peso: '',
@@ -97,6 +101,8 @@ export default function EditarDeportistaPage() {
         documentoIdentidad: data.documentoIdentidad,
         email: data.email,
         celular: data.celular || '',
+        nombreApoderado: data.nombreApoderado || '',
+        telefonoApoderado: data.telefonoApoderado || '',
         fechaNacimiento,
         altura: data.altura?.toString() || '',
         peso: data.peso?.toString() || '',
@@ -180,7 +186,7 @@ export default function EditarDeportistaPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
       </div>
     )
   }
@@ -268,6 +274,23 @@ export default function EditarDeportistaPage() {
                   value={formData.celular}
                   onChange={handleChange}
                   placeholder="Ej: +34 600 123 456"
+                />
+                <Input
+                  label="Nombre del Padre o Apoderado *"
+                  name="nombreApoderado"
+                  value={formData.nombreApoderado}
+                  onChange={handleChange}
+                  required
+                  placeholder="Ej: Carlos García"
+                />
+                <Input
+                  label="Número del Padre o Apoderado *"
+                  name="telefonoApoderado"
+                  type="tel"
+                  value={formData.telefonoApoderado}
+                  onChange={handleChange}
+                  required
+                  placeholder="Ej: 999 888 777"
                 />
               </div>
             </div>
@@ -379,7 +402,7 @@ export default function EditarDeportistaPage() {
                   name="activo"
                   checked={formData.activo}
                   onChange={handleChange}
-                  className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                 />
                 <label htmlFor="activo" className="ml-2 block text-sm text-gray-900">
                   Deportista activo
@@ -388,13 +411,13 @@ export default function EditarDeportistaPage() {
             </div>
 
             {/* Botones */}
-            <div className="flex justify-end space-x-4 pt-6 border-t">
-              <Link href="/admin/deportistas">
-                <Button type="button" variant="secondary">
+            <div className="flex flex-col-reverse gap-3 pt-6 border-t sm:flex-row sm:justify-end">
+              <Link href="/admin/deportistas" className="w-full sm:w-auto">
+                <Button type="button" variant="secondary" className="w-full sm:w-auto">
                   Cancelar
                 </Button>
               </Link>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
                 <Save className="h-4 w-4 mr-2" />
                 {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
               </Button>

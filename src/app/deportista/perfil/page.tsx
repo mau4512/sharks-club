@@ -145,7 +145,7 @@ export default function PerfilPage() {
         <Card className="mb-6">
           <CardHeader>
             <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-              <User className="h-5 w-5 mr-2 text-orange-600" />
+              <User className="h-5 w-5 mr-2 text-primary-600" />
               Información del Deportista
             </h2>
           </CardHeader>
@@ -206,7 +206,7 @@ export default function PerfilPage() {
         <Card>
           <CardHeader>
             <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-              <Lock className="h-5 w-5 mr-2 text-orange-600" />
+              <Lock className="h-5 w-5 mr-2 text-primary-600" />
               Cambiar Contraseña
             </h2>
           </CardHeader>

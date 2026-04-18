@@ -201,7 +201,7 @@ export default function SesionesCompletadas() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Cargando sesiones...</p>
         </div>
       </div>
@@ -235,7 +235,7 @@ export default function SesionesCompletadas() {
           <Card className="mb-8">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-orange-600" />
+                <BarChart3 className="h-5 w-5 text-primary-600" />
                 <h2 className="text-xl font-semibold text-gray-900">Resumen por Deportista</h2>
               </div>
             </CardHeader>
@@ -244,7 +244,7 @@ export default function SesionesCompletadas() {
                 {estadisticasDeportistas.map((stat) => (
                   <div
                     key={stat.deportistaId}
-                    className="p-4 border-2 border-gray-200 rounded-lg hover:border-orange-300 transition cursor-pointer"
+                    className="p-4 border-2 border-gray-200 rounded-lg hover:border-primary-300 transition cursor-pointer"
                     onClick={() => setDeportistaSeleccionado(
                       deportistaSeleccionado === stat.deportistaId ? 'todos' : stat.deportistaId
                     )}
@@ -256,7 +256,7 @@ export default function SesionesCompletadas() {
                       </div>
                       {stat.tendencia !== null && (
                         <div className={`flex items-center gap-1 ${
-                          stat.tendencia > 0 ? 'text-green-600' : stat.tendencia < 0 ? 'text-orange-600' : 'text-gray-600'
+                          stat.tendencia > 0 ? 'text-green-600' : stat.tendencia < 0 ? 'text-primary-600' : 'text-gray-600'
                         }`}>
                           {stat.tendencia > 0 ? (
                             <TrendingUp className="h-4 w-4" />
@@ -280,7 +280,7 @@ export default function SesionesCompletadas() {
                         <div
                           className={`h-2 rounded-full transition-all ${
                             stat.promedioCompletitud >= 80 ? 'bg-green-500' :
-                            stat.promedioCompletitud >= 60 ? 'bg-orange-500' : 'bg-red-500'
+                            stat.promedioCompletitud >= 60 ? 'bg-primary-500' : 'bg-red-500'
                           }`}
                           style={{ width: `${stat.promedioCompletitud}%` }}
                         />
@@ -297,7 +297,7 @@ export default function SesionesCompletadas() {
         {deportistaSeleccionado !== 'todos' && (
           <div className="mb-4 flex items-center gap-2">
             <span className="text-sm text-gray-600">Mostrando sesiones de:</span>
-            <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-semibold">
+            <span className="px-3 py-1 bg-primary-100 text-primary-800 rounded-full text-sm font-semibold">
               {estadisticasDeportistas.find(s => s.deportistaId === deportistaSeleccionado)?.nombre}
             </span>
             <Button
@@ -340,8 +340,8 @@ export default function SesionesCompletadas() {
                               className="w-12 h-12 rounded-full object-cover"
                             />
                           ) : (
-                            <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
-                              <User className="h-6 w-6 text-orange-600" />
+                            <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center">
+                              <User className="h-6 w-6 text-primary-600" />
                             </div>
                           )}
                         </div>
@@ -368,7 +368,7 @@ export default function SesionesCompletadas() {
 
                       {/* Resumen de completitud */}
                       <div className="text-right">
-                        <div className="text-2xl font-bold text-orange-600">
+                        <div className="text-2xl font-bold text-primary-600">
                           {sesion.resultados.filter(r => r.completado).length}/{sesion.resultados.length}
                         </div>
                         <p className="text-xs text-gray-500">ejercicios completados</p>
@@ -453,7 +453,7 @@ export default function SesionesCompletadas() {
                                               <div className="flex items-center justify-between text-xs">
                                                 <span className="text-gray-600">Lado Izq:</span>
                                                 <span className={`font-semibold ${
-                                                  porcentajes.izq >= 50 ? 'text-green-600' : 'text-orange-600'
+                                                  porcentajes.izq >= 50 ? 'text-green-600' : 'text-primary-600'
                                                 }`}>
                                                   {punto.cantidad}/{punto.realizadoIzq || 0} = {porcentajes.izq}%
                                                 </span>
@@ -461,7 +461,7 @@ export default function SesionesCompletadas() {
                                               <div className="flex items-center justify-between text-xs">
                                                 <span className="text-gray-600">Lado Der:</span>
                                                 <span className={`font-semibold ${
-                                                  porcentajes.der >= 50 ? 'text-green-600' : 'text-orange-600'
+                                                  porcentajes.der >= 50 ? 'text-green-600' : 'text-primary-600'
                                                 }`}>
                                                   {punto.cantidad}/{punto.realizadoDer || 0} = {porcentajes.der}%
                                                 </span>
@@ -470,7 +470,7 @@ export default function SesionesCompletadas() {
                                           ) : (
                                             <div className="mt-2">
                                               <span className={`text-sm font-semibold ${
-                                                porcentajes.izq >= 50 ? 'text-green-600' : 'text-orange-600'
+                                                porcentajes.izq >= 50 ? 'text-green-600' : 'text-primary-600'
                                               }`}>
                                                 {punto.cantidad}/{punto.realizadoIzq || 0} = {porcentajes.izq}%
                                               </span>

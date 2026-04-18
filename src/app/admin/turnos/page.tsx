@@ -12,7 +12,6 @@ interface Turno {
   tipo: string
   hora: string
   modalidad: string
-  seccion: string
   capacidadMaxima: number
   activo: boolean
   entrenador?: {
@@ -76,15 +75,6 @@ export default function TurnosPage() {
 
   const getModalidadLabel = (modalidad: string) => {
     return modalidad === 'interdiario' ? 'Interdiario (12 sesiones)' : 'Diario (20 sesiones)'
-  }
-
-  const getSeccionLabel = (seccion: string) => {
-    const labels: { [key: string]: string } = {
-      'preparacion_fisica': 'Preparación Física',
-      'tecnica_individual': 'Técnica Individual',
-      'personalizado': 'Personalizado'
-    }
-    return labels[seccion] || seccion
   }
 
   if (loading) {
@@ -152,11 +142,6 @@ export default function TurnosPage() {
                     <div className="text-sm">
                       <span className="font-medium text-gray-700">Modalidad:</span>
                       <span className="ml-2 text-gray-600">{getModalidadLabel(turno.modalidad)}</span>
-                    </div>
-                    
-                    <div className="text-sm">
-                      <span className="font-medium text-gray-700">Sección:</span>
-                      <span className="ml-2 text-gray-600">{getSeccionLabel(turno.seccion)}</span>
                     </div>
                     
                     {turno.entrenador && (

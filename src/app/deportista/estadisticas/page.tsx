@@ -66,7 +66,7 @@ export default function EstadisticasPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Cargando estadísticas...</p>
         </div>
       </div>
@@ -98,8 +98,8 @@ export default function EstadisticasPage() {
                   <p className="text-sm text-gray-600 mb-1">Sesiones Totales</p>
                   <p className="text-3xl font-bold text-gray-900">{estadisticas?.totalSesiones || 0}</p>
                 </div>
-                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <Calendar className="h-6 w-6 text-orange-600" />
+                <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
+                  <Calendar className="h-6 w-6 text-primary-600" />
                 </div>
               </div>
             </CardContent>
@@ -172,7 +172,7 @@ export default function EstadisticasPage() {
                   return (
                     <div
                       key={sesion.id}
-                      className="p-4 border-2 border-gray-200 rounded-lg hover:border-orange-300 transition"
+                      className="p-4 border-2 border-gray-200 rounded-lg hover:border-primary-300 transition"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
@@ -188,7 +188,7 @@ export default function EstadisticasPage() {
                             </span>
                             <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                               porcentaje >= 80 ? 'bg-green-100 text-green-700' :
-                              porcentaje >= 60 ? 'bg-orange-100 text-orange-700' :
+                              porcentaje >= 60 ? 'bg-primary-100 text-primary-700' :
                               'bg-red-100 text-red-700'
                             }`}>
                               {porcentaje}% completado

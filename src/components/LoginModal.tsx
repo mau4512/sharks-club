@@ -96,7 +96,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       ></div>
 
       {/* Modal */}
-      <div className="relative w-full max-w-md">
+      <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto">
         <Card className="border-2">
           <CardContent className="pt-6">
             <div className="flex justify-between items-center mb-6">
@@ -114,13 +114,13 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
               <label className="block text-sm font-medium text-gray-700 mb-3">
                 Tipo de Usuario
               </label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <button
                   type="button"
                   onClick={() => setTipoUsuario('admin')}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                  className={`flex flex-row items-center justify-center gap-2 rounded-lg border-2 p-3 transition-all sm:flex-col sm:p-4 ${
                     tipoUsuario === 'admin'
-                      ? 'border-orange-600 bg-orange-50 text-orange-700'
+                      ? 'border-primary-600 bg-primary-50 text-primary-700'
                       : 'border-gray-200 hover:border-gray-300 text-gray-600'
                   }`}
                 >
@@ -131,9 +131,9 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 <button
                   type="button"
                   onClick={() => setTipoUsuario('entrenador')}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                  className={`flex flex-row items-center justify-center gap-2 rounded-lg border-2 p-3 transition-all sm:flex-col sm:p-4 ${
                     tipoUsuario === 'entrenador'
-                      ? 'border-orange-600 bg-orange-50 text-orange-700'
+                      ? 'border-primary-600 bg-primary-50 text-primary-700'
                       : 'border-gray-200 hover:border-gray-300 text-gray-600'
                   }`}
                 >
@@ -144,9 +144,9 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 <button
                   type="button"
                   onClick={() => setTipoUsuario('deportista')}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                  className={`flex flex-row items-center justify-center gap-2 rounded-lg border-2 p-3 transition-all sm:flex-col sm:p-4 ${
                     tipoUsuario === 'deportista'
-                      ? 'border-orange-600 bg-orange-50 text-orange-700'
+                      ? 'border-primary-600 bg-primary-50 text-primary-700'
                       : 'border-gray-200 hover:border-gray-300 text-gray-600'
                   }`}
                 >
@@ -168,7 +168,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900"
                   placeholder="tu@email.com o usuario"
                   autoComplete="username"
                 />
@@ -185,7 +185,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900"
                   placeholder="Ingresa tu contraseña"
                   autoComplete="current-password"
                 />

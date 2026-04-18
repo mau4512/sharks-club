@@ -91,8 +91,8 @@ export default function MisDeportistasPage() {
               <Card key={deportista.id} className="hover:shadow-lg transition">
                 <CardHeader>
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                      <User className="h-6 w-6 text-orange-600" />
+                    <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
+                      <User className="h-6 w-6 text-primary-600" />
                     </div>
                     <div className="flex-1">
                       <h3 className="font-semibold text-gray-900">
@@ -120,7 +120,7 @@ export default function MisDeportistasPage() {
                   <div className="pt-3 border-t">
                     <Link 
                       href={`/entrenador/deportistas/${deportista.id}`}
-                      className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition"
+                      className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
                     >
                       <TrendingUp className="h-4 w-4" />
                       Ver Perfil y Progreso

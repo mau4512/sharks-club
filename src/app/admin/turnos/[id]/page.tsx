@@ -15,7 +15,6 @@ interface Turno {
   tipo: string
   hora: string
   modalidad: string
-  seccion: string
   capacidadMaxima: number
   activo: boolean
   deportistas: Array<{
@@ -51,7 +50,6 @@ export default function EditarTurnoPage() {
     tipo: 'diurno',
     hora: '',
     modalidad: 'interdiario',
-    seccion: 'preparacion_fisica',
     activo: true
   })
 
@@ -72,7 +70,6 @@ export default function EditarTurnoPage() {
         tipo: data.tipo,
         hora: data.hora,
         modalidad: data.modalidad,
-        seccion: data.seccion,
         activo: data.activo
       })
     } catch (error) {
@@ -183,7 +180,7 @@ export default function EditarTurnoPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
       </div>
     )
   }
@@ -235,7 +232,7 @@ export default function EditarTurnoPage() {
                 required
                 value={formData.nombre}
                 onChange={handleChange}
-                placeholder="Ej: Turno Mañana - Preparación Física"
+                placeholder="Ej: Turno Mañana"
               />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -271,18 +268,6 @@ export default function EditarTurnoPage() {
                 <option value="diario">Diario (20 sesiones)</option>
               </Select>
 
-              <Select
-                label="Sección *"
-                name="seccion"
-                required
-                value={formData.seccion}
-                onChange={handleChange}
-              >
-                <option value="preparacion_fisica">Preparación Física (10 deportistas)</option>
-                <option value="tecnica_individual">Técnica Individual (10 deportistas)</option>
-                <option value="personalizado">Personalizado (5 deportistas)</option>
-              </Select>
-
               <div className="flex items-center">
                 <input
                   type="checkbox"
@@ -290,15 +275,15 @@ export default function EditarTurnoPage() {
                   name="activo"
                   checked={formData.activo}
                   onChange={handleChange}
-                  className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                 />
                 <label htmlFor="activo" className="ml-2 block text-sm text-gray-900">
                   Turno activo
                 </label>
               </div>
 
-              <div className="flex gap-3">
-                <Button type="submit" disabled={isSubmitting}>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
                   {isSubmitting ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -311,8 +296,8 @@ export default function EditarTurnoPage() {
                     </>
                   )}
                 </Button>
-                <Link href="/admin/turnos">
-                  <Button type="button" variant="outline">
+                <Link href="/admin/turnos" className="w-full sm:w-auto">
+                  <Button type="button" variant="outline" className="w-full sm:w-auto">
                     Cancelar
                   </Button>
                 </Link>
@@ -352,7 +337,7 @@ export default function EditarTurnoPage() {
                   <select
                     value={selectedDeportistaId}
                     onChange={(e) => setSelectedDeportistaId(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900"
                   >
                     <option value="">Selecciona un deportista...</option>
                     {deportistasDisponibles.map((dep) => (

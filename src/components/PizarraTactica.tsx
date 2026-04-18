@@ -419,7 +419,7 @@ export default function PizarraTactica({ tipo, onSave, initialData }: PizarraTac
               }}
               className={`w-8 h-8 rounded-full border-2 transition ${
                 color === c.value && tool === 'pen'
-                  ? 'border-orange-600 scale-110'
+                  ? 'border-primary-600 scale-110'
                   : 'border-gray-300 hover:scale-105'
               }`}
               style={{ backgroundColor: c.value }}
@@ -447,7 +447,7 @@ export default function PizarraTactica({ tipo, onSave, initialData }: PizarraTac
           }}
           className={`p-2 rounded ${
             tool === 'eraser'
-              ? 'bg-orange-100 text-orange-600'
+              ? 'bg-primary-100 text-primary-600'
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
           title="Borrador"
@@ -489,7 +489,7 @@ export default function PizarraTactica({ tipo, onSave, initialData }: PizarraTac
       </div>
 
       {/* Figuras predefinidas */}
-      <div className="border-2 border-orange-200 bg-orange-50 rounded-lg p-3">
+      <div className="border-2 border-primary-200 bg-primary-50 rounded-lg p-3">
         <p className="text-xs font-semibold text-gray-700 mb-2">Herramientas de Entrenador:</p>
         <div className="flex flex-wrap gap-2">
           <button
@@ -499,8 +499,8 @@ export default function PizarraTactica({ tipo, onSave, initialData }: PizarraTac
             }}
             className={`px-3 py-2 text-sm rounded border-2 transition ${
               selectedShape === 'ball'
-                ? 'border-orange-600 bg-orange-100 font-semibold'
-                : 'border-gray-300 bg-white hover:border-orange-400'
+                ? 'border-primary-600 bg-primary-100 font-semibold'
+                : 'border-gray-300 bg-white hover:border-primary-400'
             }`}
           >
             🏀 Balón
@@ -512,8 +512,8 @@ export default function PizarraTactica({ tipo, onSave, initialData }: PizarraTac
             }}
             className={`px-3 py-2 text-sm rounded border-2 transition ${
               selectedShape === 'cone'
-                ? 'border-orange-600 bg-orange-100 font-semibold'
-                : 'border-gray-300 bg-white hover:border-orange-400'
+                ? 'border-primary-600 bg-primary-100 font-semibold'
+                : 'border-gray-300 bg-white hover:border-primary-400'
             }`}
           >
             🔺 Cono
@@ -525,8 +525,8 @@ export default function PizarraTactica({ tipo, onSave, initialData }: PizarraTac
             }}
             className={`px-3 py-2 text-sm rounded border-2 transition ${
               selectedShape === 'player-offense'
-                ? 'border-orange-600 bg-orange-100 font-semibold'
-                : 'border-gray-300 bg-white hover:border-orange-400'
+                ? 'border-primary-600 bg-primary-100 font-semibold'
+                : 'border-gray-300 bg-white hover:border-primary-400'
             }`}
           >
             🔵 Ataque
@@ -538,8 +538,8 @@ export default function PizarraTactica({ tipo, onSave, initialData }: PizarraTac
             }}
             className={`px-3 py-2 text-sm rounded border-2 transition ${
               selectedShape === 'player-defense'
-                ? 'border-orange-600 bg-orange-100 font-semibold'
-                : 'border-gray-300 bg-white hover:border-orange-400'
+                ? 'border-primary-600 bg-primary-100 font-semibold'
+                : 'border-gray-300 bg-white hover:border-primary-400'
             }`}
           >
             🔴 Defensa
@@ -551,8 +551,8 @@ export default function PizarraTactica({ tipo, onSave, initialData }: PizarraTac
             }}
             className={`px-3 py-2 text-sm rounded border-2 transition ${
               selectedShape === 'arrow'
-                ? 'border-orange-600 bg-orange-100 font-semibold'
-                : 'border-gray-300 bg-white hover:border-orange-400'
+                ? 'border-primary-600 bg-primary-100 font-semibold'
+                : 'border-gray-300 bg-white hover:border-primary-400'
             }`}
           >
             ➡️ Flecha
@@ -564,8 +564,8 @@ export default function PizarraTactica({ tipo, onSave, initialData }: PizarraTac
             }}
             className={`px-3 py-2 text-sm rounded border-2 transition ${
               selectedShape === 'dashed-arrow'
-                ? 'border-orange-600 bg-orange-100 font-semibold'
-                : 'border-gray-300 bg-white hover:border-orange-400'
+                ? 'border-primary-600 bg-primary-100 font-semibold'
+                : 'border-gray-300 bg-white hover:border-primary-400'
             }`}
           >
             ⤏ Movimiento

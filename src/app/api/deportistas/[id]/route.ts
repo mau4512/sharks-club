@@ -68,6 +68,8 @@ export async function PUT(
     if (body.documentoIdentidad !== undefined) updateData.documentoIdentidad = body.documentoIdentidad
     if (body.email !== undefined) updateData.email = body.email
     if ('celular' in body) updateData.celular = body.celular || null
+    if (body.nombreApoderado !== undefined) updateData.nombreApoderado = body.nombreApoderado
+    if (body.telefonoApoderado !== undefined) updateData.telefonoApoderado = body.telefonoApoderado
     if (body.fechaNacimiento !== undefined) updateData.fechaNacimiento = new Date(body.fechaNacimiento)
     if ('altura' in body) updateData.altura = body.altura ? parseFloat(body.altura) : null
     if ('peso' in body) updateData.peso = body.peso ? parseFloat(body.peso) : null

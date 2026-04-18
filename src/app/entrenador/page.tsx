@@ -65,7 +65,7 @@ export default function EntrenadorDashboard() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Cargando...</p>
         </div>
       </div>
@@ -102,7 +102,7 @@ export default function EntrenadorDashboard() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {turnos.map((turno) => (
-                  <div key={turno.id} className="border border-gray-200 rounded-lg p-4 hover:border-orange-300 transition">
+                  <div key={turno.id} className="border border-gray-200 rounded-lg p-4 hover:border-primary-300 transition">
                     <h3 className="font-semibold text-gray-900 mb-2">{turno.nombre}</h3>
                     <div className="space-y-1 text-sm text-gray-600">
                       <p>⏰ {turno.hora} - {turno.tipo === 'diurno' ? 'Diurno' : 'Nocturno'}</p>
@@ -147,7 +147,7 @@ export default function EntrenadorDashboard() {
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600">{deportista.turno}</td>
                         <td className="px-4 py-3 text-sm">
-                          <Link href={`/entrenador/deportistas/${deportista.id}`} className="text-orange-600 hover:text-orange-700">
+                          <Link href={`/entrenador/deportistas/${deportista.id}`} className="text-primary-600 hover:text-primary-700">
                             Ver Perfil
                           </Link>
                         </td>
@@ -169,7 +169,7 @@ export default function EntrenadorDashboard() {
             <CardContent>
               <div className="flex flex-wrap gap-2">
                 {entrenador?.especialidad?.map((esp: string, index: number) => (
-                  <span key={index} className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">
+                  <span key={index} className="px-3 py-1 bg-primary-100 text-primary-800 rounded-full text-sm">
                     {esp}
                   </span>
                 ))}
@@ -206,36 +206,36 @@ export default function EntrenadorDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Link
                 href="/entrenador/entrenamientos"
-                className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition text-center group"
+                className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition text-center group"
               >
-                <Calendar className="h-12 w-12 text-gray-400 group-hover:text-orange-600 mx-auto mb-3" />
+                <Calendar className="h-12 w-12 text-gray-400 group-hover:text-primary-600 mx-auto mb-3" />
                 <p className="font-medium text-gray-900 mb-2">Preparar Entrenamientos</p>
                 <p className="text-sm text-gray-600">Planificar sesiones de entrenamiento</p>
               </Link>
 
               <Link
                 href="/entrenador/sesiones"
-                className="p-6 border-2 border-dashed border-orange-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition text-center group bg-orange-50"
+                className="p-6 border-2 border-dashed border-primary-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition text-center group bg-primary-50"
               >
-                <Activity className="h-12 w-12 text-orange-600 mx-auto mb-3" />
+                <Activity className="h-12 w-12 text-primary-600 mx-auto mb-3" />
                 <p className="font-medium text-gray-900 mb-2">Ver Sesiones Completadas</p>
                 <p className="text-sm text-gray-600">Progreso de tus deportistas</p>
               </Link>
 
               <Link
                 href="/entrenador/asistencias"
-                className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition text-center group"
+                className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition text-center group"
               >
-                <ClipboardCheck className="h-12 w-12 text-gray-400 group-hover:text-orange-600 mx-auto mb-3" />
+                <ClipboardCheck className="h-12 w-12 text-gray-400 group-hover:text-primary-600 mx-auto mb-3" />
                 <p className="font-medium text-gray-900 mb-2">Registrar Asistencias</p>
                 <p className="text-sm text-gray-600">Tomar asistencia de tus grupos</p>
               </Link>
 
               <Link
                 href="/entrenador/mis-deportistas"
-                className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition text-center group"
+                className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition text-center group"
               >
-                <Users className="h-12 w-12 text-gray-400 group-hover:text-orange-600 mx-auto mb-3" />
+                <Users className="h-12 w-12 text-gray-400 group-hover:text-primary-600 mx-auto mb-3" />
                 <p className="font-medium text-gray-900 mb-2">Mis Deportistas</p>
                 <p className="text-sm text-gray-600">Ver deportistas asignados</p>
               </Link>

@@ -306,7 +306,7 @@ export default function EditarEntrenadorPage() {
                         id={`esp-${esp}`}
                         checked={especialidades.includes(esp)}
                         onChange={() => handleEspecialidadChange(esp)}
-                        className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                       />
                       <label
                         htmlFor={`esp-${esp}`}
@@ -337,7 +337,7 @@ export default function EditarEntrenadorPage() {
                           id={`turno-${turno.id}`}
                           checked={turnosSeleccionados.includes(turno.id)}
                           onChange={() => handleTurnoChange(turno.id)}
-                          className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                         />
                         <label
                           htmlFor={`turno-${turno.id}`}
@@ -361,7 +361,7 @@ export default function EditarEntrenadorPage() {
                   name="activo"
                   checked={formData.activo}
                   onChange={handleChange}
-                  className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                 />
                 <label htmlFor="activo" className="ml-2 block text-sm text-gray-700">
                   Entrenador activo

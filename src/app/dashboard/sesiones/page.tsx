@@ -84,7 +84,7 @@ export default function SesionesPage() {
                 <p className="text-2xl font-bold text-gray-900">5</p>
                 <p className="text-xs text-gray-500">sesiones</p>
               </div>
-              <Calendar className="h-8 w-8 text-orange-600" />
+              <Calendar className="h-8 w-8 text-primary-600" />
             </div>
           </CardContent>
         </Card>
@@ -136,8 +136,8 @@ export default function SesionesPage() {
             <CardContent className="py-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <div className="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                    <Calendar className="h-6 w-6 text-orange-600" />
+                  <div className="h-12 w-12 bg-primary-100 rounded-lg flex items-center justify-center">
+                    <Calendar className="h-6 w-6 text-primary-600" />
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">{sesion.tipo}</h3>

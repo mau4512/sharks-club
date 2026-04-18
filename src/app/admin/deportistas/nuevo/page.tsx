@@ -32,6 +32,8 @@ export default function NuevoDeportistaPage() {
     password: '',
     confirmPassword: '',
     celular: '',
+    nombreApoderado: '',
+    telefonoApoderado: '',
     fechaNacimiento: '',
     altura: '',
     peso: '',
@@ -205,6 +207,23 @@ export default function NuevoDeportistaPage() {
                   onChange={handleChange}
                   placeholder="Ej: +34 600 123 456"
                 />
+                <Input
+                  label="Nombre del Padre o Apoderado *"
+                  name="nombreApoderado"
+                  value={formData.nombreApoderado}
+                  onChange={handleChange}
+                  required
+                  placeholder="Ej: Carlos García"
+                />
+                <Input
+                  label="Número del Padre o Apoderado *"
+                  name="telefonoApoderado"
+                  type="tel"
+                  value={formData.telefonoApoderado}
+                  onChange={handleChange}
+                  required
+                  placeholder="Ej: 999 888 777"
+                />
               </div>
             </div>
 
@@ -276,13 +295,13 @@ export default function NuevoDeportistaPage() {
             </div>
 
             {/* Botones */}
-            <div className="flex justify-end space-x-4 pt-6 border-t">
-              <Link href="/admin/deportistas">
-                <Button type="button" variant="secondary">
+            <div className="flex flex-col-reverse gap-3 pt-6 border-t sm:flex-row sm:justify-end">
+              <Link href="/admin/deportistas" className="w-full sm:w-auto">
+                <Button type="button" variant="secondary" className="w-full sm:w-auto">
                   Cancelar
                 </Button>
               </Link>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
                 <Save className="h-4 w-4 mr-2" />
                 {isSubmitting ? 'Guardando...' : 'Registrar Deportista'}
               </Button>

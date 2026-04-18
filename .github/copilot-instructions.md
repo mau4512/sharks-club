@@ -1,32 +1,46 @@
-# Basketball Training Tracker - Next.js Project
+# Basketball Training Tracker - Club Faraday
 
-## Project Overview
-A web application for tracking basketball training exercises, shooting percentages, physical development, and progress comparisons over time.
+## Descripción del Proyecto
+Aplicación web completa para el seguimiento de entrenamientos de baloncesto del Club Faraday, con identidad visual corporativa (azul marino y dorado).
 
-## Tech Stack
-- Next.js 14 with TypeScript
-- React for UI components
-- Tailwind CSS for styling
-- Chart.js/Recharts for data visualization
-- Local Storage / Database for persistence
+## Stack Tecnológico
+- Next.js 14 con TypeScript
+- React para componentes UI
+- Tailwind CSS con colores de Faraday (azul #1e3a8a + dorado #f59e0b)
+- PostgreSQL 16 con Prisma ORM
+- Recharts para visualización de datos
+- Docker para contenedores
 
-## Key Features
-- Exercise tracking with goals
-- Shooting percentage calculations
-- Physical development metrics
-- Monthly and quarterly comparisons
-- Progress visualization with charts
+## Características Principales
+- ✅ Autenticación de usuarios (deportistas, entrenadores, admin)
+- ✅ Gestión de ejercicios y entrenamientos
+- ✅ Registro de sesiones con métricas
+- ✅ Cálculo de porcentajes de tiro
+- ✅ Seguimiento de desarrollo físico
+- ✅ Reportes y estadísticas comparativas (mensual, trimestral)
+- ✅ Panel administrativo completo
+- ✅ Gestión de horarios/turnos
+- ✅ Historial de asistencias
+- ✅ Visualización de progreso con gráficos
 
-## Progress Checklist
-- [x] Create copilot-instructions.md file
-- [x] Get project setup information
-- [x] Scaffold Next.js project
-- [x] Customize with basketball features
-- [x] Install dependencies
-- [x] Create and run development task
-- [x] Complete documentation
-- [x] Setup Docker and PostgreSQL
-- [x] Configure Prisma ORM
-- [x] Create all main pages (Dashboard, Profile, Exercises, Sessions, Statistics)
-- [x] Implement UI components library
-- [x] Setup charts with Recharts
+## Configuración de Base de Datos - FARADAY
+- **URL**: postgresql://faraday:faraday_password@localhost:5433/faraday_basketball
+- **Puerto PostgreSQL**: 5433
+- **Puerto PgAdmin**: 5051
+- **Email Admin**: admin@faraday.com
+
+## Colores Corporativos del Club Faraday
+- Primario: #1e3a8a (Azul marino)
+- Acento: #f59e0b (Dorado)
+- Configurados en: `tailwind.config.ts`
+
+## Estado del Proyecto
+- [x] Copia de estructura base completada
+- [x] Docker-compose configurado para Faraday
+- [x] Variables de entorno (.env.local) configuradas
+- [x] Tailwind.config.ts personalizado con colores de Faraday
+- [x] Base de datos PostgreSQL independiente lista
+- [ ] npm install en proyecto Faraday
+- [ ] Migraciones Prisma ejecutadas
+- [ ] Servidor de desarrollo iniciado
+- [ ] Verificación en navegador

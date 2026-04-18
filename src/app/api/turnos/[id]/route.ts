@@ -47,9 +47,6 @@ export async function PUT(
   try {
     const body = await request.json()
     
-    // Determinar capacidad máxima según la sección
-    const capacidadMaxima = body.seccion === 'personalizado' ? 5 : 10
-    
     const turno = await prisma.turno.update({
       where: { id: params.id },
       data: {
@@ -57,8 +54,6 @@ export async function PUT(
         tipo: body.tipo,
         hora: body.hora,
         modalidad: body.modalidad,
-        seccion: body.seccion,
-        capacidadMaxima: capacidadMaxima,
         activo: body.activo
       }
     })

@@ -107,12 +107,12 @@ export default function HorariosPage() {
                       {turnosDia.map((turno: any) => (
                         <div 
                           key={turno.id}
-                          className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-orange-300 transition"
+                          className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-primary-300 transition"
                         >
                           <div className="flex items-center gap-4 flex-1">
-                            <div className="w-16 h-16 bg-orange-100 rounded-lg flex flex-col items-center justify-center">
-                              <Clock className="h-5 w-5 text-orange-600 mb-1" />
-                              <span className="text-xs font-semibold text-orange-600">
+                            <div className="w-16 h-16 bg-primary-100 rounded-lg flex flex-col items-center justify-center">
+                              <Clock className="h-5 w-5 text-primary-600 mb-1" />
+                              <span className="text-xs font-semibold text-primary-600">
                                 {turno.hora}
                               </span>
                             </div>
@@ -139,7 +139,7 @@ export default function HorariosPage() {
 
                           <Link
                             href={`/entrenador/asistencias?turnoId=${turno.id}`}
-                            className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm font-medium"
+                            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm font-medium"
                           >
                             Tomar Asistencia
                           </Link>

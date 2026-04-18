@@ -74,7 +74,7 @@ export default function HistorialDeportista() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Cargando historial...</p>
         </div>
       </div>
@@ -111,7 +111,7 @@ export default function HistorialDeportista() {
             <Card>
               <CardContent className="pt-6">
                 <div className="text-center">
-                  <Calendar className="h-10 w-10 text-orange-600 mx-auto mb-2" />
+                  <Calendar className="h-10 w-10 text-primary-600 mx-auto mb-2" />
                   <p className="text-3xl font-bold text-gray-900">{estadisticas.totalSesiones}</p>
                   <p className="text-sm text-gray-600 mt-1">Sesiones Totales</p>
                 </div>
@@ -170,7 +170,7 @@ export default function HistorialDeportista() {
                       </div>
                       {ejercicio.tendencia !== null && ejercicio.tendencia !== 0 && (
                         <div className={`flex items-center gap-1 px-2 py-1 rounded ${
-                          ejercicio.tendencia > 0 ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+                          ejercicio.tendencia > 0 ? 'bg-green-100 text-green-700' : 'bg-primary-100 text-primary-700'
                         }`}>
                           <TrendingUp className={`h-4 w-4 ${ejercicio.tendencia < 0 ? 'rotate-180' : ''}`} />
                           <span className="text-xs font-semibold">
@@ -204,7 +204,7 @@ export default function HistorialDeportista() {
                               <div
                                 className={`h-2 rounded-full ${
                                   ejercicio.promedioEfectividad >= 70 ? 'bg-green-500' :
-                                  ejercicio.promedioEfectividad >= 50 ? 'bg-orange-500' : 'bg-red-500'
+                                  ejercicio.promedioEfectividad >= 50 ? 'bg-primary-500' : 'bg-red-500'
                                 }`}
                                 style={{ width: `${ejercicio.promedioEfectividad}%` }}
                               />
@@ -246,7 +246,7 @@ export default function HistorialDeportista() {
                   
                   return (
                     <Link key={sesion.id} href={`/deportista/resumen-sesion/${sesion.id}`}>
-                      <div className="p-4 border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition cursor-pointer">
+                      <div className="p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition cursor-pointer">
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <h3 className="font-semibold text-gray-900">{sesion.planEntrenamiento.titulo}</h3>
@@ -268,7 +268,7 @@ export default function HistorialDeportista() {
                           <div className="text-right">
                             <div className={`text-2xl font-bold ${
                               porcentaje >= 80 ? 'text-green-600' :
-                              porcentaje >= 60 ? 'text-orange-600' : 'text-red-600'
+                              porcentaje >= 60 ? 'text-primary-600' : 'text-red-600'
                             }`}>
                               {porcentaje}%
                             </div>

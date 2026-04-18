@@ -74,29 +74,29 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center text-gray-600 hover:text-orange-600 mb-4">
+          <Link href="/" className="inline-flex items-center text-gray-600 hover:text-primary-600 mb-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver al inicio
           </Link>
           <Image
-            src="/images/mvpskills.png"
-            alt="MVP Skills Logo"
-            width={80}
-            height={80}
-            className="mx-auto mb-4"
+            src="/images/sharks-transparent.png"
+            alt="Faraday Sharks Logo"
+            width={96}
+            height={96}
+            className="mx-auto mb-4 bg-white/95 rounded-xl p-1 shadow-sm"
           />
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Iniciar sesión</h1>
           <p className="text-gray-600">Un solo acceso para administrador, entrenador o deportista</p>
         </div>
 
-        <Card className="border-2 border-orange-100">
+        <Card className="border-2 border-primary-100">
           <CardContent className="pt-6">
             <div className="flex justify-center mb-6">
-              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center">
-                <UserCircle2 className="h-8 w-8 text-orange-600" />
+              <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center">
+                <UserCircle2 className="h-8 w-8 text-primary-600" />
               </div>
             </div>
 

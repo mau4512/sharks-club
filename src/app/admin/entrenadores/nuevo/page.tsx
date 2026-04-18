@@ -244,7 +244,7 @@ export default function NuevoEntrenadorPage() {
                           id={`esp-${esp}`}
                           checked={especialidades.includes(esp)}
                           onChange={() => handleEspecialidadChange(esp)}
-                          className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                         />
                         <label
                           htmlFor={`esp-${esp}`}
@@ -276,7 +276,7 @@ export default function NuevoEntrenadorPage() {
                           id={`turno-${turno.id}`}
                           checked={turnosSeleccionados.includes(turno.id)}
                           onChange={() => handleTurnoChange(turno.id)}
-                          className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                         />
                         <label
                           htmlFor={`turno-${turno.id}`}

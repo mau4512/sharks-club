@@ -5,10 +5,28 @@ import { prisma } from '@/lib/prisma'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { nombre, apellidos, email, telefono, fechaNacimiento, programa, nivel, mensaje } = body
+    const {
+      nombre,
+      apellidos,
+      documentoIdentidad,
+      fechaNacimiento,
+      tallaCamiseta,
+      numeroCamiseta,
+      nombreApoderado,
+      telefonoApoderado,
+    } = body
 
     // Validar campos requeridos
-    if (!nombre || !apellidos || !email || !telefono || !fechaNacimiento || !programa) {
+    if (
+      !nombre ||
+      !apellidos ||
+      !documentoIdentidad ||
+      !fechaNacimiento ||
+      !tallaCamiseta ||
+      !numeroCamiseta ||
+      !nombreApoderado ||
+      !telefonoApoderado
+    ) {
       return NextResponse.json(
         { error: 'Todos los campos obligatorios deben ser completados' },
         { status: 400 }
@@ -20,12 +38,12 @@ export async function POST(request: NextRequest) {
       data: {
         nombre,
         apellidos,
-        email,
-        telefono,
+        documentoIdentidad,
         fechaNacimiento: new Date(fechaNacimiento),
-        programa,
-        nivel: nivel || 'principiante',
-        mensaje: mensaje || '',
+        tallaCamiseta,
+        numeroCamiseta,
+        nombreApoderado,
+        telefonoApoderado,
         estado: 'pendiente',
       }
     })

@@ -185,7 +185,7 @@ export default function EjerciciosTiroPage() {
                 <select
                   value={formData.turnoId}
                   onChange={(e) => setFormData({ ...formData, turnoId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   required
                 >
                   <option value="">Seleccionar turno</option>
@@ -215,7 +215,7 @@ export default function EjerciciosTiroPage() {
                       <select
                         value={posicion.zona}
                         onChange={(e) => actualizarPosicion(index, 'zona', e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                       >
                         {ZONAS_CANCHA.map((zona) => (
                           <option key={zona} value={zona}>{zona}</option>
@@ -243,8 +243,8 @@ export default function EjerciciosTiroPage() {
                   ))}
                 </div>
 
-                <div className="mt-3 p-3 bg-orange-50 rounded-lg">
-                  <p className="text-sm font-medium text-orange-900">
+                <div className="mt-3 p-3 bg-primary-50 rounded-lg">
+                  <p className="text-sm font-medium text-primary-900">
                     Meta Total: {formData.metaTotal} aciertos
                   </p>
                 </div>
@@ -270,7 +270,7 @@ export default function EjerciciosTiroPage() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
-                    <Target className="h-5 w-5 text-orange-600" />
+                    <Target className="h-5 w-5 text-primary-600" />
                     <h3 className="font-semibold text-lg">{ejercicio.nombre}</h3>
                     <span className={`px-2 py-1 rounded-full text-xs ${ejercicio.activo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                       {ejercicio.activo ? 'Activo' : 'Inactivo'}
@@ -286,7 +286,7 @@ export default function EjerciciosTiroPage() {
                         <div key={idx} className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg">
                           <MapPin className="h-3 w-3 text-gray-400" />
                           <span className="text-sm">{pos.zona}</span>
-                          <span className="text-sm font-medium text-orange-600">{pos.meta}</span>
+                          <span className="text-sm font-medium text-primary-600">{pos.meta}</span>
                         </div>
                       ))}
                     </div>

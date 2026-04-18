@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import Link from 'next/link'
-import { Plus, Search, Edit, Trash2, UserCircle, Loader2, Eye } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, UserCircle, Loader2, Eye, Wallet } from 'lucide-react'
 import { Input } from '@/components/ui/Input'
 import { formatDate } from '@/lib/utils'
 
@@ -81,7 +81,7 @@ export default function DeportistasPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
       </div>
     )
   }
@@ -100,13 +100,13 @@ export default function DeportistasPage() {
 
   return (
     <div>
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gestión de Deportistas</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Gestión de Deportistas</h1>
           <p className="text-gray-600 mt-2">Administra el registro de atletas</p>
         </div>
-        <Link href="/admin/deportistas/nuevo">
-          <Button>
+        <Link href="/admin/deportistas/nuevo" className="w-full sm:w-auto">
+          <Button className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Nuevo Deportista
           </Button>
@@ -143,7 +143,7 @@ export default function DeportistasPage() {
               placeholder="Buscar por nombre, apellidos o documento..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900"
             />
           </div>
         </CardContent>
@@ -155,22 +155,20 @@ export default function DeportistasPage() {
           {deportistasFiltrados.map((deportista) => (
             <Card key={deportista.id} className="hover:shadow-lg transition-shadow">
               <CardContent className="py-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="h-12 w-12 bg-orange-100 rounded-full flex items-center justify-center">
-                      <UserCircle className="h-8 w-8 text-orange-600" />
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex items-start space-x-4">
+                    <div className="h-12 w-12 bg-primary-100 rounded-full flex items-center justify-center">
+                      <UserCircle className="h-8 w-8 text-primary-600" />
                     </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
+                    <div className="min-w-0">
+                      <h3 className="text-lg font-semibold text-gray-900 safe-wrap">
                         {deportista.nombre} {deportista.apellidos}
                       </h3>
-                      <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
+                      <div className="mt-1 flex flex-col gap-1 text-sm text-gray-600 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
                         <span>ID: {deportista.documentoIdentidad}</span>
-                        <span>•</span>
                         <span>Nacimiento: {formatDate(deportista.fechaNacimiento)}</span>
                         {deportista.posicion && (
                           <>
-                            <span>•</span>
                             <span>{deportista.posicion}</span>
                           </>
                         )}
@@ -178,7 +176,7 @@ export default function DeportistasPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                       deportista.activo 
                         ? 'bg-green-100 text-green-700' 
@@ -186,21 +184,28 @@ export default function DeportistasPage() {
                     }`}>
                       {deportista.activo ? 'Activo' : 'Inactivo'}
                     </span>
-                    <Link href={`/admin/deportistas/${deportista.id}/perfil`}>
-                      <Button variant="primary" size="sm">
+                    <Link href={`/admin/deportistas/${deportista.id}/perfil`} className="w-full sm:w-auto">
+                      <Button variant="primary" size="sm" className="w-full sm:w-auto">
                         <Eye className="h-4 w-4 mr-1" />
                         Ver Perfil
                       </Button>
                     </Link>
-                    <Link href={`/admin/deportistas/${deportista.id}`}>
-                      <Button variant="secondary" size="sm">
+                    <Link href={`/admin/deportistas/${deportista.id}`} className="w-full sm:w-auto">
+                      <Button variant="secondary" size="sm" className="w-full sm:w-auto">
                         <Edit className="h-4 w-4 mr-1" />
                         Editar
+                      </Button>
+                    </Link>
+                    <Link href={`/admin/caja?deportistaId=${deportista.id}`} className="w-full sm:w-auto">
+                      <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                        <Wallet className="h-4 w-4 mr-1" />
+                        Caja
                       </Button>
                     </Link>
                     <Button 
                       variant="danger" 
                       size="sm"
+                      className="w-full sm:w-auto"
                       onClick={() => handleDelete(deportista.id)}
                     >
                       <Trash2 className="h-4 w-4" />

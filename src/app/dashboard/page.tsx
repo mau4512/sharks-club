@@ -14,7 +14,7 @@ export default function DashboardPage() {
         <StatCard
           title="Sesiones esta semana"
           value="5"
-          icon={<ClipboardList className="h-8 w-8 text-orange-600" />}
+          icon={<ClipboardList className="h-8 w-8 text-primary-600" />}
           trend="+2 vs semana pasada"
         />
         <StatCard
@@ -166,7 +166,7 @@ function GoalItem({
       </div>
       <div className="w-full bg-gray-200 rounded-full h-2">
         <div
-          className="bg-orange-600 h-2 rounded-full transition-all duration-300"
+          className="bg-primary-600 h-2 rounded-full transition-all duration-300"
           style={{ width: `${Math.min(percentage, 100)}%` }}
         />
       </div>

@@ -18,7 +18,8 @@ import {
   Activity,
   Award,
   Loader2,
-  Edit
+  Edit,
+  Wallet
 } from 'lucide-react'
 import { formatDate, calculateIMC } from '@/lib/utils'
 import Image from 'next/image'
@@ -30,6 +31,8 @@ interface Deportista {
   documentoIdentidad: string
   email: string
   celular?: string
+  nombreApoderado: string
+  telefonoApoderado: string
   fechaNacimiento: string
   altura?: number
   peso?: number
@@ -165,7 +168,7 @@ export default function PerfilDeportistaPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
       </div>
     )
   }
@@ -191,19 +194,27 @@ export default function PerfilDeportistaPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <Link href="/admin/deportistas">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Link href="/admin/deportistas" className="w-full sm:w-auto">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver a Deportistas
           </Button>
         </Link>
-        <Link href={`/admin/deportistas/${id}`}>
-          <Button variant="secondary" size="sm">
-            <Edit className="h-4 w-4 mr-2" />
-            Editar Información
-          </Button>
-        </Link>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Link href={`/admin/caja?deportistaId=${id}`} className="w-full sm:w-auto">
+            <Button variant="outline" size="sm" className="w-full sm:w-auto">
+              <Wallet className="h-4 w-4 mr-2" />
+              Ver Caja
+            </Button>
+          </Link>
+          <Link href={`/admin/deportistas/${id}`} className="w-full sm:w-auto">
+            <Button variant="secondary" size="sm" className="w-full sm:w-auto">
+              <Edit className="h-4 w-4 mr-2" />
+              Editar Información
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Información Principal */}
@@ -213,7 +224,7 @@ export default function PerfilDeportistaPage() {
             {/* Foto de Perfil */}
             <div className="flex flex-col items-center">
               <div 
-                className="relative w-48 h-48 bg-gray-100 rounded-full overflow-hidden border-4 border-orange-500 cursor-pointer group"
+                className="relative w-48 h-48 bg-gray-100 rounded-full overflow-hidden border-4 border-primary-500 cursor-pointer group"
                 onClick={handleImageClick}
               >
                 {deportista.photoUrl ? (
@@ -261,14 +272,14 @@ export default function PerfilDeportistaPage() {
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
                 {deportista.nombre} {deportista.apellidos}
               </h1>
-              <p className="text-lg text-orange-600 font-medium mb-6">
+              <p className="text-lg text-primary-600 font-medium mb-6">
                 {deportista.posicion || 'Sin posición asignada'}
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center space-x-3">
-                  <div className="bg-orange-100 p-2 rounded-lg">
-                    <Mail className="h-5 w-5 text-orange-600" />
+                  <div className="bg-primary-100 p-2 rounded-lg">
+                    <Mail className="h-5 w-5 text-primary-600" />
                   </div>
                   <div>
                     <p className="text-xs text-gray-600">Email</p>
@@ -278,8 +289,8 @@ export default function PerfilDeportistaPage() {
 
                 {deportista.celular && (
                   <div className="flex items-center space-x-3">
-                    <div className="bg-orange-100 p-2 rounded-lg">
-                      <Phone className="h-5 w-5 text-orange-600" />
+                    <div className="bg-primary-100 p-2 rounded-lg">
+                      <Phone className="h-5 w-5 text-primary-600" />
                     </div>
                     <div>
                       <p className="text-xs text-gray-600">Celular</p>
@@ -289,8 +300,8 @@ export default function PerfilDeportistaPage() {
                 )}
 
                 <div className="flex items-center space-x-3">
-                  <div className="bg-orange-100 p-2 rounded-lg">
-                    <Calendar className="h-5 w-5 text-orange-600" />
+                  <div className="bg-primary-100 p-2 rounded-lg">
+                    <Calendar className="h-5 w-5 text-primary-600" />
                   </div>
                   <div>
                     <p className="text-xs text-gray-600">Edad</p>
@@ -300,8 +311,8 @@ export default function PerfilDeportistaPage() {
 
                 {deportista.altura && (
                   <div className="flex items-center space-x-3">
-                    <div className="bg-orange-100 p-2 rounded-lg">
-                      <Ruler className="h-5 w-5 text-orange-600" />
+                    <div className="bg-primary-100 p-2 rounded-lg">
+                      <Ruler className="h-5 w-5 text-primary-600" />
                     </div>
                     <div>
                       <p className="text-xs text-gray-600">Altura</p>
@@ -312,8 +323,8 @@ export default function PerfilDeportistaPage() {
 
                 {deportista.peso && (
                   <div className="flex items-center space-x-3">
-                    <div className="bg-orange-100 p-2 rounded-lg">
-                      <Weight className="h-5 w-5 text-orange-600" />
+                    <div className="bg-primary-100 p-2 rounded-lg">
+                      <Weight className="h-5 w-5 text-primary-600" />
                     </div>
                     <div>
                       <p className="text-xs text-gray-600">Peso</p>
@@ -324,8 +335,8 @@ export default function PerfilDeportistaPage() {
 
                 {imc && (
                   <div className="flex items-center space-x-3">
-                    <div className="bg-orange-100 p-2 rounded-lg">
-                      <Activity className="h-5 w-5 text-orange-600" />
+                    <div className="bg-primary-100 p-2 rounded-lg">
+                      <Activity className="h-5 w-5 text-primary-600" />
                     </div>
                     <div>
                       <p className="text-xs text-gray-600">IMC</p>
@@ -378,8 +389,8 @@ export default function PerfilDeportistaPage() {
                   <p className="text-sm text-gray-600 mb-1">% Tiro Promedio</p>
                   <p className="text-3xl font-bold text-gray-900">{estadisticas.promedioTiro}%</p>
                 </div>
-                <div className="bg-orange-100 p-3 rounded-lg">
-                  <Target className="h-6 w-6 text-orange-600" />
+                <div className="bg-primary-100 p-3 rounded-lg">
+                  <Target className="h-6 w-6 text-primary-600" />
                 </div>
               </div>
             </CardContent>
@@ -420,6 +431,14 @@ export default function PerfilDeportistaPage() {
               <div>
                 <p className="text-sm text-gray-600">Fecha de Registro</p>
                 <p className="font-medium">{formatDate(deportista.createdAt)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Padre o Apoderado</p>
+                <p className="font-medium">{deportista.nombreApoderado}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Número del Padre o Apoderado</p>
+                <p className="font-medium">{deportista.telefonoApoderado}</p>
               </div>
             </div>
           </CardContent>

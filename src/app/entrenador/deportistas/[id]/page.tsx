@@ -101,8 +101,8 @@ export default function DeportistaDetailPage({ params }: { params: { id: string 
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-center">
-                  <div className="w-24 h-24 bg-orange-100 rounded-full flex items-center justify-center">
-                    <User className="h-12 w-12 text-orange-600" />
+                  <div className="w-24 h-24 bg-primary-100 rounded-full flex items-center justify-center">
+                    <User className="h-12 w-12 text-primary-600" />
                   </div>
                 </div>
                 
@@ -130,11 +130,11 @@ export default function DeportistaDetailPage({ params }: { params: { id: string 
                 <div className="pt-4 border-t">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-gray-700">Asistencia</span>
-                    <span className="text-2xl font-bold text-orange-600">{porcentajeAsistencia}%</span>
+                    <span className="text-2xl font-bold text-primary-600">{porcentajeAsistencia}%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div 
-                      className="bg-orange-600 h-2 rounded-full transition-all"
+                      className="bg-primary-600 h-2 rounded-full transition-all"
                       style={{ width: `${porcentajeAsistencia}%` }}
                     />
                   </div>
@@ -174,12 +174,12 @@ export default function DeportistaDetailPage({ params }: { params: { id: string 
                     <p className="text-sm text-gray-600 mt-1">Asistencias confirmadas</p>
                   </div>
 
-                  <div className="bg-orange-50 p-4 rounded-lg">
+                  <div className="bg-primary-50 p-4 rounded-lg">
                     <div className="flex items-center gap-2 mb-2">
-                      <TrendingUp className="h-5 w-5 text-orange-600" />
+                      <TrendingUp className="h-5 w-5 text-primary-600" />
                       <h3 className="font-semibold text-gray-900">Racha</h3>
                     </div>
-                    <p className="text-3xl font-bold text-orange-600">
+                    <p className="text-3xl font-bold text-primary-600">
                       {porcentajeAsistencia}%
                     </p>
                     <p className="text-sm text-gray-600 mt-1">Tasa de asistencia</p>

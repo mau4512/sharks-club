@@ -57,8 +57,8 @@ export default function PerfilPage() {
         <Card>
           <CardContent className="py-8">
             <div className="flex flex-col items-center">
-              <div className="h-32 w-32 rounded-full bg-orange-100 flex items-center justify-center mb-4">
-                <User className="h-16 w-16 text-orange-600" />
+              <div className="h-32 w-32 rounded-full bg-primary-100 flex items-center justify-center mb-4">
+                <User className="h-16 w-16 text-primary-600" />
               </div>
               <h2 className="text-xl font-semibold text-gray-900">
                 {profile.nombre} {profile.apellidos}
@@ -142,7 +142,7 @@ export default function PerfilPage() {
             <h3 className="text-lg font-semibold text-gray-900">IMC</h3>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-orange-600">23.2</p>
+            <p className="text-3xl font-bold text-primary-600">23.2</p>
             <p className="text-sm text-gray-600 mt-1">Peso saludable</p>
           </CardContent>
         </Card>
@@ -152,7 +152,7 @@ export default function PerfilPage() {
             <h3 className="text-lg font-semibold text-gray-900">Edad</h3>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-orange-600">26</p>
+            <p className="text-3xl font-bold text-primary-600">26</p>
             <p className="text-sm text-gray-600 mt-1">Años</p>
           </CardContent>
         </Card>
@@ -162,7 +162,7 @@ export default function PerfilPage() {
             <h3 className="text-lg font-semibold text-gray-900">Antigüedad</h3>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-orange-600">3</p>
+            <p className="text-3xl font-bold text-primary-600">3</p>
             <p className="text-sm text-gray-600 mt-1">Meses en la plataforma</p>
           </CardContent>
         </Card>

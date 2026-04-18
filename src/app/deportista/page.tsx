@@ -135,7 +135,7 @@ export default function DeportistaDashboard() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Cargando...</p>
         </div>
       </div>
@@ -179,14 +179,14 @@ export default function DeportistaDashboard() {
                           className="object-cover w-full h-full"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-orange-100">
-                          <User className="h-16 w-16 text-orange-600" />
+                        <div className="w-full h-full flex items-center justify-center bg-primary-100">
+                          <User className="h-16 w-16 text-primary-600" />
                         </div>
                       )}
                     </div>
                     <label
                       htmlFor="photo-upload"
-                      className="absolute bottom-0 right-0 w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-orange-700 transition"
+                      className="absolute bottom-0 right-0 w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-primary-700 transition"
                     >
                       <Camera className="h-5 w-5 text-white" />
                       <input
@@ -204,7 +204,7 @@ export default function DeportistaDashboard() {
                   </h2>
                   <p className="text-gray-600">{deportista?.posicion || 'Jugador'}</p>
                   {uploadingPhoto && (
-                    <p className="text-sm text-orange-600 mt-2">Subiendo foto...</p>
+                    <p className="text-sm text-primary-600 mt-2">Subiendo foto...</p>
                   )}
                 </div>
               </CardContent>
@@ -252,7 +252,7 @@ export default function DeportistaDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-center">
-                  <div className="text-4xl font-bold text-orange-600 mb-2">
+                  <div className="text-4xl font-bold text-primary-600 mb-2">
                     {calcularAsistencia()}%
                   </div>
                   <p className="text-sm text-gray-600 mb-4">
@@ -260,7 +260,7 @@ export default function DeportistaDashboard() {
                   </p>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
-                      className="bg-orange-600 h-2 rounded-full transition-all"
+                      className="bg-primary-600 h-2 rounded-full transition-all"
                       style={{ width: `${calcularAsistencia()}%` }}
                     />
                   </div>
@@ -276,7 +276,7 @@ export default function DeportistaDashboard() {
               <Card>
                 <CardContent className="pt-6">
                   <div className="text-center">
-                    <Trophy className="h-8 w-8 text-orange-600 mx-auto mb-2" />
+                    <Trophy className="h-8 w-8 text-primary-600 mx-auto mb-2" />
                     <div className="text-3xl font-bold text-gray-900">{sesiones.length}</div>
                     <p className="text-sm text-gray-600">Sesiones Totales</p>
                   </div>
@@ -313,7 +313,7 @@ export default function DeportistaDashboard() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-gray-900">Últimas Sesiones</h2>
-                  <Link href="/deportista/sesiones" className="text-orange-600 hover:text-orange-700 text-sm font-medium">
+                  <Link href="/deportista/sesiones" className="text-primary-600 hover:text-primary-700 text-sm font-medium">
                     Ver todas →
                   </Link>
                 </div>
@@ -329,8 +329,8 @@ export default function DeportistaDashboard() {
                         className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                            <Calendar className="h-5 w-5 text-orange-600" />
+                          <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
+                            <Calendar className="h-5 w-5 text-primary-600" />
                           </div>
                           <div>
                             <p className="font-medium text-gray-900">{sesion.tipo}</p>
@@ -358,7 +358,7 @@ export default function DeportistaDashboard() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-gray-900">Entrenamientos Programados</h2>
-                  <Trophy className="h-5 w-5 text-orange-600" />
+                  <Trophy className="h-5 w-5 text-primary-600" />
                 </div>
               </CardHeader>
               <CardContent>
@@ -371,7 +371,7 @@ export default function DeportistaDashboard() {
                       return (
                         <div
                           key={plan.id}
-                          className="border border-gray-200 rounded-lg overflow-hidden hover:border-orange-300 transition"
+                          className="border border-gray-200 rounded-lg overflow-hidden hover:border-primary-300 transition"
                         >
                           {/* Header clickeable */}
                           <div
@@ -389,7 +389,7 @@ export default function DeportistaDashboard() {
                                   )}
                                 </div>
                               </div>
-                              <span className="text-xs px-2 py-1 bg-orange-100 text-orange-800 rounded-full font-medium ml-2">
+                              <span className="text-xs px-2 py-1 bg-primary-100 text-primary-800 rounded-full font-medium ml-2">
                                 {new Date(plan.fecha).toLocaleDateString('es-ES', {
                                   day: 'numeric',
                                   month: 'short'
@@ -438,11 +438,11 @@ export default function DeportistaDashboard() {
                                       </div>
 
                                       {/* Meta del ejercicio */}
-                                      <div className="p-2 bg-orange-50 border border-orange-200 rounded">
+                                      <div className="p-2 bg-primary-50 border border-primary-200 rounded">
                                         <div className="flex items-center justify-between">
                                           <div>
-                                            <p className="text-xs font-semibold text-orange-800">Meta:</p>
-                                            <p className="text-sm text-orange-900">
+                                            <p className="text-xs font-semibold text-primary-800">Meta:</p>
+                                            <p className="text-sm text-primary-900">
                                               {ejercicio.meta?.cantidad} {ejercicio.meta?.unidad}
                                             </p>
                                           </div>
@@ -494,7 +494,7 @@ export default function DeportistaDashboard() {
                               {/* Botón Iniciar Entrenamiento */}
                               <div className="mt-4 pt-4 border-t border-gray-200">
                                 <Link href={`/deportista/ejecutar-entrenamiento/${plan.id}`}>
-                                  <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white">
+                                  <Button className="w-full bg-primary-600 hover:bg-primary-700 text-white">
                                     <Trophy className="h-4 w-4 mr-2" />
                                     Iniciar Entrenamiento
                                   </Button>
@@ -519,25 +519,25 @@ export default function DeportistaDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Link
                     href="/deportista/sesiones"
-                    className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition text-center group"
+                    className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition text-center group"
                   >
-                    <Calendar className="h-10 w-10 text-gray-400 group-hover:text-orange-600 mx-auto mb-2" />
+                    <Calendar className="h-10 w-10 text-gray-400 group-hover:text-primary-600 mx-auto mb-2" />
                     <p className="font-medium text-gray-900 text-sm">Mis Sesiones</p>
                   </Link>
 
                   <Link
                     href="/deportista/estadisticas"
-                    className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition text-center group"
+                    className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition text-center group"
                   >
-                    <TrendingUp className="h-10 w-10 text-gray-400 group-hover:text-orange-600 mx-auto mb-2" />
+                    <TrendingUp className="h-10 w-10 text-gray-400 group-hover:text-primary-600 mx-auto mb-2" />
                     <p className="font-medium text-gray-900 text-sm">Estadísticas</p>
                   </Link>
 
                   <Link
                     href="/deportista/perfil"
-                    className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition text-center group"
+                    className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition text-center group"
                   >
-                    <User className="h-10 w-10 text-gray-400 group-hover:text-orange-600 mx-auto mb-2" />
+                    <User className="h-10 w-10 text-gray-400 group-hover:text-primary-600 mx-auto mb-2" />
                     <p className="font-medium text-gray-900 text-sm">Mi Perfil</p>
                   </Link>
                 </div>

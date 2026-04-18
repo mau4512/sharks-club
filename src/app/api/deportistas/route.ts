@@ -35,6 +35,8 @@ export async function POST(request: Request) {
         email: body.email,
         password,
         celular: body.celular || null,
+        nombreApoderado: body.nombreApoderado,
+        telefonoApoderado: body.telefonoApoderado,
         fechaNacimiento: new Date(body.fechaNacimiento),
         altura: body.altura ? parseFloat(body.altura) : null,
         peso: body.peso ? parseFloat(body.peso) : null,

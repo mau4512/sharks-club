@@ -89,7 +89,7 @@ export default function EjerciciosPage() {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">{ejercicio.titulo}</h3>
                   <div className="flex items-center gap-2 mt-2">
-                    <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">
+                    <span className="px-2 py-1 bg-primary-100 text-primary-700 text-xs rounded-full">
                       {ejercicio.categoria}
                     </span>
                     <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
@@ -97,8 +97,8 @@ export default function EjerciciosPage() {
                     </span>
                   </div>
                 </div>
-                <div className="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <FileText className="h-6 w-6 text-orange-600" />
+                <div className="h-12 w-12 bg-primary-100 rounded-lg flex items-center justify-center">
+                  <FileText className="h-6 w-6 text-primary-600" />
                 </div>
               </div>
             </CardHeader>

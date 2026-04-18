@@ -76,8 +76,8 @@ export default function SesionesPage() {
                 <CardContent className="py-6">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4 flex-1">
-                      <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Calendar className="h-6 w-6 text-orange-600" />
+                      <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Calendar className="h-6 w-6 text-primary-600" />
                       </div>
                       
                       <div className="flex-1">

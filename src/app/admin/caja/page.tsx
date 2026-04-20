@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
@@ -83,7 +83,7 @@ type MovimientoCaja =
       observacion?: string | null
     }
 
-export default function CajaPage() {
+function CajaPageContent() {
   const searchParams = useSearchParams()
   const deportistaIdParam = searchParams.get('deportistaId') || ''
 
@@ -626,5 +626,13 @@ export default function CajaPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function CajaPage() {
+  return (
+    <Suspense fallback={<div className="p-4 text-sm text-gray-600">Cargando caja...</div>}>
+      <CajaPageContent />
+    </Suspense>
   )
 }

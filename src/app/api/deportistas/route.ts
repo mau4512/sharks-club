@@ -26,13 +26,16 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     const password = body.password ? await hashPassword(body.password) : null
+    const email = typeof body.email === 'string' && body.email.trim()
+      ? body.email.trim().toLowerCase()
+      : null
     
     const deportista = await prisma.deportista.create({
       data: {
         nombre: body.nombre,
         apellidos: body.apellidos,
         documentoIdentidad: body.documentoIdentidad,
-        email: body.email,
+        email,
         password,
         celular: body.celular || null,
         nombreApoderado: body.nombreApoderado,
@@ -54,7 +57,7 @@ export async function POST(request: Request) {
     // Verificar si es un error de unicidad
     if (error.code === 'P2002') {
       return NextResponse.json(
-        { error: 'El email o documento de identidad ya existe' },
+        { error: 'El documento de identidad o email ya existe' },
         { status: 400 }
       )
     }

@@ -125,8 +125,8 @@ export default function DeportistasPage() {
             <div className="flex-1">
               <h3 className="font-semibold text-blue-900 mb-1">Acceso de Deportistas</h3>
               <p className="text-sm text-blue-800">
-                Cada deportista puede acceder a su portal usando el <strong>email</strong> y <strong>contraseña</strong> asignados durante su registro. 
-                Las credenciales se establecen al crear el deportista y pueden modificarse en cualquier momento desde la opción de editar.
+                Cada deportista puede acceder a su portal usando su <strong>DNI</strong> y <strong>contraseña</strong>. 
+                El email es opcional y puede modificarse en cualquier momento desde la opción de editar.
               </p>
             </div>
           </div>

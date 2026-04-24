@@ -30,7 +30,7 @@ model Deportista {
   nombre        String
   apellidos     String
   documentoIdentidad String   @unique
-  email         String        @unique
+  email         String?       @unique
   celular       String?
   nombreApoderado String
   telefonoApoderado String

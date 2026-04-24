@@ -159,7 +159,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Correo o usuario
+                  DNI, correo o usuario
                 </label>
                 <input
                   id="email"
@@ -169,7 +169,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   value={formData.email}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900"
-                  placeholder="tu@email.com o usuario"
+                  placeholder="DNI, correo o usuario"
                   autoComplete="username"
                 />
               </div>

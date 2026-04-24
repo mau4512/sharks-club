@@ -66,7 +66,11 @@ export async function PUT(
     if (body.nombre !== undefined) updateData.nombre = body.nombre
     if (body.apellidos !== undefined) updateData.apellidos = body.apellidos
     if (body.documentoIdentidad !== undefined) updateData.documentoIdentidad = body.documentoIdentidad
-    if (body.email !== undefined) updateData.email = body.email
+    if (body.email !== undefined) {
+      updateData.email = typeof body.email === 'string' && body.email.trim()
+        ? body.email.trim().toLowerCase()
+        : null
+    }
     if ('celular' in body) updateData.celular = body.celular || null
     if (body.nombreApoderado !== undefined) updateData.nombreApoderado = body.nombreApoderado
     if (body.telefonoApoderado !== undefined) updateData.telefonoApoderado = body.telefonoApoderado
@@ -90,7 +94,7 @@ export async function PUT(
     
     if (error.code === 'P2002') {
       return NextResponse.json(
-        { error: 'El email o documento de identidad ya existe' },
+        { error: 'El documento de identidad o email ya existe' },
         { status: 400 }
       )
     }

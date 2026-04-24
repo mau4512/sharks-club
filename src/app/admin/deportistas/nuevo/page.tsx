@@ -128,7 +128,7 @@ export default function NuevoDeportistaPage() {
           <p className="text-gray-600 mt-1">Completa la información del deportista</p>
           <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-800">
-              <strong>📧 Credenciales de Acceso:</strong> El email y contraseña que establezcas aquí serán las credenciales que el deportista usará para iniciar sesión en su portal.
+              <strong>Credenciales de Acceso:</strong> El DNI y la contraseña que establezcas aquí serán las credenciales principales que el deportista usará para iniciar sesión en su portal. El email es opcional.
             </p>
           </div>
         </CardHeader>
@@ -171,13 +171,12 @@ export default function NuevoDeportistaPage() {
                   required
                 />
                 <Input
-                  label="Email *"
+                  label="Email"
                   name="email"
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
-                  required
-                  placeholder="deportista@example.com"
+                  placeholder="Opcional"
                 />
                 <Input
                   label="Contraseña *"

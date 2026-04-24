@@ -13,6 +13,7 @@ const { prismaMock } = vi.hoisted(() => ({
     },
     deportista: {
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
       update: vi.fn(),
     },
   },
@@ -31,11 +32,13 @@ describe('POST /api/auth/login', () => {
     prismaMock.entrenador.findUnique.mockReset()
     prismaMock.entrenador.update.mockReset()
     prismaMock.deportista.findUnique.mockReset()
+    prismaMock.deportista.findFirst.mockReset()
     prismaMock.deportista.update.mockReset()
 
     prismaMock.admin.findUnique.mockResolvedValue(null)
     prismaMock.entrenador.findUnique.mockResolvedValue(null)
     prismaMock.deportista.findUnique.mockResolvedValue(null)
+    prismaMock.deportista.findFirst.mockResolvedValue(null)
   })
 
   it('allows the temporary admin/admin access', async () => {
@@ -93,5 +96,43 @@ describe('POST /api/auth/login', () => {
 
     expect(response.status).toBe(401)
     expect(json.error).toBe('Credenciales incorrectas')
+  })
+
+  it('authenticates an athlete using DNI', async () => {
+    prismaMock.deportista.findFirst.mockResolvedValue({
+      id: 'dep-1',
+      nombre: 'Ana',
+      apellidos: 'Perez',
+      documentoIdentidad: '12345678',
+      email: null,
+      password: 'segura123',
+      activo: true,
+      turno: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+
+    const request = new NextRequest('http://localhost:3000/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email: '12345678', password: 'segura123', preferredRole: 'deportista' }),
+      headers: { 'Content-Type': 'application/json' },
+    })
+
+    const response = await POST(request)
+    const json = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(json.success).toBe(true)
+    expect(json.role).toBe('deportista')
+    expect(json.user.documentoIdentidad).toBe('12345678')
+    expect(prismaMock.deportista.findFirst).toHaveBeenCalledWith({
+      where: {
+        OR: [
+          { documentoIdentidad: '12345678' },
+          { email: '12345678' },
+        ],
+      },
+      include: { turno: true },
+    })
   })
 })

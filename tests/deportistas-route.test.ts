@@ -67,8 +67,34 @@ describe('/api/deportistas', () => {
     expect(payload.nombre).toBe('Ana')
     expect(payload.planSesiones).toBe(20)
     expect(payload.altura).toBe(160)
+    expect(payload.email).toBe('ana@club.com')
     expect(payload.password).not.toBe('segura123')
     expect(payload.password).toMatch(/^\$2[aby]\$/)
+  })
+
+  it('creates an athlete without email', async () => {
+    prismaMock.deportista.create.mockResolvedValue({ id: 'dep-3', nombre: 'Luis' })
+
+    const request = new Request('http://localhost:3000/api/deportistas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: 'Luis',
+        apellidos: 'Ramirez',
+        documentoIdentidad: '87654321',
+        email: '',
+        password: 'segura123',
+        nombreApoderado: 'Maria Ramirez',
+        telefonoApoderado: '999888777',
+        fechaNacimiento: '2013-05-10',
+      }),
+    })
+
+    const response = await POST(request)
+
+    expect(response.status).toBe(201)
+    const payload = prismaMock.deportista.create.mock.calls[0][0].data
+    expect(payload.email).toBeNull()
   })
 
   it('returns a friendly message when the document or email already exists', async () => {
@@ -92,6 +118,6 @@ describe('/api/deportistas', () => {
     const json = await response.json()
 
     expect(response.status).toBe(400)
-    expect(json.error).toBe('El email o documento de identidad ya existe')
+    expect(json.error).toBe('El documento de identidad o email ya existe')
   })
 })

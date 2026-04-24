@@ -99,7 +99,7 @@ export default function EditarDeportistaPage() {
         nombre: data.nombre,
         apellidos: data.apellidos,
         documentoIdentidad: data.documentoIdentidad,
-        email: data.email,
+        email: data.email || '',
         celular: data.celular || '',
         nombreApoderado: data.nombreApoderado || '',
         telefonoApoderado: data.telefonoApoderado || '',
@@ -259,13 +259,12 @@ export default function EditarDeportistaPage() {
                   required
                 />
                 <Input
-                  label="Email *"
+                  label="Email"
                   name="email"
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
-                  required
-                  placeholder="deportista@example.com"
+                  placeholder="Opcional"
                 />
                 <Input
                   label="Celular"

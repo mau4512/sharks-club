@@ -1,6 +1,12 @@
 # Configuración Supabase + Vercel para Faraday
 
+> Para trabajar con base de produccion y base de pruebas separadas, revisar tambien
+> `SUPABASE_ENTORNOS.md`, `.env.production.example` y `.env.staging.example`.
+
 ## 1. Crear el proyecto en Supabase
+
+Si ya existe una base Supabase actual, esa queda como produccion. Para pruebas crea
+un segundo proyecto Supabase separado, por ejemplo `faraday-staging`.
 
 1. Entra a `https://supabase.com/dashboard`
 2. Crea un proyecto nuevo
@@ -45,6 +51,11 @@ Valores a copiar desde Supabase:
   `postgresql://postgres:PASSWORD@db.[PROJECT-REF].supabase.co:5432/postgres`
 
 ## 4. Variables en Vercel
+
+Configura variables distintas por ambiente:
+
+- Production: usar la base Supabase actual.
+- Preview/Staging: usar el nuevo proyecto Supabase de pruebas.
 
 En Vercel agrega estas variables:
 

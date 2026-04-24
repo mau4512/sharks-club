@@ -5,18 +5,24 @@ import { hashPassword, isBcryptHash, verifyPassword } from '@/lib/password'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, password } = body
+    const login = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
+    const password = typeof body.password === 'string' ? body.password : ''
 
-    if (!email || !password) {
+    if (!login || !password) {
       return NextResponse.json(
-        { error: 'Email y contraseña son requeridos' },
+        { error: 'DNI/correo y contraseña son requeridos' },
         { status: 400 }
       )
     }
 
-    // Buscar deportista por email
-    const deportista = await prisma.deportista.findUnique({
-      where: { email },
+    // Buscar deportista por DNI o email para mantener compatibilidad con cuentas antiguas.
+    const deportista = await prisma.deportista.findFirst({
+      where: {
+        OR: [
+          { documentoIdentidad: login },
+          { email: login },
+        ],
+      },
       include: {
         turno: true
       }

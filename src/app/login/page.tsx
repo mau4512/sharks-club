@@ -111,7 +111,7 @@ export default function LoginPage() {
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                   <Mail className="inline h-4 w-4 mr-2" />
-                  Correo o usuario
+                  DNI, correo o usuario
                 </label>
                 <Input
                   id="email"
@@ -119,7 +119,7 @@ export default function LoginPage() {
                   type="text"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="tu@email.com o usuario"
+                  placeholder="DNI, correo o usuario"
                   required
                   autoComplete="username"
                 />

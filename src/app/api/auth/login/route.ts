@@ -116,8 +116,13 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      const deportista = await prisma.deportista.findUnique({
-        where: { email: login },
+      const deportista = await prisma.deportista.findFirst({
+        where: {
+          OR: [
+            { documentoIdentidad: login },
+            { email: login },
+          ],
+        },
         include: { turno: true },
       })
 

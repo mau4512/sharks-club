@@ -12,7 +12,6 @@ interface Turno {
   tipo: string
   hora: string
   modalidad: string
-  capacidadMaxima: number
   activo: boolean
   entrenador?: {
     nombre: string
@@ -156,7 +155,7 @@ export default function TurnosPage() {
                     <div className="flex items-center text-sm pt-3 border-t">
                       <Users className="h-4 w-4 mr-2 text-gray-500" />
                       <span className="font-medium text-gray-900">{turno._count.deportistas}</span>
-                      <span className="text-gray-500 ml-1">/ {turno.capacidadMaxima} deportistas</span>
+                      <span className="text-gray-500 ml-1">deportistas inscritos</span>
                     </div>
                   </div>
                 </Link>

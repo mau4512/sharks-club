@@ -17,7 +17,6 @@ interface Turno {
   hora: string
   activo: boolean
   _count: { deportistas: number }
-  capacidadMaxima: number
 }
 
 export default function NuevoDeportistaPage() {
@@ -51,10 +50,8 @@ export default function NuevoDeportistaPage() {
       const response = await fetch('/api/turnos')
       if (response.ok) {
         const data = await response.json()
-        // Filtrar solo turnos activos y con espacio disponible
-        setTurnos(Array.isArray(data) ? data.filter((t: Turno) => 
-          t.activo && t._count.deportistas < t.capacidadMaxima
-        ) : [])
+        // Filtrar solo turnos activos. Los turnos no tienen limite de deportistas.
+        setTurnos(Array.isArray(data) ? data.filter((t: Turno) => t.activo) : [])
       }
     } catch (error) {
       console.error('Error al cargar turnos:', error)
@@ -283,7 +280,7 @@ export default function NuevoDeportistaPage() {
                   <option value="">Sin turno asignado</option>
                   {turnos.map((turno) => (
                     <option key={turno.id} value={turno.id}>
-                      {turno.nombre} - {turno.tipo === 'diurno' ? 'Diurno' : 'Nocturno'} ({turno.hora}) - {turno._count.deportistas}/{turno.capacidadMaxima}
+                      {turno.nombre} - {turno.tipo === 'diurno' ? 'Diurno' : 'Nocturno'} ({turno.hora}) - {turno._count.deportistas} inscritos
                     </option>
                   ))}
                 </Select>

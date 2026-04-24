@@ -107,7 +107,7 @@ export default function EntrenadorDashboard() {
                     <div className="space-y-1 text-sm text-gray-600">
                       <p>⏰ {turno.hora} - {turno.tipo === 'diurno' ? 'Diurno' : 'Nocturno'}</p>
                       <p>📚 {turno.seccion.replace('_', ' ')}</p>
-                      <p>👥 {turno._count?.deportistas || 0} / {turno.capacidadMaxima} deportistas</p>
+                      <p>👥 {turno._count?.deportistas || 0} deportistas inscritos</p>
                     </div>
                     <Link href={`/entrenador/asistencias?turnoId=${turno.id}`}>
                       <Button size="sm" className="w-full mt-3">

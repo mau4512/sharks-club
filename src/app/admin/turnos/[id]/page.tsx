@@ -15,7 +15,6 @@ interface Turno {
   tipo: string
   hora: string
   modalidad: string
-  capacidadMaxima: number
   activo: boolean
   deportistas: Array<{
     id: string
@@ -313,18 +312,16 @@ export default function EditarTurnoPage() {
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">Deportistas en este Turno</h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  {turno.deportistas.length} / {turno.capacidadMaxima} deportistas
+                  {turno.deportistas.length} deportistas inscritos
                 </p>
               </div>
-              {turno.deportistas.length < turno.capacidadMaxima && (
-                <Button 
-                  onClick={() => setShowAddDeportista(!showAddDeportista)}
-                  size="sm"
-                >
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Agregar
-                </Button>
-              )}
+              <Button 
+                onClick={() => setShowAddDeportista(!showAddDeportista)}
+                size="sm"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Agregar
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -342,7 +339,7 @@ export default function EditarTurnoPage() {
                     <option value="">Selecciona un deportista...</option>
                     {deportistasDisponibles.map((dep) => (
                       <option key={dep.id} value={dep.id}>
-                        {dep.nombre} {dep.apellidos} - {dep.email}
+                        {dep.nombre} {dep.apellidos} - {dep.email || 'sin email'}
                       </option>
                     ))}
                   </select>

@@ -19,6 +19,10 @@ export default function AsistenciasEntrenadorPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
+  const getDebtNameClass = (deportista: any) => {
+    return deportista.deudaStatus?.tieneDeuda ? 'text-red-700' : 'text-gray-900'
+  }
+
   useEffect(() => {
     const entrenadorData = localStorage.getItem('entrenador')
     if (!entrenadorData) {
@@ -263,11 +267,19 @@ export default function AsistenciasEntrenadorPage() {
                             ) : (
                               <XCircle className="h-6 w-6 text-gray-400" />
                             )}
-                            <div>
-                              <p className="font-medium text-gray-900">
+                              <div>
+                              <p className={`font-medium ${getDebtNameClass(deportista)}`}>
                                 {deportista.nombre} {deportista.apellidos}
                               </p>
-                              <p className="text-sm text-gray-600">DNI: {deportista.documentoIdentidad}</p>
+                              <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
+                                <span>DNI: {deportista.documentoIdentidad}</span>
+                                {deportista.numeroCamiseta && <span>• #{deportista.numeroCamiseta}</span>}
+                              </div>
+                              {deportista.deudaStatus?.tieneDeuda && (
+                                <p className="mt-1 text-xs font-medium text-red-600">
+                                  {deportista.deudaStatus.etiquetas.join(' · ')}
+                                </p>
+                              )}
                             </div>
                           </div>
                           <span className={`px-3 py-1 rounded-full text-sm font-medium ${

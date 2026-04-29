@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import Link from 'next/link'
-import { ArrowLeft, User, Mail, Phone, Calendar, TrendingUp, Trophy, Target } from 'lucide-react'
+import { ArrowLeft, User, Mail, Phone, Calendar, TrendingUp, Trophy, Target, Shirt, Wallet } from 'lucide-react'
 
 export default function DeportistaDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter()
@@ -125,7 +125,42 @@ export default function DeportistaDetailPage({ params }: { params: { id: string 
                       <span className="text-sm">{turno.nombre} - {turno.hora}</span>
                     </div>
                   )}
+
+                  {deportista.numeroCamiseta && (
+                    <div className="flex items-center gap-3 text-gray-700">
+                      <Shirt className="h-4 w-4 text-gray-400" />
+                      <span className="text-sm">
+                        Camiseta #{deportista.numeroCamiseta}
+                        {deportista.tallaCamiseta ? ` · Talla ${deportista.tallaCamiseta}` : ''}
+                      </span>
+                    </div>
+                  )}
                 </div>
+
+                {deportista.deudaStatus && (
+                  <div className="pt-4 border-t">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Wallet className="h-4 w-4 text-gray-400" />
+                      <span className="text-sm font-medium text-gray-700">Estado de pagos</span>
+                    </div>
+                    {deportista.deudaStatus.tieneDeuda ? (
+                      <div className="flex flex-wrap gap-2">
+                        {deportista.deudaStatus.etiquetas.map((etiqueta: string) => (
+                          <span
+                            key={etiqueta}
+                            className="rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700"
+                          >
+                            {etiqueta}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
+                        Pagos al día
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 <div className="pt-4 border-t">
                   <div className="flex items-center justify-between mb-2">

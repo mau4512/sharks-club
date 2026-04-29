@@ -37,9 +37,21 @@ interface Deportista {
   altura?: number
   peso?: number
   posicion?: string
+  tallaCamiseta?: string
+  numeroCamiseta?: string
   photoUrl?: string
   activo: boolean
   createdAt: string
+  deudaStatus?: {
+    mensualidadPendiente: boolean
+    uniformePendiente: boolean
+    tieneDeuda: boolean
+    etiquetas: string[]
+    cicloUniforme: {
+      inicio: number
+      fin: number
+    }
+  }
 }
 
 interface Estadisticas {
@@ -276,6 +288,25 @@ export default function PerfilDeportistaPage() {
                 {deportista.posicion || 'Sin posición asignada'}
               </p>
 
+              {deportista.deudaStatus && (
+                <div className="mb-6 flex flex-wrap gap-2">
+                  {deportista.deudaStatus.tieneDeuda ? (
+                    deportista.deudaStatus.etiquetas.map((etiqueta) => (
+                      <span
+                        key={etiqueta}
+                        className="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700"
+                      >
+                        {etiqueta}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                      Pagos al día
+                    </span>
+                  )}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center space-x-3">
                   <div className="bg-primary-100 p-2 rounded-lg">
@@ -341,6 +372,30 @@ export default function PerfilDeportistaPage() {
                     <div>
                       <p className="text-xs text-gray-600">IMC</p>
                       <p className="text-sm font-medium">{imc}</p>
+                    </div>
+                  </div>
+                )}
+
+                {deportista.tallaCamiseta && (
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-primary-100 p-2 rounded-lg">
+                      <Award className="h-5 w-5 text-primary-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600">Talla de camiseta</p>
+                      <p className="text-sm font-medium">{deportista.tallaCamiseta}</p>
+                    </div>
+                  </div>
+                )}
+
+                {deportista.numeroCamiseta && (
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-primary-100 p-2 rounded-lg">
+                      <Target className="h-5 w-5 text-primary-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600">Número de camiseta</p>
+                      <p className="text-sm font-medium">#{deportista.numeroCamiseta}</p>
                     </div>
                   </div>
                 )}
@@ -440,6 +495,20 @@ export default function PerfilDeportistaPage() {
                 <p className="text-sm text-gray-600">Número del Padre o Apoderado</p>
                 <p className="font-medium">{deportista.telefonoApoderado}</p>
               </div>
+              {deportista.deudaStatus && (
+                <div>
+                  <p className="text-sm text-gray-600">Estado de pagos</p>
+                  <p className="font-medium">
+                    {deportista.deudaStatus.tieneDeuda
+                      ? deportista.deudaStatus.etiquetas.join(' · ')
+                      : 'Al día'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Control de uniforme ciclo {deportista.deudaStatus.cicloUniforme.inicio}-
+                    {deportista.deudaStatus.cicloUniforme.fin}
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

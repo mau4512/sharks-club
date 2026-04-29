@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { attachDeudaStatus } from '@/lib/deportista-finanzas'
 
 // GET - Obtener un turno por ID
 export async function GET(
@@ -16,7 +17,9 @@ export async function GET(
             nombre: true,
             apellidos: true,
             email: true,
-            photoUrl: true
+            photoUrl: true,
+            tallaCamiseta: true,
+            numeroCamiseta: true,
           }
         }
       }
@@ -29,7 +32,25 @@ export async function GET(
       )
     }
 
-    return NextResponse.json(turno)
+    const pagos = turno.deportistas.length
+      ? await prisma.pagoDeportista.findMany({
+          where: {
+            deportistaId: {
+              in: turno.deportistas.map((deportista) => deportista.id),
+            },
+          },
+          select: {
+            deportistaId: true,
+            concepto: true,
+            fechaPago: true,
+          },
+        })
+      : []
+
+    return NextResponse.json({
+      ...turno,
+      deportistas: attachDeudaStatus(turno.deportistas, pagos),
+    })
   } catch (error) {
     console.error('Error al obtener turno:', error)
     return NextResponse.json(

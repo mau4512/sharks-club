@@ -14,6 +14,12 @@ interface Deportista {
   apellidos: string
   email: string
   photoUrl: string | null
+  tallaCamiseta?: string | null
+  numeroCamiseta?: string | null
+  deudaStatus?: {
+    tieneDeuda: boolean
+    etiquetas: string[]
+  }
 }
 
 interface Turno {
@@ -272,10 +278,18 @@ export default function TomarAsistenciaPage() {
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900">
+                            <h3 className={`font-semibold ${deportista.deudaStatus?.tieneDeuda ? 'text-red-700' : 'text-gray-900'}`}>
                               {deportista.nombre} {deportista.apellidos}
                             </h3>
-                            <p className="text-sm text-gray-600">{deportista.email}</p>
+                            <p className="text-sm text-gray-600">
+                              {deportista.email}
+                              {deportista.numeroCamiseta ? ` • #${deportista.numeroCamiseta}` : ''}
+                            </p>
+                            {deportista.deudaStatus?.tieneDeuda && (
+                              <p className="mt-1 text-xs font-medium text-red-600">
+                                {deportista.deudaStatus.etiquetas.join(' · ')}
+                              </p>
+                            )}
                           </div>
 
                           <div className="flex gap-2">

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/password'
+import { attachDeudaStatus } from '@/lib/deportista-finanzas'
 
 // GET - Obtener todos los deportistas
 export async function GET() {
@@ -11,7 +12,22 @@ export async function GET() {
       }
     })
 
-    return NextResponse.json(deportistas)
+    const pagos = deportistas.length
+      ? await prisma.pagoDeportista.findMany({
+          where: {
+            deportistaId: {
+              in: deportistas.map((deportista) => deportista.id),
+            },
+          },
+          select: {
+            deportistaId: true,
+            concepto: true,
+            fechaPago: true,
+          },
+        })
+      : []
+
+    return NextResponse.json(attachDeudaStatus(deportistas, pagos))
   } catch (error) {
     console.error('Error al obtener deportistas:', error)
     return NextResponse.json(
@@ -44,6 +60,8 @@ export async function POST(request: Request) {
         altura: body.altura ? parseFloat(body.altura) : null,
         peso: body.peso ? parseFloat(body.peso) : null,
         posicion: body.posicion || null,
+        tallaCamiseta: body.tallaCamiseta || null,
+        numeroCamiseta: body.numeroCamiseta || null,
         planSesiones: body.planSesiones ? parseInt(body.planSesiones) : 12,
         turnoId: body.turnoId || null,
         activo: body.activo !== false

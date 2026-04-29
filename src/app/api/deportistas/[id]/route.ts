@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/password'
+import { buildDeudaStatus } from '@/lib/deportista-finanzas'
 
 // GET - Obtener un deportista por ID
 export async function GET(
@@ -31,7 +32,19 @@ export async function GET(
       )
     }
 
-    return NextResponse.json(deportista)
+    const pagos = await prisma.pagoDeportista.findMany({
+      where: { deportistaId: deportista.id },
+      select: {
+        deportistaId: true,
+        concepto: true,
+        fechaPago: true,
+      },
+    })
+
+    return NextResponse.json({
+      ...deportista,
+      deudaStatus: buildDeudaStatus(pagos),
+    })
   } catch (error) {
     console.error('Error al obtener deportista:', error)
     return NextResponse.json(
@@ -78,6 +91,8 @@ export async function PUT(
     if ('altura' in body) updateData.altura = body.altura ? parseFloat(body.altura) : null
     if ('peso' in body) updateData.peso = body.peso ? parseFloat(body.peso) : null
     if ('posicion' in body) updateData.posicion = body.posicion || null
+    if ('tallaCamiseta' in body) updateData.tallaCamiseta = body.tallaCamiseta || null
+    if ('numeroCamiseta' in body) updateData.numeroCamiseta = body.numeroCamiseta || null
     if (body.planSesiones !== undefined) updateData.planSesiones = parseInt(body.planSesiones)
     if (body.activo !== undefined) updateData.activo = body.activo
     

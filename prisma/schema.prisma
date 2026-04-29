@@ -39,6 +39,8 @@ model Deportista {
   altura        Float?        // en cm
   peso          Float?        // en kg
   posicion      String?       // Base, Escolta, Alero, etc.
+  tallaCamiseta String?
+  numeroCamiseta String?
   photoUrl      String?
   planSesiones  Int           @default(12) // 12 o 20 sesiones
   activo        Boolean       @default(true)

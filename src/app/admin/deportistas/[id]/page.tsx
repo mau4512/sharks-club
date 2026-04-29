@@ -22,6 +22,8 @@ interface DeportistaData {
   altura: string
   peso: string
   posicion: string
+  tallaCamiseta: string
+  numeroCamiseta: string
   planSesiones: string
   turnoId: string
   activo: boolean
@@ -57,6 +59,8 @@ export default function EditarDeportistaPage() {
     altura: '',
     peso: '',
     posicion: '',
+    tallaCamiseta: '',
+    numeroCamiseta: '',
     planSesiones: '12',
     turnoId: '',
     activo: true
@@ -107,6 +111,8 @@ export default function EditarDeportistaPage() {
         altura: data.altura?.toString() || '',
         peso: data.peso?.toString() || '',
         posicion: data.posicion || '',
+        tallaCamiseta: data.tallaCamiseta || '',
+        numeroCamiseta: data.numeroCamiseta || '',
         planSesiones: data.planSesiones?.toString() || '12',
         turnoId: data.turnoId || '',
         activo: data.activo
@@ -327,7 +333,7 @@ export default function EditarDeportistaPage() {
             {/* Información Deportiva */}
             <div>
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Información Deportiva</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
                 <Input
                   label="Altura (cm)"
                   name="altura"
@@ -353,6 +359,20 @@ export default function EditarDeportistaPage() {
                     { value: '', label: 'Seleccionar posición' },
                     ...POSICIONES.map(pos => ({ value: pos, label: pos }))
                   ]}
+                />
+                <Input
+                  label="Talla de Camiseta"
+                  name="tallaCamiseta"
+                  value={formData.tallaCamiseta}
+                  onChange={handleChange}
+                  placeholder="Ej: S, M, L"
+                />
+                <Input
+                  label="Número de Camiseta"
+                  name="numeroCamiseta"
+                  value={formData.numeroCamiseta}
+                  onChange={handleChange}
+                  placeholder="Ej: 7"
                 />
               </div>
             </div>

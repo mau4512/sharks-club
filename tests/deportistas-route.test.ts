@@ -6,6 +6,9 @@ const { prismaMock } = vi.hoisted(() => ({
       findMany: vi.fn(),
       create: vi.fn(),
     },
+    pagoDeportista: {
+      findMany: vi.fn(),
+    },
   },
 }))
 
@@ -19,16 +22,28 @@ describe('/api/deportistas', () => {
   beforeEach(() => {
     prismaMock.deportista.findMany.mockReset()
     prismaMock.deportista.create.mockReset()
+    prismaMock.pagoDeportista.findMany.mockReset()
   })
 
   it('returns the list of athletes', async () => {
     prismaMock.deportista.findMany.mockResolvedValue([{ id: 'dep-1', nombre: 'Juan' }])
+    prismaMock.pagoDeportista.findMany.mockResolvedValue([])
 
     const response = await GET()
     const json = await response.json()
 
     expect(response.status).toBe(200)
-    expect(json).toEqual([{ id: 'dep-1', nombre: 'Juan' }])
+    expect(json).toEqual([
+      expect.objectContaining({
+        id: 'dep-1',
+        nombre: 'Juan',
+        deudaStatus: expect.objectContaining({
+          mensualidadPendiente: true,
+          uniformePendiente: true,
+          tieneDeuda: true,
+        }),
+      }),
+    ])
     expect(prismaMock.deportista.findMany).toHaveBeenCalledWith({
       orderBy: { createdAt: 'desc' },
     })
@@ -68,6 +83,8 @@ describe('/api/deportistas', () => {
     expect(payload.planSesiones).toBe(20)
     expect(payload.altura).toBe(160)
     expect(payload.email).toBe('ana@club.com')
+    expect(payload.tallaCamiseta).toBeNull()
+    expect(payload.numeroCamiseta).toBeNull()
     expect(payload.password).not.toBe('segura123')
     expect(payload.password).toMatch(/^\$2[aby]\$/)
   })

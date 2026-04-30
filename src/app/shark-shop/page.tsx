@@ -50,7 +50,7 @@ export default function SharkShopPage() {
 
               <div className="mt-8 flex flex-col gap-4 sm:flex-row">
                 <a
-                  href="mailto:contacto@sharksbasketball.com?subject=Consulta%20Shark%20Shop"
+                  href="mailto:faradaysharks@gmail.com?subject=Consulta%20Shark%20Shop"
                   className="w-full sm:w-auto"
                 >
                   <Button size="lg" className="w-full bg-primary-500 hover:bg-primary-400">
@@ -121,13 +121,6 @@ export default function SharkShopPage() {
             })}
           </div>
 
-          <div className="mt-10 rounded-[1.75rem] border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
-            <h3 className="text-2xl font-bold text-gray-900">Próximo paso recomendado</h3>
-            <p className="mt-3 max-w-3xl text-gray-600">
-              En una siguiente etapa podemos conectar Shark Shop con un catálogo real, stock por tallas, control de
-              pedidos y relación directa con los pagos de uniforme desde caja.
-            </p>
-          </div>
         </section>
       </div>
     </div>

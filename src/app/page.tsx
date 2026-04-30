@@ -152,7 +152,7 @@ export default function HomePage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.25em] text-primary-300">Ecosistema Sharks</p>
-              <h2 className="mt-3 text-3xl font-bold sm:text-4xl">Tu club también vive fuera de la cancha</h2>
+              <h2 className="mt-3 text-3xl font-bold text-primary-300 sm:text-4xl">Tu club también vive fuera de la cancha</h2>
               <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-300 sm:text-lg">
                 Separamos la presentación pública del club de los accesos internos para miembros, operación deportiva y merchandising oficial.
               </p>
@@ -220,7 +220,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.25em] text-primary-600">Competencias del año</p>
-            <h2 className="mt-3 text-3xl font-bold text-gray-900 sm:text-4xl">
+            <h2 className="mt-3 text-3xl font-bold text-primary-700 sm:text-4xl">
               Torneos en los que participa Sharks
             </h2>
             <p className="mx-auto mt-4 max-w-3xl text-lg text-gray-600">
@@ -254,7 +254,7 @@ export default function HomePage() {
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold text-primary-700 mb-4">
               ¿Por qué Sharks Basketball?
             </h2>
             <p className="text-xl text-gray-600">
@@ -318,7 +318,7 @@ export default function HomePage() {
       <section id="programas" className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold text-primary-700 mb-4">
               Planteles del Club
             </h2>
             <p className="text-xl text-gray-600">
@@ -373,11 +373,70 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Formulario de Matrícula */}
+      <section className="bg-white py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <h2 className="text-4xl font-bold text-primary-700 mb-4">
+              Nuestras Sedes
+            </h2>
+            <p className="text-xl text-gray-600">
+              Entrenamos en dos puntos clave de la ciudad, organizando los grupos por edad y etapa formativa.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+            <Card className="border-2 hover:border-primary-300 hover:shadow-xl transition-all">
+              <CardContent className="pt-8">
+                <div className="inline-flex rounded-full bg-primary-100 px-4 py-2 text-sm font-semibold text-primary-700">
+                  Desde U13 en adelante
+                </div>
+                <h3 className="mt-5 text-3xl font-bold text-gray-900">Coliseo Faraday</h3>
+                <p className="mt-3 text-lg text-gray-600">Cerro Colorado, Calle Lozada s/n</p>
+                <p className="mt-4 text-gray-600">
+                  Sede principal para categorias de formacion avanzada y competencia regular del club.
+                </p>
+                <a
+                  href="https://maps.app.goo.gl/KKymVNQ72uwpvMy86"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-6 inline-flex items-center text-sm font-semibold text-primary-700 hover:text-primary-900"
+                >
+                  Ver ubicacion en Maps
+                  <ChevronRight className="ml-1 h-4 w-4" />
+                </a>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 hover:border-primary-300 hover:shadow-xl transition-all">
+              <CardContent className="pt-8">
+                <div className="inline-flex rounded-full bg-primary-100 px-4 py-2 text-sm font-semibold text-primary-700">
+                  Desde U7 hasta U11
+                </div>
+                <h3 className="mt-5 text-3xl font-bold text-gray-900">Colegio Faraday</h3>
+                <p className="mt-3 text-lg text-gray-600">Centro de la ciudad, Calle Moral 307</p>
+                <p className="mt-4 text-gray-600">
+                  Espacio enfocado en iniciacion y desarrollo temprano, ideal para las categorias menores.
+                </p>
+                <a
+                  href="https://maps.app.goo.gl/VExFETxyZ1bdNMyM8"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-6 inline-flex items-center text-sm font-semibold text-primary-700 hover:text-primary-900"
+                >
+                  Ver ubicacion en Maps
+                  <ChevronRight className="ml-1 h-4 w-4" />
+                </a>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Formulario de contacto */}
       <section id="contacto" className="py-20 bg-white">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold text-primary-700 mb-4">
               Solicita informacion
             </h2>
             <p className="text-xl text-gray-600">
@@ -392,7 +451,7 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
             <div>
               <div className="flex items-center mb-4">
                 <Image 
@@ -412,9 +471,16 @@ export default function HomePage() {
             <div>
               <h3 className="text-lg font-semibold mb-4">Contacto</h3>
               <ul className="space-y-2 text-gray-400">
-                <li>Email: contacto@sharksbasketball.com</li>
-                <li>Teléfono: +52 000 000 0000</li>
-                <li>Dirección: Sede Club Faraday</li>
+                <li>
+                  <a href="mailto:faradaysharks@gmail.com" className="hover:text-primary-400">
+                    faradaysharks@gmail.com
+                  </a>
+                </li>
+                <li>
+                  <a href="tel:+51900596258" className="hover:text-primary-400">
+                    +51 900 596 258
+                  </a>
+                </li>
               </ul>
             </div>
             

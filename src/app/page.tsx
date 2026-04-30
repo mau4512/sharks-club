@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
-import { Trophy, Users, Target, Calendar, CheckCircle, ArrowRight, Menu, X } from 'lucide-react'
+import { Trophy, Users, Target, Calendar, CheckCircle, Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent } from '@/components/ui/Card'
 import MatriculaForm from '@/components/MatriculaForm'
@@ -79,7 +79,6 @@ export default function HomePage() {
                 <Link href="#matricula" className="w-full sm:w-auto">
                   <Button size="lg" className="w-full text-base sm:text-lg px-8">
                     Sumarme al Club
-                    <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
                 <Link href="#programas" className="w-full sm:w-auto">

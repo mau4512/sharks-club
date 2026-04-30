@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent } from '@/components/ui/Card'
-import { ArrowRight, CheckCircle, AlertCircle } from 'lucide-react'
+import { CheckCircle, AlertCircle } from 'lucide-react'
 
 export default function MatriculaForm() {
   const [formData, setFormData] = useState({
@@ -243,8 +243,12 @@ export default function MatriculaForm() {
             className="w-full text-lg"
             disabled={status === 'loading'}
           >
-            {status === 'loading' ? 'Enviando...' : 'Enviar Solicitud de Matrícula'}
-            {status !== 'loading' && <ArrowRight className="ml-2 h-5 w-5" />}
+            {status === 'loading' ? 'Enviando...' : (
+              <>
+                <span className="sm:hidden">Enviar solicitud</span>
+                <span className="hidden sm:inline">Enviar Solicitud de Matrícula</span>
+              </>
+            )}
           </Button>
 
           <p className="text-sm text-gray-500 text-center">

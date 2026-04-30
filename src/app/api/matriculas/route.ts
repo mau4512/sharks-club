@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-// API endpoint for matriculation submissions
+// API endpoint for public contact requests
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -10,8 +10,6 @@ export async function POST(request: NextRequest) {
       apellidos,
       documentoIdentidad,
       fechaNacimiento,
-      tallaCamiseta,
-      numeroCamiseta,
       nombreApoderado,
       telefonoApoderado,
     } = body
@@ -22,8 +20,6 @@ export async function POST(request: NextRequest) {
       !apellidos ||
       !documentoIdentidad ||
       !fechaNacimiento ||
-      !tallaCamiseta ||
-      !numeroCamiseta ||
       !nombreApoderado ||
       !telefonoApoderado
     ) {
@@ -33,15 +29,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Crear el registro de matrícula
+    // Crear el registro de la solicitud de contacto.
+    // Por compatibilidad con el esquema actual, talla y numero de camiseta
+    // se mantienen vacios hasta que el club formalice la inscripcion.
     const matricula = await prisma.matricula.create({
       data: {
         nombre,
         apellidos,
         documentoIdentidad,
         fechaNacimiento: new Date(fechaNacimiento),
-        tallaCamiseta,
-        numeroCamiseta,
+        tallaCamiseta: '',
+        numeroCamiseta: '',
         nombreApoderado,
         telefonoApoderado,
         estado: 'pendiente',
@@ -56,13 +54,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { 
         success: true, 
-        message: 'Solicitud de matrícula recibida correctamente',
+        message: 'Solicitud de contacto recibida correctamente',
         id: matricula.id 
       },
       { status: 201 }
     )
   } catch (error) {
-    console.error('Error al procesar matrícula:', error)
+    console.error('Error al procesar solicitud de contacto:', error)
     return NextResponse.json(
       { error: 'Error al procesar la solicitud' },
       { status: 500 }
@@ -70,7 +68,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Endpoint para obtener todas las matrículas (solo admin)
+// Endpoint para obtener todas las solicitudes de contacto
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -85,9 +83,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(matriculas)
   } catch (error) {
-    console.error('Error al obtener matrículas:', error)
+    console.error('Error al obtener solicitudes de contacto:', error)
     return NextResponse.json(
-      { error: 'Error al obtener las matrículas' },
+      { error: 'Error al obtener las solicitudes de contacto' },
       { status: 500 }
     )
   }

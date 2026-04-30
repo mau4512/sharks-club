@@ -64,8 +64,8 @@ export default function HomePage() {
               <Link href="#programas" className="w-full md:w-auto">
                 <Button variant="ghost" className="w-full md:w-auto">Planteles</Button>
               </Link>
-              <Link href="#matricula" className="w-full md:w-auto">
-                <Button className="w-full md:w-auto">Inscripción</Button>
+              <Link href="#contacto" className="w-full md:w-auto">
+                <Button className="w-full md:w-auto">Contacto</Button>
               </Link>
             </div>
 
@@ -95,8 +95,8 @@ export default function HomePage() {
                 <Link href="#programas" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="ghost" className="w-full">Planteles</Button>
                 </Link>
-                <Link href="#matricula" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="outline" className="w-full">Inscripción</Button>
+                <Link href="#contacto" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="outline" className="w-full">Contacto</Button>
                 </Link>
               </div>
             </div>
@@ -120,7 +120,7 @@ export default function HomePage() {
                 disciplina táctica y desarrollo personal. Trabajamos por categorías y objetivos reales de competencia.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="#matricula" className="w-full sm:w-auto">
+                <Link href="#contacto" className="w-full sm:w-auto">
                   <Button size="lg" className="w-full text-base sm:text-lg px-8">
                     Sumarme al Club
                   </Button>
@@ -361,7 +361,7 @@ export default function HomePage() {
                     </li>
                   </ul>
 
-                  <Link href="#matricula">
+                  <Link href="#contacto">
                     <Button className="w-full" variant={plantel.destacado ? 'primary' : 'outline'}>
                       Solicitar cupo
                     </Button>
@@ -374,14 +374,14 @@ export default function HomePage() {
       </section>
 
       {/* Formulario de Matrícula */}
-      <section id="matricula" className="py-20 bg-white">
+      <section id="contacto" className="py-20 bg-white">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Inscripción Sharks Basketball
+              Solicita informacion
             </h2>
             <p className="text-xl text-gray-600">
-              Completa el formulario y el cuerpo técnico te contactará para evaluación y asignación de plantel.
+              Completa este primer contacto y el club se comunicara contigo para orientar el ingreso, revisar horarios disponibles y evaluar el posible registro.
             </p>
           </div>
 
@@ -427,8 +427,8 @@ export default function HomePage() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="#matricula" className="text-gray-400 hover:text-primary-400">
-                    Inscripción
+                  <Link href="#contacto" className="text-gray-400 hover:text-primary-400">
+                    Contacto
                   </Link>
                 </li>
                 <li>

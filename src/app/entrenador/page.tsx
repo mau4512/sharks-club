@@ -11,7 +11,6 @@ export default function EntrenadorDashboard() {
   const router = useRouter()
   const [entrenador, setEntrenador] = useState<any>(null)
   const [turnos, setTurnos] = useState<any[]>([])
-  const [deportistas, setDeportistas] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -35,19 +34,6 @@ export default function EntrenadorDashboard() {
         const allTurnos = await turnosResponse.json()
         const misTurnos = allTurnos.filter((t: any) => t.entrenadorId === entrenadorId)
         setTurnos(misTurnos)
-
-        // Obtener deportistas de esos turnos
-        const todosDeportistas: any[] = []
-        misTurnos.forEach((turno: any) => {
-          if (turno.deportistas) {
-            turno.deportistas.forEach((dep: any) => {
-              if (!todosDeportistas.find(d => d.id === dep.id)) {
-                todosDeportistas.push({ ...dep, turno: turno.nombre })
-              }
-            })
-          }
-        })
-        setDeportistas(todosDeportistas)
       }
     } catch (error) {
       console.error('Error al cargar datos:', error)
@@ -121,42 +107,49 @@ export default function EntrenadorDashboard() {
           </CardContent>
         </Card>
 
-        {/* Mis Deportistas */}
+        {/* Acciones Principales */}
         <Card className="mb-8">
           <CardHeader>
-            <h2 className="text-xl font-semibold text-gray-900">Mis Deportistas ({deportistas.length})</h2>
+            <h2 className="text-xl font-semibold text-gray-900">Acciones Rápidas</h2>
           </CardHeader>
           <CardContent>
-            {deportistas.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">No tienes deportistas asignados</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Turno</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {deportistas.map((deportista) => (
-                      <tr key={deportista.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm text-gray-900">
-                          {deportista.nombre} {deportista.apellidos}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{deportista.turno}</td>
-                        <td className="px-4 py-3 text-sm">
-                          <Link href={`/entrenador/deportistas/${deportista.id}`} className="text-primary-600 hover:text-primary-700">
-                            Ver Perfil
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Link
+                href="/entrenador/entrenamientos"
+                className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition text-center group"
+              >
+                <Calendar className="h-12 w-12 text-gray-400 group-hover:text-primary-600 mx-auto mb-3" />
+                <p className="font-medium text-gray-900 mb-2">Preparar Entrenamientos</p>
+                <p className="text-sm text-gray-600">Planificar sesiones de entrenamiento</p>
+              </Link>
+
+              <Link
+                href="/entrenador/sesiones"
+                className="p-6 border-2 border-dashed border-primary-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition text-center group bg-primary-50"
+              >
+                <Activity className="h-12 w-12 text-primary-600 mx-auto mb-3" />
+                <p className="font-medium text-gray-900 mb-2">Ver Sesiones Completadas</p>
+                <p className="text-sm text-gray-600">Progreso de tus deportistas</p>
+              </Link>
+
+              <Link
+                href="/entrenador/asistencias"
+                className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition text-center group"
+              >
+                <ClipboardCheck className="h-12 w-12 text-gray-400 group-hover:text-primary-600 mx-auto mb-3" />
+                <p className="font-medium text-gray-900 mb-2">Registrar Asistencias</p>
+                <p className="text-sm text-gray-600">Tomar asistencia de tus grupos</p>
+              </Link>
+
+              <Link
+                href="/entrenador/mis-deportistas"
+                className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition text-center group"
+              >
+                <Users className="h-12 w-12 text-gray-400 group-hover:text-primary-600 mx-auto mb-3" />
+                <p className="font-medium text-gray-900 mb-2">Mis Deportistas</p>
+                <p className="text-sm text-gray-600">Ingresar al listado completo de deportistas</p>
+              </Link>
+            </div>
           </CardContent>
         </Card>
 
@@ -197,51 +190,6 @@ export default function EntrenadorDashboard() {
           </Card>
         </div>
 
-        {/* Acciones Principales */}
-        <Card>
-          <CardHeader>
-            <h2 className="text-xl font-semibold text-gray-900">Acciones Rápidas</h2>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Link
-                href="/entrenador/entrenamientos"
-                className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition text-center group"
-              >
-                <Calendar className="h-12 w-12 text-gray-400 group-hover:text-primary-600 mx-auto mb-3" />
-                <p className="font-medium text-gray-900 mb-2">Preparar Entrenamientos</p>
-                <p className="text-sm text-gray-600">Planificar sesiones de entrenamiento</p>
-              </Link>
-
-              <Link
-                href="/entrenador/sesiones"
-                className="p-6 border-2 border-dashed border-primary-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition text-center group bg-primary-50"
-              >
-                <Activity className="h-12 w-12 text-primary-600 mx-auto mb-3" />
-                <p className="font-medium text-gray-900 mb-2">Ver Sesiones Completadas</p>
-                <p className="text-sm text-gray-600">Progreso de tus deportistas</p>
-              </Link>
-
-              <Link
-                href="/entrenador/asistencias"
-                className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition text-center group"
-              >
-                <ClipboardCheck className="h-12 w-12 text-gray-400 group-hover:text-primary-600 mx-auto mb-3" />
-                <p className="font-medium text-gray-900 mb-2">Registrar Asistencias</p>
-                <p className="text-sm text-gray-600">Tomar asistencia de tus grupos</p>
-              </Link>
-
-              <Link
-                href="/entrenador/mis-deportistas"
-                className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition text-center group"
-              >
-                <Users className="h-12 w-12 text-gray-400 group-hover:text-primary-600 mx-auto mb-3" />
-                <p className="font-medium text-gray-900 mb-2">Mis Deportistas</p>
-                <p className="text-sm text-gray-600">Ver deportistas asignados</p>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   )

@@ -2,19 +2,22 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Trophy, Users, Target, Calendar, CheckCircle, ArrowRight } from 'lucide-react'
+import { useState } from 'react'
+import { Trophy, Users, Target, Calendar, CheckCircle, ArrowRight, Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent } from '@/components/ui/Card'
 import MatriculaForm from '@/components/MatriculaForm'
 
 export default function HomePage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
   return (
     <div className="min-h-screen bg-white">
       {/* Navbar */}
       <nav className="bg-white shadow-sm fixed w-full top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-3 py-3 sm:h-20 sm:flex-row sm:items-center sm:justify-between sm:py-0">
-            <div className="flex items-center justify-center sm:justify-start">
+          <div className="flex items-center justify-between py-3 sm:h-20 sm:py-0">
+            <div className="flex min-w-0 items-center">
               <Image 
                 src="/images/sharks-transparent.png" 
                 alt="Faraday Sharks Logo" 
@@ -22,9 +25,10 @@ export default function HomePage() {
                 height={72} 
                 className="object-contain bg-white/95 rounded-md p-1 shadow-sm" 
               />
-              <span className="ml-3 text-center text-lg font-bold text-gray-900 sm:text-left sm:text-2xl">Sharks Basketball</span>
+              <span className="ml-3 text-lg font-bold text-gray-900 sm:text-2xl">Sharks Basketball</span>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+
+            <div className="hidden sm:flex sm:flex-row sm:items-center sm:gap-4">
               <Link href="#matricula" className="w-full sm:w-auto">
                 <Button variant="outline" className="w-full sm:w-auto">Únete al Club</Button>
               </Link>
@@ -32,12 +36,35 @@ export default function HomePage() {
                 <Button className="w-full sm:w-auto">Portal del Club</Button>
               </Link>
             </div>
+
+            <button
+              type="button"
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 text-gray-700 transition hover:bg-gray-50 sm:hidden"
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+              aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
+              aria-expanded={mobileMenuOpen}
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
           </div>
+
+          {mobileMenuOpen && (
+            <div className="border-t border-gray-100 pb-4 pt-3 sm:hidden">
+              <div className="flex flex-col gap-3">
+                <Link href="/portal-del-club" onClick={() => setMobileMenuOpen(false)}>
+                  <Button className="w-full">Portal del Club</Button>
+                </Link>
+                <Link href="#matricula" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="outline" className="w-full">Inscripción</Button>
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-44 pb-20 sm:pt-32 bg-gradient-to-br from-primary-50 to-white">
+      <section className="bg-gradient-to-br from-primary-50 to-white pb-20 pt-28 sm:pt-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>

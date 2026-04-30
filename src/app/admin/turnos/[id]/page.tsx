@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { ArrowLeft, Save, Loader2, UserPlus, X, Calendar } from 'lucide-react'
 import Link from 'next/link'
+import { toast } from 'sonner'
+import { confirmDialog } from '@/components/ui/confirm-dialog'
 
 interface Turno {
   id: string
@@ -73,7 +75,7 @@ export default function EditarTurnoPage() {
       })
     } catch (error) {
       console.error('Error:', error)
-      alert('Error al cargar el turno')
+      toast.error('Error al cargar el turno')
     } finally {
       setLoading(false)
     }
@@ -108,11 +110,11 @@ export default function EditarTurnoPage() {
       if (response.ok) {
         router.push('/admin/turnos')
       } else {
-        alert('Error al actualizar el turno')
+        toast.error('Error al actualizar el turno')
       }
     } catch (error) {
       console.error('Error:', error)
-      alert('Error al actualizar el turno')
+      toast.error('Error al actualizar el turno')
     } finally {
       setIsSubmitting(false)
     }
@@ -136,16 +138,23 @@ export default function EditarTurnoPage() {
         cargarTurno()
         cargarDeportistasDisponibles()
       } else {
-        alert('Error al agregar deportista al turno')
+        toast.error('Error al agregar deportista al turno')
       }
     } catch (error) {
       console.error('Error:', error)
-      alert('Error al agregar deportista al turno')
+      toast.error('Error al agregar deportista al turno')
     }
   }
 
   const removerDeportista = async (deportistaId: string) => {
-    if (!confirm('¿Deseas remover este deportista del turno?')) return
+    const confirmed = await confirmDialog({
+      title: 'Remover deportista',
+      description: '¿Deseas remover este deportista del turno?',
+      confirmText: 'Remover',
+      variant: 'danger',
+    })
+
+    if (!confirmed) return
 
     try {
       const response = await fetch(`/api/deportistas/${deportistaId}`, {
@@ -160,11 +169,11 @@ export default function EditarTurnoPage() {
         cargarTurno()
         cargarDeportistasDisponibles()
       } else {
-        alert('Error al remover deportista del turno')
+        toast.error('Error al remover deportista del turno')
       }
     } catch (error) {
       console.error('Error:', error)
-      alert('Error al remover deportista del turno')
+      toast.error('Error al remover deportista del turno')
     }
   }
 

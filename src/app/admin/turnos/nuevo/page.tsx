@@ -8,6 +8,7 @@ import { Select } from '@/components/ui/Select'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 
 export default function NuevoTurnoPage() {
   const router = useRouter()
@@ -54,11 +55,11 @@ export default function NuevoTurnoPage() {
       if (response.ok) {
         router.push('/admin/turnos')
       } else {
-        alert('Error al crear el turno')
+        toast.error('Error al crear el turno')
       }
     } catch (error) {
       console.error('Error:', error)
-      alert('Error al crear el turno')
+      toast.error('Error al crear el turno')
     } finally {
       setLoading(false)
     }

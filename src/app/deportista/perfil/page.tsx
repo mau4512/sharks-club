@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import Link from 'next/link'
 import { ArrowLeft, Save, User, Lock } from 'lucide-react'
+import { toast } from 'sonner'
 
 export default function PerfilPage() {
   const router = useRouter()
@@ -62,13 +63,13 @@ export default function PerfilPage() {
         const updated = await response.json()
         setDeportista(updated)
         localStorage.setItem('deportista', JSON.stringify(updated))
-        alert('Perfil actualizado correctamente')
+        toast.success('Perfil actualizado correctamente')
       } else {
-        alert('Error al actualizar el perfil')
+        toast.error('Error al actualizar el perfil')
       }
     } catch (error) {
       console.error('Error:', error)
-      alert('Error al actualizar el perfil')
+      toast.error('Error al actualizar el perfil')
     } finally {
       setSaving(false)
     }
@@ -78,12 +79,12 @@ export default function PerfilPage() {
     e.preventDefault()
 
     if (formData.newPassword !== formData.confirmPassword) {
-      alert('Las contraseñas no coinciden')
+      toast.error('Las contraseñas no coinciden')
       return
     }
 
     if (formData.newPassword.length < 6) {
-      alert('La nueva contraseña debe tener al menos 6 caracteres')
+      toast.error('La nueva contraseña debe tener al menos 6 caracteres')
       return
     }
 
@@ -100,7 +101,7 @@ export default function PerfilPage() {
       })
 
       if (response.ok) {
-        alert('Contraseña actualizada correctamente')
+        toast.success('Contraseña actualizada correctamente')
         setFormData({
           ...formData,
           currentPassword: '',
@@ -109,11 +110,11 @@ export default function PerfilPage() {
         })
       } else {
         const error = await response.json()
-        alert(error.error || 'Error al cambiar la contraseña')
+        toast.error(error.error || 'Error al cambiar la contraseña')
       }
     } catch (error) {
       console.error('Error:', error)
-      alert('Error al cambiar la contraseña')
+      toast.error('Error al cambiar la contraseña')
     } finally {
       setSaving(false)
     }

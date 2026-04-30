@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { BookOpen, Filter, Search } from 'lucide-react'
+import { toast } from 'sonner'
+import { confirmDialog } from '@/components/ui/confirm-dialog'
 
 interface Ejercicio {
   id: string
@@ -161,7 +163,7 @@ export default function BibliotecaEjerciciosPage() {
     e.preventDefault()
 
     if (!userId) {
-      alert('No se pudo identificar al entrenador creador.')
+      toast.error('No se pudo identificar al entrenador creador.')
       return
     }
 
@@ -197,7 +199,7 @@ export default function BibliotecaEjerciciosPage() {
       await cargarDatos()
     } catch (error: any) {
       console.error('Error al guardar ejercicio:', error)
-      alert(error.message || 'Error al guardar el ejercicio')
+      toast.error(error.message || 'Error al guardar el ejercicio')
     }
   }
 
@@ -227,7 +229,14 @@ export default function BibliotecaEjerciciosPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar este ejercicio?')) return
+    const confirmed = await confirmDialog({
+      title: 'Eliminar ejercicio',
+      description: '¿Estás seguro de eliminar este ejercicio?',
+      confirmText: 'Eliminar',
+      variant: 'danger',
+    })
+
+    if (!confirmed) return
 
     try {
       const response = await fetch(`/api/ejercicios-biblioteca/${id}`, {
@@ -242,7 +251,7 @@ export default function BibliotecaEjerciciosPage() {
       await cargarDatos()
     } catch (error: any) {
       console.error('Error al eliminar ejercicio:', error)
-      alert(error.message || 'Error al eliminar el ejercicio')
+      toast.error(error.message || 'Error al eliminar el ejercicio')
     }
   }
 

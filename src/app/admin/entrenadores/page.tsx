@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { UserCog, Plus, Mail, Phone, Award, Clock } from 'lucide-react'
+import { toast } from 'sonner'
+import { confirmDialog } from '@/components/ui/confirm-dialog'
 
 interface Turno {
   id: string
@@ -53,7 +55,14 @@ export default function EntrenadoresPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar este entrenador?')) return
+    const confirmed = await confirmDialog({
+      title: 'Eliminar entrenador',
+      description: '¿Estás seguro de eliminar este entrenador?',
+      confirmText: 'Eliminar',
+      variant: 'danger',
+    })
+
+    if (!confirmed) return
 
     try {
       const response = await fetch(`/api/entrenadores/${id}`, {
@@ -63,11 +72,11 @@ export default function EntrenadoresPage() {
       if (response.ok) {
         setEntrenadores(entrenadores.filter(e => e.id !== id))
       } else {
-        alert('Error al eliminar el entrenador')
+        toast.error('Error al eliminar el entrenador')
       }
     } catch (error) {
       console.error('Error al eliminar:', error)
-      alert('Error al eliminar el entrenador')
+      toast.error('Error al eliminar el entrenador')
     }
   }
 

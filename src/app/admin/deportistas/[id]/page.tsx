@@ -9,6 +9,7 @@ import { Select } from '@/components/ui/Select'
 import { ArrowLeft, Save, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { POSICIONES } from '@/lib/constants'
+import { toast } from 'sonner'
 
 interface DeportistaData {
   nombre: string
@@ -131,11 +132,11 @@ export default function EditarDeportistaPage() {
     // Validar contraseñas si se están cambiando
     if (formData.password || formData.confirmPassword) {
       if (formData.password !== formData.confirmPassword) {
-        alert('Las contraseñas no coinciden')
+        toast.error('Las contraseñas no coinciden')
         return
       }
       if (formData.password && formData.password.length < 6) {
-        alert('La contraseña debe tener al menos 6 caracteres')
+        toast.error('La contraseña debe tener al menos 6 caracteres')
         return
       }
     }
@@ -162,11 +163,11 @@ export default function EditarDeportistaPage() {
         throw new Error(error.error || 'Error al actualizar deportista')
       }
       
-      alert('Deportista actualizado exitosamente')
+      toast.success('Deportista actualizado exitosamente')
       router.push('/admin/deportistas')
     } catch (error: any) {
       console.error('Error:', error)
-      alert(error.message || 'Error al actualizar deportista')
+      toast.error(error.message || 'Error al actualizar deportista')
     } finally {
       setIsSubmitting(false)
     }

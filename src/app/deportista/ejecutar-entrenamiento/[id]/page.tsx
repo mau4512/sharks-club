@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { ArrowLeft, Clock, CheckCircle, Target, Save } from 'lucide-react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 
 interface PuntoTiro {
   posicion: string
@@ -78,7 +79,7 @@ export default function EjecutarEntrenamientoPage() {
           })
           
           if (sesionHoy) {
-            alert('Ya completaste este entrenamiento hoy. Revisa tu resumen en el historial.')
+            toast.info('Ya completaste este entrenamiento hoy. Revisa tu resumen en el historial.')
             router.push(`/deportista/resumen-sesion/${sesionHoy.id}`)
             return
           }
@@ -179,9 +180,9 @@ export default function EjecutarEntrenamientoPage() {
         console.error('❌ Error del servidor:', errorText)
         try {
           const errorData = JSON.parse(errorText)
-          alert(`Error al guardar: ${errorData.error}\nDetalles: ${errorData.details || 'No disponibles'}`)
+          toast.error(`Error al guardar: ${errorData.error}. Detalles: ${errorData.details || 'No disponibles'}`)
         } catch {
-          alert(`Error al guardar la sesión. Status: ${response.status}`)
+          toast.error(`Error al guardar la sesión. Status: ${response.status}`)
         }
         return
       }
@@ -193,9 +194,9 @@ export default function EjecutarEntrenamientoPage() {
     } catch (error) {
       console.error('❌ Error completo:', error)
       if (error instanceof Error) {
-        alert(`Error: ${error.message}`)
+        toast.error(`Error: ${error.message}`)
       } else {
-        alert('Error desconocido al guardar la sesión')
+        toast.error('Error desconocido al guardar la sesión')
       }
     } finally {
       setGuardando(false)

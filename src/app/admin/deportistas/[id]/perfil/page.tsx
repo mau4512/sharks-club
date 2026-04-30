@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { formatDate, calculateIMC } from '@/lib/utils'
 import Image from 'next/image'
+import { toast } from 'sonner'
 
 interface Deportista {
   id: string
@@ -128,7 +129,7 @@ export default function PerfilDeportistaPage() {
 
     // Validar tamaño (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('La imagen no puede superar los 5MB')
+      toast.error('La imagen no puede superar los 5MB')
       return
     }
 
@@ -157,10 +158,10 @@ export default function PerfilDeportistaPage() {
         })
       }
 
-      alert('Imagen actualizada exitosamente')
+      toast.success('Imagen actualizada exitosamente')
     } catch (err) {
       console.error('Error:', err)
-      alert('Error al subir la imagen')
+      toast.error('Error al subir la imagen')
     } finally {
       setUploadingImage(false)
     }

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { ArrowLeft } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface Turno {
   id: string
@@ -121,12 +122,12 @@ export default function NuevoEntrenadorPage() {
         router.push('/admin/entrenadores')
       } else {
         const data = await response.json()
-        alert(data.error || 'Error al crear el entrenador')
+        toast.error(data.error || 'Error al crear el entrenador')
         setLoading(false)
       }
     } catch (error) {
       console.error('Error:', error)
-      alert('Error al crear el entrenador')
+      toast.error('Error al crear el entrenador')
       setLoading(false)
     }
   }

@@ -7,6 +7,8 @@ import Link from 'next/link'
 import { Plus, Search, Edit, Trash2, UserCircle, Loader2, Eye, Wallet } from 'lucide-react'
 import { Input } from '@/components/ui/Input'
 import { formatDate } from '@/lib/utils'
+import { toast } from 'sonner'
+import { confirmDialog } from '@/components/ui/confirm-dialog'
 
 interface Deportista {
   id: string
@@ -52,7 +54,14 @@ export default function DeportistasPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar este deportista?')) return
+    const confirmed = await confirmDialog({
+      title: 'Eliminar deportista',
+      description: '¿Estás seguro de eliminar este deportista?',
+      confirmText: 'Eliminar',
+      variant: 'danger',
+    })
+
+    if (!confirmed) return
 
     try {
       const response = await fetch(`/api/deportistas/${id}`, {
@@ -67,7 +76,7 @@ export default function DeportistasPage() {
       setDeportistas(deportistas.filter(d => d.id !== id))
     } catch (err) {
       console.error('Error:', err)
-      alert('Error al eliminar el deportista')
+      toast.error('Error al eliminar el deportista')
     }
   }
 

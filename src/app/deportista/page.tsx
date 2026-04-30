@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Users, Calendar, TrendingUp, LogOut, User, Trophy, Camera, CheckCircle, ChevronDown, ChevronUp, Clock } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { toast } from 'sonner'
 
 export default function DeportistaDashboard() {
   const router = useRouter()
@@ -96,13 +97,13 @@ export default function DeportistaDashboard() {
         const updatedDeportista = { ...deportista, photoUrl: data.photoUrl }
         setDeportista(updatedDeportista)
         localStorage.setItem('deportista', JSON.stringify(updatedDeportista))
-        alert('Foto actualizada correctamente')
+        toast.success('Foto actualizada correctamente')
       } else {
-        alert('Error al subir la foto')
+        toast.error('Error al subir la foto')
       }
     } catch (error) {
       console.error('Error:', error)
-      alert('Error al subir la foto')
+      toast.error('Error al subir la foto')
     } finally {
       setUploadingPhoto(false)
     }

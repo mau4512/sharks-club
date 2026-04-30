@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import Link from 'next/link'
 import { Clock, Users, Plus, Edit, Trash2, Sun, Moon } from 'lucide-react'
+import { toast } from 'sonner'
+import { confirmDialog } from '@/components/ui/confirm-dialog'
 
 interface Turno {
   id: string
@@ -51,7 +53,14 @@ export default function TurnosPage() {
   }
 
   const eliminarTurno = async (id: string) => {
-    if (!confirm('¿Estás seguro de que deseas eliminar este turno?')) {
+    const confirmed = await confirmDialog({
+      title: 'Eliminar turno',
+      description: '¿Estás seguro de que deseas eliminar este turno?',
+      confirmText: 'Eliminar',
+      variant: 'danger',
+    })
+
+    if (!confirmed) {
       return
     }
 
@@ -62,9 +71,12 @@ export default function TurnosPage() {
 
       if (response.ok) {
         cargarTurnos()
+      } else {
+        toast.error('Error al eliminar el turno')
       }
     } catch (error) {
       console.error('Error al eliminar turno:', error)
+      toast.error('Error al eliminar el turno')
     }
   }
 

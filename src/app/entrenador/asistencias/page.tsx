@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import Link from 'next/link'
 import { ArrowLeft, Calendar, CheckCircle, Clock, Save, Users, XCircle } from 'lucide-react'
+import { toast } from 'sonner'
 
 export default function AsistenciasEntrenadorPage() {
   const router = useRouter()
@@ -102,7 +103,7 @@ export default function AsistenciasEntrenadorPage() {
 
   const guardarAsistencias = async () => {
     if (!turnoSeleccionado) {
-      alert('Selecciona un turno')
+      toast.error('Selecciona un turno')
       return
     }
 
@@ -124,13 +125,13 @@ export default function AsistenciasEntrenadorPage() {
       })
 
       if (response.ok) {
-        alert('Asistencias guardadas correctamente')
+        toast.success('Asistencias guardadas correctamente')
       } else {
-        alert('Error al guardar asistencias')
+        toast.error('Error al guardar asistencias')
       }
     } catch (error) {
       console.error('Error:', error)
-      alert('Error al guardar asistencias')
+      toast.error('Error al guardar asistencias')
     } finally {
       setSaving(false)
     }

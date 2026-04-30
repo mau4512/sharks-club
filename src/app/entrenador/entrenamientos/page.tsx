@@ -9,6 +9,8 @@ import { ArrowLeft, Plus, Trash2, Save, Clipboard, Edit, Calendar, Clock, BookOp
 import Link from 'next/link'
 import PizarraTactica from '@/components/PizarraTactica'
 import SelectorEjerciciosBiblioteca from '@/components/SelectorEjerciciosBiblioteca'
+import { toast } from 'sonner'
+import { confirmDialog } from '@/components/ui/confirm-dialog'
 
 interface PuntoTiro {
   posicion: 'esquina_izq' | 'codo_izq' | 'medio' | 'codo_der' | 'esquina_der'
@@ -134,7 +136,7 @@ export default function PrepararEntrenamientoPage() {
 
   const agregarEjercicio = async () => {
     if (!nuevoEjercicio.titulo.trim()) {
-      alert('El título del ejercicio es obligatorio')
+      toast.error('El título del ejercicio es obligatorio')
       return
     }
 
@@ -247,7 +249,7 @@ export default function PrepararEntrenamientoPage() {
     });
 
     setMostrarSelectorBiblioteca(false);
-    alert(`Ejercicio "${ejercicioBiblioteca.nombre}" agregado al plan`);
+    toast.success(`Ejercicio "${ejercicioBiblioteca.nombre}" agregado al plan`);
   }
 
   const calcularDuracionTotal = () => {
@@ -256,17 +258,17 @@ export default function PrepararEntrenamientoPage() {
 
   const guardarPlan = async () => {
     if (!plan.titulo.trim()) {
-      alert('El título del plan es obligatorio')
+      toast.error('El título del plan es obligatorio')
       return
     }
 
     if (!plan.turno) {
-      alert('Debes seleccionar un turno')
+      toast.error('Debes seleccionar un turno')
       return
     }
 
     if (plan.ejercicios.length === 0) {
-      alert('Agrega al menos un ejercicio')
+      toast.error('Agrega al menos un ejercicio')
       return
     }
 
@@ -302,7 +304,7 @@ export default function PrepararEntrenamientoPage() {
       console.log('Respuesta del servidor:', responseData)
 
       if (response.ok) {
-        alert(planEditando ? 'Plan actualizado exitosamente' : 'Plan guardado exitosamente')
+        toast.success(planEditando ? 'Plan actualizado exitosamente' : 'Plan guardado exitosamente')
         await fetchPlanesGuardados(entrenador.id)
         
         // Resetear formulario
@@ -315,11 +317,11 @@ export default function PrepararEntrenamientoPage() {
         })
         setPlanEditando(null)
       } else {
-        alert('Error al guardar el plan')
+        toast.error('Error al guardar el plan')
       }
     } catch (error) {
       console.error('Error:', error)
-      alert('Error al guardar el plan')
+      toast.error('Error al guardar el plan')
     } finally {
       setSaving(false)
     }
@@ -340,7 +342,14 @@ export default function PrepararEntrenamientoPage() {
   }
 
   const eliminarPlan = async (planId: string) => {
-    if (!confirm('¿Estás seguro de eliminar este plan?')) return
+    const confirmed = await confirmDialog({
+      title: 'Eliminar plan',
+      description: '¿Estás seguro de eliminar este plan?',
+      confirmText: 'Eliminar',
+      variant: 'danger',
+    })
+
+    if (!confirmed) return
 
     try {
       const response = await fetch(`/api/planes-entrenamiento/${planId}`, {
@@ -348,14 +357,14 @@ export default function PrepararEntrenamientoPage() {
       })
 
       if (response.ok) {
-        alert('Plan eliminado exitosamente')
+        toast.success('Plan eliminado exitosamente')
         await fetchPlanesGuardados(entrenador.id)
       } else {
-        alert('Error al eliminar el plan')
+        toast.error('Error al eliminar el plan')
       }
     } catch (error) {
       console.error('Error:', error)
-      alert('Error al eliminar el plan')
+      toast.error('Error al eliminar el plan')
     }
   }
 
@@ -1077,11 +1086,7 @@ export default function PrepararEntrenamientoPage() {
                           <Edit className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => {
-                            if (confirm('¿Estás seguro de eliminar este plan?')) {
-                              eliminarPlan(plan.id)
-                            }
-                          }}
+                          onClick={() => eliminarPlan(plan.id)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded transition"
                           title="Eliminar plan"
                         >

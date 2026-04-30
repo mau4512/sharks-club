@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { ArrowDownCircle, ArrowUpCircle, Banknote, CreditCard, Search, Wallet } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface Deportista {
   id: string
@@ -250,7 +251,7 @@ function CajaPageContent() {
       await fetchData(ingresoData.deportistaId || deportistaIdParam)
     } catch (error: any) {
       console.error(error)
-      alert(error.message || 'Error al registrar el ingreso')
+      toast.error(error.message || 'Error al registrar el ingreso')
     } finally {
       setIsSubmittingIngreso(false)
     }
@@ -282,7 +283,7 @@ function CajaPageContent() {
       await fetchData(ingresoData.deportistaId || deportistaIdParam)
     } catch (error: any) {
       console.error(error)
-      alert(error.message || 'Error al registrar el egreso')
+      toast.error(error.message || 'Error al registrar el egreso')
     } finally {
       setIsSubmittingEgreso(false)
     }

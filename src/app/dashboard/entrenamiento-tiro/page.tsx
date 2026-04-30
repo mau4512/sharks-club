@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Target, MapPin, CheckCircle, TrendingUp } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface Posicion {
   zona: string
@@ -105,15 +106,15 @@ export default function EntrenamientoTiroPage() {
           setPosicionActual(posicionActual + 1)
           setIntentos(0)
           setAciertos(0)
-          alert(`¡Completaste ${ejercicioSeleccionado!.posiciones[posicionActual].zona}! Pasando a la siguiente posición...`)
+          toast.success(`Completaste ${ejercicioSeleccionado!.posiciones[posicionActual].zona}. Pasando a la siguiente posición...`)
         } else {
-          alert('¡Felicitaciones! Completaste el ejercicio completo')
+          toast.success('Felicitaciones, completaste el ejercicio completo')
           setEjercicioSeleccionado(null)
           fetchRegistros()
         }
       } catch (error) {
         console.error('Error al registrar tiro:', error)
-        alert('Error al guardar el registro')
+        toast.error('Error al guardar el registro')
       } finally {
         setLoading(false)
       }

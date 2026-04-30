@@ -9,6 +9,7 @@ import { Select } from '@/components/ui/Select'
 import { ArrowLeft, Save } from 'lucide-react'
 import Link from 'next/link'
 import { POSICIONES } from '@/lib/constants'
+import { toast } from 'sonner'
 
 interface Turno {
   id: string
@@ -64,13 +65,13 @@ export default function NuevoDeportistaPage() {
     
     // Validar que las contraseñas coincidan
     if (formData.password !== formData.confirmPassword) {
-      alert('Las contraseñas no coinciden')
+      toast.error('Las contraseñas no coinciden')
       return
     }
     
     // Validar longitud mínima de contraseña
     if (formData.password.length < 6) {
-      alert('La contraseña debe tener al menos 6 caracteres')
+      toast.error('La contraseña debe tener al menos 6 caracteres')
       return
     }
     
@@ -91,11 +92,11 @@ export default function NuevoDeportistaPage() {
         throw new Error(error.error || 'Error al registrar deportista')
       }
       
-      alert('Deportista registrado exitosamente')
+      toast.success('Deportista registrado exitosamente')
       router.push('/admin/deportistas')
     } catch (error: any) {
       console.error('Error:', error)
-      alert(error.message || 'Error al registrar deportista')
+      toast.error(error.message || 'Error al registrar deportista')
     } finally {
       setIsSubmitting(false)
     }

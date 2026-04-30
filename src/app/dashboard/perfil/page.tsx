@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { User, Edit, Save, X } from 'lucide-react'
 import { POSICIONES } from '@/lib/constants'
+import { toast } from 'sonner'
 
 export default function PerfilPage() {
   const [isEditing, setIsEditing] = useState(false)
@@ -23,7 +24,7 @@ export default function PerfilPage() {
   const handleSave = () => {
     // Aquí se llamaría a la API para guardar los cambios
     setIsEditing(false)
-    alert('Perfil actualizado correctamente')
+    toast.success('Perfil actualizado correctamente')
   }
 
   return (

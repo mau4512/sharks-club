@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Plus, Target, Trash2, MapPin } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface Turno {
   id: string
@@ -125,7 +126,7 @@ export default function EjerciciosTiroPage() {
       })
 
       if (res.ok) {
-        alert('Ejercicio de tiro creado exitosamente')
+        toast.success('Ejercicio de tiro creado exitosamente')
         setShowForm(false)
         setFormData({
           turnoId: '',
@@ -136,11 +137,11 @@ export default function EjerciciosTiroPage() {
         })
         fetchEjercicios()
       } else {
-        alert('Error al crear ejercicio')
+        toast.error('Error al crear ejercicio')
       }
     } catch (error) {
       console.error('Error:', error)
-      alert('Error al crear ejercicio')
+      toast.error('Error al crear ejercicio')
     } finally {
       setLoading(false)
     }

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { ArrowLeft, Save, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 
 interface Deportista {
   id: string
@@ -138,15 +139,15 @@ export default function TomarAsistenciaPage() {
       })
 
       if (response.ok) {
-        alert('Asistencia registrada exitosamente')
+        toast.success('Asistencia registrada exitosamente')
         router.push(`/admin/turnos/${id}/asistencias`)
       } else {
         const error = await response.json()
-        alert(`Error: ${error.error}`)
+        toast.error(`Error: ${error.error}`)
       }
     } catch (error) {
       console.error('Error:', error)
-      alert('Error al guardar asistencia')
+      toast.error('Error al guardar asistencia')
     } finally {
       setSaving(false)
     }

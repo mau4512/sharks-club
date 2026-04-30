@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AppToaster } from "@/components/ui/AppToaster";
+import { ConfirmDialogProvider } from "@/components/ui/confirm-dialog";
 
 export const metadata: Metadata = {
   title: "Sharks Basketball - Club Faraday",
@@ -13,7 +15,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body>{children}</body>
+      <body>
+        {children}
+        <AppToaster />
+        <ConfirmDialogProvider />
+      </body>
     </html>
   );
 }

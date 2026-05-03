@@ -139,6 +139,29 @@ describe('/api/pagos', () => {
     expect(payload.montoEsperado).toBe(180)
   })
 
+  it('calculates the weekend monthly plan correctly', async () => {
+    prismaMock.pagoDeportista.create.mockResolvedValue({ id: 'pago-weekend', monto: 120 })
+
+    const request = new NextRequest('http://localhost:3000/api/pagos', {
+      method: 'POST',
+      body: JSON.stringify({
+        deportistaId: 'dep-1',
+        concepto: 'mensualidad',
+        metodo: 'yape',
+        monto: '120',
+        tarifaMensual: 'finSemana',
+        mesCoberturaInicio: '2026-05',
+        mesCoberturaFin: '2026-05',
+      }),
+    })
+
+    const response = await POST(request)
+    expect(response.status).toBe(201)
+
+    const payload = prismaMock.pagoDeportista.create.mock.calls.at(-1)?.[0].data
+    expect(payload.montoEsperado).toBe(120)
+  })
+
   it('uses the full uniform cost as expected amount', async () => {
     prismaMock.pagoDeportista.create.mockResolvedValue({ id: 'pago-uniforme', monto: 80 })
 

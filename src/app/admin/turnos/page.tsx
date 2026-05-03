@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import Link from 'next/link'
 import { Clock, Users, Plus, Edit, Trash2, Sun, Moon } from 'lucide-react'
+import { getTurnoModalidadLabel } from '@/lib/pagos-config'
 import { toast } from 'sonner'
 import { confirmDialog } from '@/components/ui/confirm-dialog'
 
@@ -84,10 +85,6 @@ export default function TurnosPage() {
     return tipo === 'diurno' ? 'Diurno' : 'Nocturno'
   }
 
-  const getModalidadLabel = (modalidad: string) => {
-    return modalidad === 'interdiario' ? 'Interdiario (12 sesiones)' : 'Diario (20 sesiones)'
-  }
-
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -152,7 +149,7 @@ export default function TurnosPage() {
                     
                     <div className="text-sm">
                       <span className="font-medium text-gray-700">Modalidad:</span>
-                      <span className="ml-2 text-gray-600">{getModalidadLabel(turno.modalidad)}</span>
+                      <span className="ml-2 text-gray-600">{getTurnoModalidadLabel(turno.modalidad)}</span>
                     </div>
                     
                     {turno.entrenador && (

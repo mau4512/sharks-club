@@ -8,6 +8,7 @@ import { Select } from '@/components/ui/Select'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { TURNO_MODALIDAD_OPTIONS } from '@/lib/pagos-config'
 import { toast } from 'sonner'
 
 export default function NuevoTurnoPage() {
@@ -18,7 +19,7 @@ export default function NuevoTurnoPage() {
     nombre: '',
     tipo: 'diurno',
     hora: '',
-    modalidad: 'interdiario',
+    modalidad: 'diario',
     entrenadorId: '',
     activo: true
   })
@@ -148,8 +149,11 @@ export default function NuevoTurnoPage() {
                 value={formData.modalidad}
                 onChange={handleChange}
               >
-                <option value="interdiario">Interdiario (12 sesiones)</option>
-                <option value="diario">Diario (20 sesiones)</option>
+                {TURNO_MODALIDAD_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </Select>
               <p className="text-xs text-gray-500 mt-1">
                 Selecciona la frecuencia del plan de entrenamiento

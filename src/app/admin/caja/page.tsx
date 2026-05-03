@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/Input'
 import { ArrowDownCircle, ArrowUpCircle, Banknote, CreditCard, Pencil, Search, Trash2, Wallet } from 'lucide-react'
 import { toast } from 'sonner'
 import { confirmDialog } from '@/components/ui/confirm-dialog'
-import { getRecurringMonthsCount, inferExpectedAmount } from '@/lib/pagos-config'
+import { getRecurringMonthsCount, inferExpectedAmount, TARIFA_MENSUAL_OPTIONS, type TarifaMensual } from '@/lib/pagos-config'
 
 interface Deportista {
   id: string
@@ -116,7 +116,7 @@ function CajaPageContent() {
     concepto: 'mensualidad',
     metodo: 'efectivo',
     modoPago: 'total' as 'total' | 'parcial',
-    tarifaMensual: 'regular' as 'regular' | 'hermanas',
+    tarifaMensual: 'regular' as TarifaMensual,
     monto: '',
     fechaPago: new Date().toISOString().split('T')[0],
     mesCoberturaInicio: new Date().toISOString().slice(0, 7),
@@ -280,7 +280,7 @@ function CajaPageContent() {
         concepto: ingresoData.concepto,
         mesCoberturaInicio: ingresoData.mesCoberturaInicio,
         mesCoberturaFin: ingresoData.mesCoberturaFin,
-        tarifaMensual: ingresoData.tarifaMensual as 'regular' | 'hermanas',
+        tarifaMensual: ingresoData.tarifaMensual as TarifaMensual,
       }),
     [ingresoData.concepto, ingresoData.mesCoberturaFin, ingresoData.mesCoberturaInicio, ingresoData.tarifaMensual]
   )
@@ -337,7 +337,13 @@ function CajaPageContent() {
         pago.concepto === 'mensualidad' || pago.concepto === 'anualidad'
           ? monthlyExpected === 165
             ? 'hermanas'
-            : 'regular'
+            : monthlyExpected === 120
+              ? 'finSemana'
+              : monthlyExpected === 110
+                ? 'finSemanaHermanas'
+                : monthlyExpected === 60
+                  ? 'finSemana4'
+                  : 'regular'
           : 'regular',
       monto: String(pago.monto),
       fechaPago: pago.fechaPago.slice(0, 10),
@@ -383,7 +389,7 @@ function CajaPageContent() {
             concepto: next.concepto,
             mesCoberturaInicio: next.mesCoberturaInicio,
             mesCoberturaFin: next.mesCoberturaFin,
-            tarifaMensual: next.tarifaMensual as 'regular' | 'hermanas',
+            tarifaMensual: next.tarifaMensual as TarifaMensual,
           })
         )
       }
@@ -729,8 +735,11 @@ function CajaPageContent() {
                       onChange={handleIngresoChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
                     >
-                      <option value="regular">Regular - S/ 180</option>
-                      <option value="hermanas">Hermanas - S/ 165</option>
+                      {TARIFA_MENSUAL_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 ) : (
@@ -967,8 +976,11 @@ function CajaPageContent() {
                       onChange={handleIngresoChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
                     >
-                      <option value="regular">Regular - S/ 180</option>
-                      <option value="hermanas">Hermanas - S/ 165</option>
+                      {TARIFA_MENSUAL_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 ) : (

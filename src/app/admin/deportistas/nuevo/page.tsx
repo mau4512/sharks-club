@@ -9,6 +9,7 @@ import { Select } from '@/components/ui/Select'
 import { ArrowLeft, Save } from 'lucide-react'
 import Link from 'next/link'
 import { POSICIONES } from '@/lib/constants'
+import { PLAN_SESIONES_OPTIONS } from '@/lib/pagos-config'
 import { toast } from 'sonner'
 
 interface Turno {
@@ -267,10 +268,7 @@ export default function NuevoDeportistaPage() {
                   value={formData.planSesiones}
                   onChange={handleChange}
                   required
-                  options={[
-                    { value: '12', label: '12 Sesiones' },
-                    { value: '20', label: '20 Sesiones' }
-                  ]}
+                  options={PLAN_SESIONES_OPTIONS.map((option) => ({ value: option.value, label: option.label }))}
                 />
                 <Select
                   label="Turno"

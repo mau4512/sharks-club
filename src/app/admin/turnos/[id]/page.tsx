@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { ArrowLeft, Save, Loader2, UserPlus, X, Calendar } from 'lucide-react'
 import Link from 'next/link'
+import { TURNO_MODALIDAD_OPTIONS } from '@/lib/pagos-config'
 import { toast } from 'sonner'
 import { confirmDialog } from '@/components/ui/confirm-dialog'
 
@@ -50,7 +51,7 @@ export default function EditarTurnoPage() {
     nombre: '',
     tipo: 'diurno',
     hora: '',
-    modalidad: 'interdiario',
+    modalidad: 'diario',
     activo: true
   })
 
@@ -272,8 +273,11 @@ export default function EditarTurnoPage() {
                 value={formData.modalidad}
                 onChange={handleChange}
               >
-                <option value="interdiario">Interdiario (12 sesiones)</option>
-                <option value="diario">Diario (20 sesiones)</option>
+                {TURNO_MODALIDAD_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </Select>
 
               <div className="flex items-center">

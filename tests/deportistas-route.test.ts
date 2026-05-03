@@ -49,6 +49,35 @@ describe('/api/deportistas', () => {
     })
   })
 
+  it('marks uniform as paid when the full cycle amount was registered', async () => {
+    prismaMock.deportista.findMany.mockResolvedValue([
+      {
+        id: 'dep-1',
+        nombre: 'Juan',
+        createdAt: new Date('2026-04-01T12:00:00.000Z'),
+      },
+    ])
+    prismaMock.pagoDeportista.findMany.mockResolvedValue([
+      {
+        deportistaId: 'dep-1',
+        concepto: 'uniforme',
+        monto: 160,
+        montoEsperado: 160,
+        fechaPago: new Date('2026-04-15T10:00:00.000Z'),
+        mesCoberturaInicio: null,
+        mesCoberturaFin: null,
+      },
+    ])
+
+    const response = await GET()
+    const json = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(json[0].deudaStatus.uniformePendiente).toBe(false)
+    expect(json[0].deudaStatus.etiquetas).not.toContain('Debe 1 uniforme')
+    expect(json[0].deudaStatus.etiquetas).not.toContain('Debe 2 uniformes')
+  })
+
   it('creates an athlete and hashes the password', async () => {
     prismaMock.deportista.create.mockResolvedValue({ id: 'dep-2', nombre: 'Ana' })
 

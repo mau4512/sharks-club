@@ -22,6 +22,8 @@ export async function GET() {
           select: {
             deportistaId: true,
             concepto: true,
+            monto: true,
+            montoEsperado: true,
             fechaPago: true,
             mesCoberturaInicio: true,
             mesCoberturaFin: true,

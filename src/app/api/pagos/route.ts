@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+function parseCoverageMonth(value?: string | null) {
+  if (!value) return null
+  const normalized = /^\d{4}-\d{2}$/.test(value) ? `${value}-01T00:00:00.000Z` : value
+  const parsed = new Date(normalized)
+  return Number.isNaN(parsed.getTime()) ? null : new Date(parsed.getUTCFullYear(), parsed.getUTCMonth(), 1)
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -52,6 +59,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    let mesCoberturaInicio = null
+    let mesCoberturaFin = null
+
+    if (body.concepto === 'mensualidad') {
+      mesCoberturaInicio = parseCoverageMonth(body.mesCoberturaInicio) || new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+      mesCoberturaFin = parseCoverageMonth(body.mesCoberturaFin) || mesCoberturaInicio
+
+      if (mesCoberturaFin < mesCoberturaInicio) {
+        return NextResponse.json(
+          { error: 'El mes final no puede ser anterior al mes inicial' },
+          { status: 400 }
+        )
+      }
+    }
+
     const pago = await prisma.pagoDeportista.create({
       data: {
         deportistaId: body.deportistaId,
@@ -59,6 +81,8 @@ export async function POST(request: NextRequest) {
         metodo: body.metodo,
         monto,
         fechaPago: body.fechaPago ? new Date(body.fechaPago) : new Date(),
+        mesCoberturaInicio,
+        mesCoberturaFin,
         observacion: body.observacion?.trim() || null,
       },
       include: {

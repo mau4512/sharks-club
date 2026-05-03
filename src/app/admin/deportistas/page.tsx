@@ -20,6 +20,13 @@ interface Deportista {
   celular?: string
   posicion?: string
   activo: boolean
+  deudaStatus?: {
+    mensualidadPendiente: boolean
+    uniformePendiente: boolean
+    tieneDeuda: boolean
+    etiquetas: string[]
+    mesesDeudaMensualidad?: number
+  }
 }
 
 export default function DeportistasPage() {
@@ -170,7 +177,9 @@ export default function DeportistasPage() {
                       <UserCircle className="h-8 w-8 text-primary-600" />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="text-lg font-semibold text-gray-900 safe-wrap">
+                      <h3 className={`text-lg font-semibold safe-wrap ${
+                        deportista.deudaStatus?.tieneDeuda ? 'text-red-700' : 'text-green-700'
+                      }`}>
                         {deportista.nombre} {deportista.apellidos}
                       </h3>
                       <div className="mt-1 flex flex-col gap-1 text-sm text-gray-600 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
@@ -180,6 +189,22 @@ export default function DeportistasPage() {
                           <>
                             <span>{deportista.posicion}</span>
                           </>
+                        )}
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {deportista.deudaStatus?.tieneDeuda ? (
+                          deportista.deudaStatus.etiquetas.map((etiqueta) => (
+                            <span
+                              key={`${deportista.id}-${etiqueta}`}
+                              className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700"
+                            >
+                              {etiqueta}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
+                            Al día
+                          </span>
                         )}
                       </div>
                     </div>

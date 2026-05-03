@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/password'
-import { buildDeudaStatus } from '@/lib/deportista-finanzas'
+import { buildDeudaStatusDesdeAlta } from '@/lib/deportista-finanzas'
 
 // GET - Obtener un deportista por ID
 export async function GET(
@@ -43,7 +43,7 @@ export async function GET(
 
     return NextResponse.json({
       ...deportista,
-      deudaStatus: buildDeudaStatus(pagos),
+      deudaStatus: buildDeudaStatusDesdeAlta(pagos, deportista.createdAt),
     })
   } catch (error) {
     console.error('Error al obtener deportista:', error)

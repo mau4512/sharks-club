@@ -23,6 +23,8 @@ export async function GET() {
             deportistaId: true,
             concepto: true,
             fechaPago: true,
+            mesCoberturaInicio: true,
+            mesCoberturaFin: true,
           },
         })
       : []

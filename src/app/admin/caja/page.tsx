@@ -22,6 +22,8 @@ interface Pago {
   metodo: string
   monto: number
   fechaPago: string
+  mesCoberturaInicio?: string | null
+  mesCoberturaFin?: string | null
   observacion?: string | null
   deportista: Deportista
 }
@@ -101,6 +103,8 @@ function CajaPageContent() {
     metodo: 'efectivo',
     monto: '',
     fechaPago: new Date().toISOString().split('T')[0],
+    mesCoberturaInicio: new Date().toISOString().slice(0, 7),
+    mesCoberturaFin: new Date().toISOString().slice(0, 7),
     observacion: '',
   })
   const [egresoData, setEgresoData] = useState({
@@ -144,17 +148,30 @@ function CajaPageContent() {
   }
 
   const movimientos = useMemo<MovimientoCaja[]>(() => {
-    const ingresosMap = pagos.map((pago) => ({
-      id: pago.id,
-      tipo: 'ingreso' as const,
-      concepto: pago.concepto,
-      metodo: pago.metodo,
-      monto: pago.monto,
-      fecha: pago.fechaPago,
-      titulo: `${pago.deportista.nombre} ${pago.deportista.apellidos}`,
-      subtitulo: `DNI: ${pago.deportista.documentoIdentidad}`,
-      observacion: pago.observacion,
-    }))
+    const ingresosMap = pagos.map((pago) => {
+      const coverageInicio = pago.mesCoberturaInicio?.slice(0, 7)
+      const coverageFin = pago.mesCoberturaFin?.slice(0, 7)
+      const coverageLabel =
+        pago.concepto === 'mensualidad' && coverageInicio
+          ? coverageInicio === coverageFin || !coverageFin
+            ? `Cubre: ${coverageInicio}`
+            : `Cubre: ${coverageInicio} a ${coverageFin}`
+          : null
+
+      const observacion = [coverageLabel, pago.observacion].filter(Boolean).join(' · ') || null
+
+      return {
+        id: pago.id,
+        tipo: 'ingreso' as const,
+        concepto: pago.concepto,
+        metodo: pago.metodo,
+        monto: pago.monto,
+        fecha: pago.fechaPago,
+        titulo: `${pago.deportista.nombre} ${pago.deportista.apellidos}`,
+        subtitulo: `DNI: ${pago.deportista.documentoIdentidad}`,
+        observacion,
+      }
+    })
 
     const egresosMap = egresos.map((egreso) => ({
       id: egreso.id,
@@ -246,6 +263,10 @@ function CajaPageContent() {
         ...prev,
         monto: '',
         observacion: '',
+        mesCoberturaInicio:
+          prev.concepto === 'mensualidad' ? prev.mesCoberturaInicio : new Date().toISOString().slice(0, 7),
+        mesCoberturaFin:
+          prev.concepto === 'mensualidad' ? prev.mesCoberturaFin : new Date().toISOString().slice(0, 7),
       }))
 
       await fetchData(ingresoData.deportistaId || deportistaIdParam)
@@ -448,6 +469,27 @@ function CajaPageContent() {
                   required
                 />
               </div>
+
+              {ingresoData.concepto === 'mensualidad' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Input
+                    label="Mes que cancela desde"
+                    name="mesCoberturaInicio"
+                    type="month"
+                    value={ingresoData.mesCoberturaInicio}
+                    onChange={handleIngresoChange}
+                    required
+                  />
+                  <Input
+                    label="Mes que cancela hasta"
+                    name="mesCoberturaFin"
+                    type="month"
+                    value={ingresoData.mesCoberturaFin}
+                    onChange={handleIngresoChange}
+                    required
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Observación</label>

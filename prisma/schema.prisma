@@ -313,6 +313,8 @@ model PagoDeportista {
   metodo        String      // efectivo, transferencia, yape, plin, otro
   monto         Float
   fechaPago     DateTime    @default(now())
+  mesCoberturaInicio DateTime?
+  mesCoberturaFin    DateTime?
   observacion   String?     @db.Text
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt

@@ -2,6 +2,8 @@ type PagoLite = {
   deportistaId: string
   concepto: string
   fechaPago: Date | string
+  mesCoberturaInicio?: Date | string | null
+  mesCoberturaFin?: Date | string | null
 }
 
 export const UNIFORME_CYCLE_BASE_YEAR = 2026
@@ -13,6 +15,16 @@ function getMonthStart(date: Date) {
 
 function getNextMonthStart(date: Date) {
   return new Date(date.getFullYear(), date.getMonth() + 1, 1)
+}
+
+function getMonthKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
+function parseDate(value: Date | string | null | undefined) {
+  if (!value) return null
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
 function getUniformCycleStart(date: Date) {
@@ -67,6 +79,81 @@ export function buildDeudaStatus(pagos: PagoLite[], now = new Date()) {
   }
 }
 
+export function buildDeudaStatusDesdeAlta(
+  pagos: PagoLite[],
+  fechaAlta: Date | string | null | undefined,
+  now = new Date()
+) {
+  const baseStatus = buildDeudaStatus(pagos, now)
+
+  if (!fechaAlta) {
+    return {
+      ...baseStatus,
+      mesesDeudaMensualidad: baseStatus.mensualidadPendiente ? 1 : 0,
+    }
+  }
+
+  const alta = new Date(fechaAlta)
+  const altaMonthStart = getMonthStart(alta)
+  const currentMonthStart = getMonthStart(now)
+
+  if (Number.isNaN(alta.getTime()) || altaMonthStart > currentMonthStart) {
+    return {
+      ...baseStatus,
+      mensualidadPendiente: false,
+      tieneDeuda: baseStatus.uniformePendiente,
+      etiquetas: baseStatus.uniformePendiente ? ['Uniforme pendiente'] : [],
+      mesesDeudaMensualidad: 0,
+    }
+  }
+
+  const mesesPagados = new Set(
+    pagos
+      .filter((pago) => pago.concepto === 'mensualidad')
+      .flatMap((pago) => {
+        const inicio = getMonthStart(parseDate(pago.mesCoberturaInicio) || new Date(pago.fechaPago))
+        const fin = getMonthStart(parseDate(pago.mesCoberturaFin) || parseDate(pago.mesCoberturaInicio) || new Date(pago.fechaPago))
+
+        const keys: string[] = []
+        let cursor = inicio
+        while (cursor <= fin) {
+          keys.push(getMonthKey(cursor))
+          cursor = getNextMonthStart(cursor)
+        }
+        return keys
+      })
+  )
+
+  let cursor = altaMonthStart
+  let mesesDeudaMensualidad = 0
+
+  while (cursor <= currentMonthStart) {
+    if (!mesesPagados.has(getMonthKey(cursor))) {
+      mesesDeudaMensualidad += 1
+    }
+    cursor = getNextMonthStart(cursor)
+  }
+
+  const mensualidadPendiente = mesesDeudaMensualidad > 0
+  const tieneDeuda = mensualidadPendiente || baseStatus.uniformePendiente
+  const etiquetas = [
+    mensualidadPendiente
+      ? mesesDeudaMensualidad === 1
+        ? 'Debe 1 mes'
+        : `Debe ${mesesDeudaMensualidad} meses`
+      : null,
+    baseStatus.uniformePendiente ? 'Uniforme pendiente' : null,
+  ].filter(Boolean) as string[]
+
+  return {
+    ...baseStatus,
+    mensualidadPendiente,
+    tieneDeuda,
+    etiquetas,
+    mesesDeudaMensualidad,
+  }
+}
+
 export function attachDeudaStatus<T extends { id: string }>(
   deportistas: T[],
   pagos: PagoLite[],
@@ -82,6 +169,10 @@ export function attachDeudaStatus<T extends { id: string }>(
 
   return deportistas.map((deportista) => ({
     ...deportista,
-    deudaStatus: buildDeudaStatus(pagosPorDeportista.get(deportista.id) || [], now),
+    deudaStatus: buildDeudaStatusDesdeAlta(
+      pagosPorDeportista.get(deportista.id) || [],
+      (deportista as T & { createdAt?: Date | string }).createdAt,
+      now
+    ),
   }))
 }

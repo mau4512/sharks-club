@@ -12,39 +12,10 @@ function isRecurringConcept(concepto?: string | null) {
   return concepto === 'mensualidad' || concepto === 'anualidad'
 }
 
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const deportistaId = searchParams.get('deportistaId')
-
-    const pagos = await prisma.pagoDeportista.findMany({
-      where: deportistaId ? { deportistaId } : undefined,
-      include: {
-        deportista: {
-          select: {
-            id: true,
-            nombre: true,
-            apellidos: true,
-            documentoIdentidad: true,
-          },
-        },
-      },
-      orderBy: {
-        fechaPago: 'desc',
-      },
-    })
-
-    return NextResponse.json(pagos)
-  } catch (error) {
-    console.error('Error al obtener pagos:', error)
-    return NextResponse.json(
-      { error: 'Error al obtener los pagos' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function POST(request: NextRequest) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     const body = await request.json()
 
@@ -67,7 +38,9 @@ export async function POST(request: NextRequest) {
     let mesCoberturaFin = null
 
     if (isRecurringConcept(body.concepto)) {
-      mesCoberturaInicio = parseCoverageMonth(body.mesCoberturaInicio) || new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+      mesCoberturaInicio =
+        parseCoverageMonth(body.mesCoberturaInicio) ||
+        new Date(new Date().getFullYear(), new Date().getMonth(), 1)
       mesCoberturaFin = parseCoverageMonth(body.mesCoberturaFin) || mesCoberturaInicio
 
       if (mesCoberturaFin < mesCoberturaInicio) {
@@ -78,7 +51,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const pago = await prisma.pagoDeportista.create({
+    const pago = await prisma.pagoDeportista.update({
+      where: { id: params.id },
       data: {
         deportistaId: body.deportistaId,
         concepto: body.concepto,
@@ -101,11 +75,30 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json(pago, { status: 201 })
+    return NextResponse.json(pago)
   } catch (error) {
-    console.error('Error al registrar pago:', error)
+    console.error('Error al actualizar pago:', error)
     return NextResponse.json(
-      { error: 'Error al registrar el pago' },
+      { error: 'Error al actualizar el pago' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    await prisma.pagoDeportista.delete({
+      where: { id: params.id },
+    })
+
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    console.error('Error al eliminar pago:', error)
+    return NextResponse.json(
+      { error: 'Error al eliminar el pago' },
       { status: 500 }
     )
   }

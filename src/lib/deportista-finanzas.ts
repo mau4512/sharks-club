@@ -6,6 +6,10 @@ type PagoLite = {
   mesCoberturaFin?: Date | string | null
 }
 
+function isRecurringConcept(concepto: string) {
+  return concepto === 'mensualidad' || concepto === 'anualidad'
+}
+
 export const UNIFORME_CYCLE_BASE_YEAR = 2026
 export const UNIFORME_CYCLE_DURATION_YEARS = 2
 
@@ -25,6 +29,13 @@ function parseDate(value: Date | string | null | undefined) {
   if (!value) return null
   const parsed = new Date(value)
   return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+function formatMonthLabel(date: Date) {
+  return new Intl.DateTimeFormat('es-PE', {
+    month: 'long',
+    year: 'numeric',
+  }).format(date)
 }
 
 function getUniformCycleStart(date: Date) {
@@ -109,7 +120,7 @@ export function buildDeudaStatusDesdeAlta(
 
   const mesesPagados = new Set(
     pagos
-      .filter((pago) => pago.concepto === 'mensualidad')
+      .filter((pago) => isRecurringConcept(pago.concepto))
       .flatMap((pago) => {
         const inicio = getMonthStart(parseDate(pago.mesCoberturaInicio) || new Date(pago.fechaPago))
         const fin = getMonthStart(parseDate(pago.mesCoberturaFin) || parseDate(pago.mesCoberturaInicio) || new Date(pago.fechaPago))
@@ -126,22 +137,27 @@ export function buildDeudaStatusDesdeAlta(
 
   let cursor = altaMonthStart
   let mesesDeudaMensualidad = 0
+  const mesesPendientes: Date[] = []
 
   while (cursor <= currentMonthStart) {
     if (!mesesPagados.has(getMonthKey(cursor))) {
       mesesDeudaMensualidad += 1
+      mesesPendientes.push(cursor)
     }
     cursor = getNextMonthStart(cursor)
   }
 
   const mensualidadPendiente = mesesDeudaMensualidad > 0
   const tieneDeuda = mensualidadPendiente || baseStatus.uniformePendiente
+  const etiquetasMensualidad =
+    mesesPendientes.length <= 3
+      ? mesesPendientes.map((mes) => `${formatMonthLabel(mes)} pendiente`)
+      : [
+          ...mesesPendientes.slice(0, 3).map((mes) => `${formatMonthLabel(mes)} pendiente`),
+          `+${mesesPendientes.length - 3} mes(es) más`,
+        ]
   const etiquetas = [
-    mensualidadPendiente
-      ? mesesDeudaMensualidad === 1
-        ? 'Debe 1 mes'
-        : `Debe ${mesesDeudaMensualidad} meses`
-      : null,
+    ...etiquetasMensualidad,
     baseStatus.uniformePendiente ? 'Uniforme pendiente' : null,
   ].filter(Boolean) as string[]
 
@@ -151,6 +167,7 @@ export function buildDeudaStatusDesdeAlta(
     tieneDeuda,
     etiquetas,
     mesesDeudaMensualidad,
+    mesesPendientes: mesesPendientes.map(getMonthKey),
   }
 }
 

@@ -6,6 +6,8 @@ const { prismaMock } = vi.hoisted(() => ({
     pagoDeportista: {
       findMany: vi.fn(),
       create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
     },
   },
 }))
@@ -15,11 +17,14 @@ vi.mock('@/lib/prisma', () => ({
 }))
 
 import { GET, POST } from '@/app/api/pagos/route'
+import { PATCH, DELETE } from '@/app/api/pagos/[id]/route'
 
 describe('/api/pagos', () => {
   beforeEach(() => {
     prismaMock.pagoDeportista.findMany.mockReset()
     prismaMock.pagoDeportista.create.mockReset()
+    prismaMock.pagoDeportista.update.mockReset()
+    prismaMock.pagoDeportista.delete.mockReset()
   })
 
   it('filters payments by athlete when deportistaId is present', async () => {
@@ -125,5 +130,48 @@ describe('/api/pagos', () => {
     expect(response.status).toBe(400)
     expect(json.error).toBe('El mes final no puede ser anterior al mes inicial')
     expect(prismaMock.pagoDeportista.create).not.toHaveBeenCalled()
+  })
+
+  it('updates a payment with recurring coverage months', async () => {
+    prismaMock.pagoDeportista.update.mockResolvedValue({ id: 'pago-4', monto: 600 })
+
+    const request = new NextRequest('http://localhost:3000/api/pagos/pago-4', {
+      method: 'PATCH',
+      body: JSON.stringify({
+        deportistaId: 'dep-1',
+        concepto: 'anualidad',
+        metodo: 'transferencia',
+        monto: '600',
+        fechaPago: '2026-05-03',
+        mesCoberturaInicio: '2026-01',
+        mesCoberturaFin: '2026-12',
+        observacion: 'pago anual',
+      }),
+    })
+
+    const response = await PATCH(request, { params: { id: 'pago-4' } })
+    expect(response.status).toBe(200)
+
+    const payload = prismaMock.pagoDeportista.update.mock.calls[0][0]
+    expect(payload.where).toEqual({ id: 'pago-4' })
+    expect(payload.data.mesCoberturaInicio).toEqual(new Date(2026, 0, 1))
+    expect(payload.data.mesCoberturaFin).toEqual(new Date(2026, 11, 1))
+  })
+
+  it('deletes a payment by id', async () => {
+    prismaMock.pagoDeportista.delete.mockResolvedValue({ id: 'pago-5' })
+
+    const request = new NextRequest('http://localhost:3000/api/pagos/pago-5', {
+      method: 'DELETE',
+    })
+
+    const response = await DELETE(request, { params: { id: 'pago-5' } })
+    const json = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(json).toEqual({ ok: true })
+    expect(prismaMock.pagoDeportista.delete).toHaveBeenCalledWith({
+      where: { id: 'pago-5' },
+    })
   })
 })

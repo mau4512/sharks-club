@@ -33,6 +33,8 @@ describe('Admin caja page', () => {
             metodo: 'yape',
             monto: 150,
             fechaPago: '2026-04-20',
+            mesCoberturaInicio: '2026-05-01T00:00:00.000Z',
+            mesCoberturaFin: '2026-05-01T00:00:00.000Z',
             deportista: {
               id: 'dep-1',
               nombre: 'Juan',
@@ -42,37 +44,25 @@ describe('Admin caja page', () => {
           },
         ],
       })
-      .mockResolvedValueOnce({
-        json: async () => [
-          {
-            id: 'egreso-1',
-            categoria: 'alquiler',
-            metodo: 'transferencia',
-            beneficiario: 'Coliseo',
-            monto: 50,
-            fechaEgreso: '2026-04-20',
-          },
-        ],
-      })
 
     vi.stubGlobal('fetch', fetchMock)
 
     render(React.createElement(CajaPage))
 
     await waitFor(() => {
-      expect(screen.getByText('Ingresos Totales')).toBeInTheDocument()
-      expect(screen.getByText('Egresos Totales')).toBeInTheDocument()
-      expect(screen.getByText('Saldo Neto')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Registrar Pago' })).toBeInTheDocument()
+      expect(screen.getByText('Ventana de pago')).toBeInTheDocument()
       expect(screen.getByText('+ S/ 150.00')).toBeInTheDocument()
-      expect(screen.getByText('- S/ 50.00')).toBeInTheDocument()
-      expect(screen.getByText('S/ 100.00')).toBeInTheDocument()
+      expect(screen.getAllByText('Juan Perez').length).toBeGreaterThan(0)
     })
 
     expect(fetchMock).toHaveBeenCalledWith('/api/pagos?deportistaId=dep-1')
+    expect(fetchMock).not.toHaveBeenCalledWith('/api/egresos')
+    expect(screen.queryByText('Registrar Egreso')).not.toBeInTheDocument()
 
-    await user.type(screen.getByPlaceholderText(/buscar por persona, categoría o método/i), 'coliseo')
+    await user.type(screen.getByPlaceholderText(/buscar por persona, categoría o método/i), 'juan')
 
-    expect(screen.getByText('Coliseo')).toBeInTheDocument()
-    expect(screen.queryByText('+ S/ 150.00')).not.toBeInTheDocument()
+    expect(screen.getAllByText('Juan Perez').length).toBeGreaterThan(0)
+    expect(screen.getByText(/cubre: 2026-05/i)).toBeInTheDocument()
   })
 })

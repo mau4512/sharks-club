@@ -5,7 +5,6 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import Link from 'next/link'
 import { Plus, Search, Edit, Trash2, UserCircle, Loader2, Eye, Wallet } from 'lucide-react'
-import { Input } from '@/components/ui/Input'
 import { formatDate } from '@/lib/utils'
 import { toast } from 'sonner'
 import { confirmDialog } from '@/components/ui/confirm-dialog'
@@ -26,6 +25,7 @@ interface Deportista {
     tieneDeuda: boolean
     etiquetas: string[]
     mesesDeudaMensualidad?: number
+    mesesPendientes?: string[]
   }
 }
 
@@ -230,12 +230,14 @@ export default function DeportistasPage() {
                         Editar
                       </Button>
                     </Link>
-                    <Link href={`/admin/caja?deportistaId=${deportista.id}`} className="w-full sm:w-auto">
-                      <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                        <Wallet className="h-4 w-4 mr-1" />
-                        Caja
-                      </Button>
-                    </Link>
+                    {deportista.deudaStatus?.tieneDeuda && (
+                      <Link href={`/admin/caja?deportistaId=${deportista.id}`} className="w-full sm:w-auto">
+                        <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                          <Wallet className="h-4 w-4 mr-1" />
+                          Pagar
+                        </Button>
+                      </Link>
+                    )}
                     <Button 
                       variant="danger" 
                       size="sm"

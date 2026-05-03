@@ -50,7 +50,9 @@ describe('deportista finanzas', () => {
 
     expect(status.mensualidadPendiente).toBe(true)
     expect(status.mesesDeudaMensualidad).toBe(3)
-    expect(status.etiquetas).toContain('Debe 3 meses')
+    expect(status.etiquetas).toContain('enero de 2026 pendiente')
+    expect(status.etiquetas).toContain('marzo de 2026 pendiente')
+    expect(status.etiquetas).toContain('abril de 2026 pendiente')
   })
 
   it('reinicia el control del mes cuando ya existe pago de la mensualidad actual', () => {
@@ -73,6 +75,6 @@ describe('deportista finanzas', () => {
 
     expect(status.mensualidadPendiente).toBe(false)
     expect(status.mesesDeudaMensualidad).toBe(0)
-    expect(status.etiquetas).not.toContain('Debe 1 mes')
+    expect(status.etiquetas).toEqual(['Uniforme pendiente'])
   })
 })

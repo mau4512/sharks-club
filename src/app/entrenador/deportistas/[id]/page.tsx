@@ -76,6 +76,12 @@ export default function DeportistaDetailPage({ params }: { params: { id: string 
   }
 
   const porcentajeAsistencia = calcularAsistencia()
+  const formatLimaTime = (value: string) =>
+    new Date(value).toLocaleTimeString('es-PE', {
+      timeZone: 'America/Lima',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -242,14 +248,20 @@ export default function DeportistaDetailPage({ params }: { params: { id: string 
                       >
                         <div className="flex items-center gap-3">
                           <Calendar className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm text-gray-700">
-                            {new Date(asistencia.fecha).toLocaleDateString('es-ES', {
-                              weekday: 'long',
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric'
-                            })}
-                          </span>
+                          <div className="text-sm text-gray-700">
+                            <span>
+                              {new Date(asistencia.fecha).toLocaleDateString('es-ES', {
+                                timeZone: 'America/Lima',
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })}
+                            </span>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Registro: {formatLimaTime(asistencia.updatedAt || asistencia.createdAt || asistencia.fecha)}
+                            </p>
+                          </div>
                         </div>
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                           asistencia.presente

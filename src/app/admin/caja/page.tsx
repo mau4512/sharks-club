@@ -6,8 +6,9 @@ import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { ArrowDownCircle, ArrowUpCircle, Banknote, CreditCard, Search, Wallet } from 'lucide-react'
+import { ArrowDownCircle, ArrowUpCircle, Banknote, CreditCard, Pencil, Search, Trash2, Wallet } from 'lucide-react'
 import { toast } from 'sonner'
+import { confirmDialog } from '@/components/ui/confirm-dialog'
 
 interface Deportista {
   id: string
@@ -22,6 +23,7 @@ interface Pago {
   metodo: string
   monto: number
   fechaPago: string
+  createdAt?: string
   mesCoberturaInicio?: string | null
   mesCoberturaFin?: string | null
   observacion?: string | null
@@ -35,12 +37,14 @@ interface Egreso {
   beneficiario: string
   monto: number
   fechaEgreso: string
+  createdAt?: string
   observacion?: string | null
 }
 
 const conceptosIngreso = [
   { value: 'inscripcion', label: 'Inscripción' },
   { value: 'mensualidad', label: 'Mensualidad' },
+  { value: 'anualidad', label: 'Anual' },
   { value: 'uniforme', label: 'Uniforme' },
   { value: 'otro', label: 'Otro' },
 ]
@@ -72,6 +76,8 @@ type MovimientoCaja =
       fecha: string
       titulo: string
       subtitulo: string
+      registradoEn?: string
+      deportistaId?: string
       observacion?: string | null
     }
   | {
@@ -83,12 +89,15 @@ type MovimientoCaja =
       fecha: string
       titulo: string
       subtitulo: string
+      registradoEn?: string
       observacion?: string | null
     }
 
 function CajaPageContent() {
   const searchParams = useSearchParams()
   const deportistaIdParam = searchParams.get('deportistaId') || ''
+  const pagoDirecto = Boolean(deportistaIdParam)
+  const currentMonth = new Date().toISOString().slice(0, 7)
 
   const [deportistas, setDeportistas] = useState<Deportista[]>([])
   const [pagos, setPagos] = useState<Pago[]>([])
@@ -97,6 +106,9 @@ function CajaPageContent() {
   const [isSubmittingIngreso, setIsSubmittingIngreso] = useState(false)
   const [isSubmittingEgreso, setIsSubmittingEgreso] = useState(false)
   const [busqueda, setBusqueda] = useState('')
+  const [mesSeleccionado, setMesSeleccionado] = useState(currentMonth)
+  const [tipoMovimiento, setTipoMovimiento] = useState<'ingreso' | 'egreso'>('ingreso')
+  const [editingPagoId, setEditingPagoId] = useState<string | null>(null)
   const [ingresoData, setIngresoData] = useState({
     deportistaId: deportistaIdParam,
     concepto: 'mensualidad',
@@ -116,6 +128,18 @@ function CajaPageContent() {
     observacion: '',
   })
 
+  const formatLimaDate = (value: string) =>
+    new Date(value).toLocaleDateString('es-PE', {
+      timeZone: 'America/Lima',
+    })
+
+  const formatLimaTime = (value: string) =>
+    new Date(value).toLocaleTimeString('es-PE', {
+      timeZone: 'America/Lima',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+
   useEffect(() => {
     fetchData(deportistaIdParam)
   }, [deportistaIdParam])
@@ -127,12 +151,12 @@ function CajaPageContent() {
       const [deportistasRes, pagosRes, egresosRes] = await Promise.all([
         fetch('/api/deportistas'),
         fetch(deportistaId ? `/api/pagos?deportistaId=${deportistaId}` : '/api/pagos'),
-        fetch('/api/egresos'),
+        deportistaId ? Promise.resolve(null) : fetch('/api/egresos'),
       ])
 
       const deportistasData = await deportistasRes.json()
       const pagosData = await pagosRes.json()
-      const egresosData = await egresosRes.json()
+      const egresosData = egresosRes ? await egresosRes.json() : []
 
       setDeportistas(Array.isArray(deportistasData) ? deportistasData : [])
       setPagos(Array.isArray(pagosData) ? pagosData : [])
@@ -167,6 +191,8 @@ function CajaPageContent() {
         metodo: pago.metodo,
         monto: pago.monto,
         fecha: pago.fechaPago,
+        registradoEn: pago.createdAt || pago.fechaPago,
+        deportistaId: pago.deportista.id,
         titulo: `${pago.deportista.nombre} ${pago.deportista.apellidos}`,
         subtitulo: `DNI: ${pago.deportista.documentoIdentidad}`,
         observacion,
@@ -180,6 +206,7 @@ function CajaPageContent() {
       metodo: egreso.metodo,
       monto: egreso.monto,
       fecha: egreso.fechaEgreso,
+      registradoEn: egreso.createdAt || egreso.fechaEgreso,
       titulo: egreso.beneficiario,
       subtitulo: `Categoría: ${egreso.categoria}`,
       observacion: egreso.observacion,
@@ -190,40 +217,93 @@ function CajaPageContent() {
     )
   }, [pagos, egresos])
 
+  const mesesDisponibles = useMemo(() => {
+    const months = new Set<string>([currentMonth])
+
+    pagos.forEach((pago) => months.add(pago.fechaPago.slice(0, 7)))
+    egresos.forEach((egreso) => months.add(egreso.fechaEgreso.slice(0, 7)))
+
+    return Array.from(months).sort((a, b) => b.localeCompare(a))
+  }, [currentMonth, pagos, egresos])
+
+  const movimientosDelPeriodo = useMemo(() => {
+    if (pagoDirecto) return movimientos
+    return movimientos.filter((movimiento) => movimiento.fecha.slice(0, 7) === mesSeleccionado)
+  }, [movimientos, pagoDirecto, mesSeleccionado])
+
   const movimientosFiltrados = useMemo(() => {
     const term = busqueda.trim().toLowerCase()
-    if (!term) return movimientos
+    if (!term) return movimientosDelPeriodo
 
-    return movimientos.filter((movimiento) =>
+    return movimientosDelPeriodo.filter((movimiento) =>
       movimiento.titulo.toLowerCase().includes(term) ||
       movimiento.subtitulo.toLowerCase().includes(term) ||
       movimiento.concepto.toLowerCase().includes(term) ||
       movimiento.metodo.toLowerCase().includes(term)
     )
-  }, [movimientos, busqueda])
+  }, [movimientosDelPeriodo, busqueda])
 
   const resumen = useMemo(() => {
-    const inicioMes = new Date()
-    inicioMes.setDate(1)
-    inicioMes.setHours(0, 0, 0, 0)
+    const ingresosPeriodo = pagoDirecto
+      ? pagos
+      : pagos.filter((pago) => pago.fechaPago.slice(0, 7) === mesSeleccionado)
+    const egresosPeriodo = pagoDirecto
+      ? egresos
+      : egresos.filter((egreso) => egreso.fechaEgreso.slice(0, 7) === mesSeleccionado)
 
-    const ingresosMes = pagos.filter((pago) => new Date(pago.fechaPago) >= inicioMes)
-    const egresosMes = egresos.filter((egreso) => new Date(egreso.fechaEgreso) >= inicioMes)
-
-    const totalIngresos = pagos.reduce((acc, pago) => acc + pago.monto, 0)
-    const totalEgresos = egresos.reduce((acc, egreso) => acc + egreso.monto, 0)
-    const ingresosDelMes = ingresosMes.reduce((acc, pago) => acc + pago.monto, 0)
-    const egresosDelMes = egresosMes.reduce((acc, egreso) => acc + egreso.monto, 0)
+    const totalIngresos = ingresosPeriodo.reduce((acc, pago) => acc + pago.monto, 0)
+    const totalEgresos = egresosPeriodo.reduce((acc, egreso) => acc + egreso.monto, 0)
 
     return {
       totalIngresos,
       totalEgresos,
       saldoNeto: totalIngresos - totalEgresos,
-      ingresosDelMes,
-      egresosDelMes,
-      movimientos: movimientos.length,
+      movimientos: movimientosDelPeriodo.length,
     }
-  }, [pagos, egresos, movimientos.length])
+  }, [egresos, mesSeleccionado, movimientosDelPeriodo.length, pagoDirecto, pagos])
+
+  const deportistaSeleccionado = deportistas.find((deportista) => deportista.id === ingresoData.deportistaId)
+
+  const setCoberturaMensual = (inicio: Date, fin?: Date) => {
+    const start = `${inicio.getFullYear()}-${String(inicio.getMonth() + 1).padStart(2, '0')}`
+    const endDate = fin || inicio
+    const end = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}`
+
+    setIngresoData((prev) => ({
+      ...prev,
+      concepto: 'mensualidad',
+      mesCoberturaInicio: start,
+      mesCoberturaFin: end,
+    }))
+  }
+
+  const cargarPagoEnFormulario = (pago: Pago) => {
+    setEditingPagoId(pago.id)
+    setIngresoData({
+      deportistaId: pago.deportista.id,
+      concepto: pago.concepto,
+      metodo: pago.metodo,
+      monto: String(pago.monto),
+      fechaPago: pago.fechaPago.slice(0, 10),
+      mesCoberturaInicio: pago.mesCoberturaInicio?.slice(0, 7) || new Date().toISOString().slice(0, 7),
+      mesCoberturaFin: pago.mesCoberturaFin?.slice(0, 7) || pago.mesCoberturaInicio?.slice(0, 7) || new Date().toISOString().slice(0, 7),
+      observacion: pago.observacion || '',
+    })
+  }
+
+  const resetIngresoForm = () => {
+    setEditingPagoId(null)
+    setIngresoData({
+      deportistaId: deportistaIdParam,
+      concepto: 'mensualidad',
+      metodo: 'efectivo',
+      monto: '',
+      fechaPago: new Date().toISOString().split('T')[0],
+      mesCoberturaInicio: new Date().toISOString().slice(0, 7),
+      mesCoberturaFin: new Date().toISOString().slice(0, 7),
+      observacion: '',
+    })
+  }
 
   const handleIngresoChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -245,36 +325,69 @@ function CajaPageContent() {
 
   const handleIngresoSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    const confirmed = await confirmDialog({
+      title: 'Confirmar pago',
+      description: '¿Estás seguro de realizar esta transacción?',
+      confirmText: 'Registrar pago',
+    })
+
+    if (!confirmed) return
+
     setIsSubmittingIngreso(true)
 
     try {
-      const response = await fetch('/api/pagos', {
-        method: 'POST',
+      const targetResponse = await fetch(editingPagoId ? `/api/pagos/${editingPagoId}` : '/api/pagos', {
+        method: editingPagoId ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(ingresoData),
       })
 
-      const data = await response.json()
-      if (!response.ok) {
+      const data = await targetResponse.json()
+      if (!targetResponse.ok) {
         throw new Error(data.error || 'No se pudo registrar el ingreso')
       }
 
-      setIngresoData((prev) => ({
-        ...prev,
-        monto: '',
-        observacion: '',
-        mesCoberturaInicio:
-          prev.concepto === 'mensualidad' ? prev.mesCoberturaInicio : new Date().toISOString().slice(0, 7),
-        mesCoberturaFin:
-          prev.concepto === 'mensualidad' ? prev.mesCoberturaFin : new Date().toISOString().slice(0, 7),
-      }))
-
+      resetIngresoForm()
+      toast.success(editingPagoId ? 'Pago actualizado exitosamente' : 'Pago registrado exitosamente')
       await fetchData(ingresoData.deportistaId || deportistaIdParam)
     } catch (error: any) {
       console.error(error)
       toast.error(error.message || 'Error al registrar el ingreso')
     } finally {
       setIsSubmittingIngreso(false)
+    }
+  }
+
+  const handleDeletePago = async (pago: Pago) => {
+    const confirmed = await confirmDialog({
+      title: 'Anular pago',
+      description: '¿Estás seguro de anular este pago? Esta acción eliminará el registro.',
+      confirmText: 'Anular pago',
+      variant: 'danger',
+    })
+
+    if (!confirmed) return
+
+    try {
+      const response = await fetch(`/api/pagos/${pago.id}`, {
+        method: 'DELETE',
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'No se pudo eliminar el pago')
+      }
+
+      if (editingPagoId === pago.id) {
+        resetIngresoForm()
+      }
+
+      toast.success('Pago anulado exitosamente')
+      await fetchData(ingresoData.deportistaId || deportistaIdParam)
+    } catch (error: any) {
+      console.error(error)
+      toast.error(error.message || 'Error al anular el pago')
     }
   }
 
@@ -314,8 +427,12 @@ function CajaPageContent() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Caja</h1>
-          <p className="text-gray-600 mt-2">Controla ingresos, egresos y el flujo real de caja del club.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{pagoDirecto ? 'Registrar Pago' : 'Caja'}</h1>
+          <p className="text-gray-600 mt-2">
+            {pagoDirecto
+              ? 'Registra el pago del deportista y revisa su historial mensual.'
+              : 'Controla ingresos, egresos y el flujo real de caja del club.'}
+          </p>
         </div>
         <Link href="/admin/deportistas" className="w-full sm:w-auto">
           <Button variant="outline" className="w-full sm:w-auto">
@@ -324,12 +441,56 @@ function CajaPageContent() {
         </Link>
       </div>
 
+      {pagoDirecto && deportistaSeleccionado && (
+        <Card className="border-primary-200 bg-primary-50">
+          <CardContent className="py-5">
+            <p className="text-sm font-medium text-primary-700">Deportista seleccionado</p>
+            <p className="mt-1 text-xl font-semibold text-gray-900">
+              {deportistaSeleccionado.nombre} {deportistaSeleccionado.apellidos}
+            </p>
+            <p className="text-sm text-gray-600">DNI: {deportistaSeleccionado.documentoIdentidad}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {!pagoDirecto && (
+      <Card>
+        <CardContent className="py-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-700">Estado de cuenta por mes</p>
+              <p className="text-sm text-gray-600">Selecciona el periodo para revisar caja.</p>
+            </div>
+            <div className="w-full sm:w-64">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mes</label>
+              <select
+                value={mesSeleccionado}
+                onChange={(e) => setMesSeleccionado(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
+              >
+                {mesesDisponibles.map((mes) => (
+                  <option key={mes} value={mes}>
+                    {new Date(`${mes}-01T00:00:00`).toLocaleDateString('es-PE', {
+                      timeZone: 'America/Lima',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      )}
+
+      {!pagoDirecto && (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
         <Card>
           <CardContent className="py-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Ingresos Totales</p>
+                <p className="text-sm text-gray-600">Ingresos del mes</p>
                 <p className="text-3xl font-bold text-gray-900">S/ {resumen.totalIngresos.toFixed(2)}</p>
               </div>
               <Wallet className="h-10 w-10 text-primary-600" />
@@ -341,7 +502,7 @@ function CajaPageContent() {
           <CardContent className="py-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Egresos Totales</p>
+                <p className="text-sm text-gray-600">Egresos del mes</p>
                 <p className="text-3xl font-bold text-gray-900">S/ {resumen.totalEgresos.toFixed(2)}</p>
               </div>
               <ArrowUpCircle className="h-10 w-10 text-red-600" />
@@ -353,7 +514,7 @@ function CajaPageContent() {
           <CardContent className="py-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Saldo Neto</p>
+                <p className="text-sm text-gray-600">Saldo neto del mes</p>
                 <p className={`text-3xl font-bold ${resumen.saldoNeto >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                   S/ {resumen.saldoNeto.toFixed(2)}
                 </p>
@@ -367,8 +528,14 @@ function CajaPageContent() {
           <CardContent className="py-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Ingresos del Mes</p>
-                <p className="text-3xl font-bold text-gray-900">S/ {resumen.ingresosDelMes.toFixed(2)}</p>
+                <p className="text-sm text-gray-600">Periodo seleccionado</p>
+                <p className="text-lg font-bold text-gray-900 capitalize">
+                  {new Date(`${mesSeleccionado}-01T00:00:00`).toLocaleDateString('es-PE', {
+                    timeZone: 'America/Lima',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </p>
               </div>
               <ArrowDownCircle className="h-10 w-10 text-blue-600" />
             </div>
@@ -379,17 +546,207 @@ function CajaPageContent() {
           <CardContent className="py-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Movimientos</p>
+                <p className="text-sm text-gray-600">Movimientos del mes</p>
                 <p className="text-3xl font-bold text-gray-900">{resumen.movimientos}</p>
-                <p className="text-xs text-gray-500 mt-1">Egresos del mes: S/ {resumen.egresosDelMes.toFixed(2)}</p>
+                <p className="text-xs text-gray-500 mt-1">Consulta mensual activa</p>
               </div>
               <CreditCard className="h-10 w-10 text-amber-600" />
             </div>
           </CardContent>
         </Card>
       </div>
+      )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      {pagoDirecto ? (
+        <Card>
+          <CardHeader>
+            <h2 className="text-xl font-semibold text-gray-900">Ventana de pago</h2>
+            <p className="text-sm text-gray-600">Selecciona el concepto y el periodo exacto que está cancelando.</p>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleIngresoSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Deportista</label>
+                <select
+                  name="deportistaId"
+                  value={ingresoData.deportistaId}
+                  onChange={handleIngresoChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
+                >
+                  <option value="">Seleccionar deportista</option>
+                  {deportistas.map((deportista) => (
+                    <option key={deportista.id} value={deportista.id}>
+                      {deportista.nombre} {deportista.apellidos} - {deportista.documentoIdentidad}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Concepto</label>
+                  <select
+                    name="concepto"
+                    value={ingresoData.concepto}
+                    onChange={handleIngresoChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
+                  >
+                    {conceptosIngreso.map((concepto) => (
+                      <option key={concepto.value} value={concepto.value}>
+                        {concepto.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Método</label>
+                  <select
+                    name="metodo"
+                    value={ingresoData.metodo}
+                    onChange={handleIngresoChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
+                  >
+                    {metodos.map((metodo) => (
+                      <option key={metodo.value} value={metodo.value}>
+                        {metodo.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  label="Monto (S/)"
+                  name="monto"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={ingresoData.monto}
+                  onChange={handleIngresoChange}
+                  required
+                  placeholder="Ej: 150.00"
+                />
+                <Input
+                  label="Fecha de pago"
+                  name="fechaPago"
+                  type="date"
+                  value={ingresoData.fechaPago}
+                  onChange={handleIngresoChange}
+                  required
+                />
+              </div>
+
+              {(ingresoData.concepto === 'mensualidad' || ingresoData.concepto === 'anualidad') && (
+                <>
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <p className="text-sm font-medium text-gray-800">Atajos de periodo</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCoberturaMensual(new Date(new Date().getFullYear(), new Date().getMonth(), 1))}
+                      >
+                        Mes actual
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setCoberturaMensual(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1))
+                        }
+                      >
+                        Mes siguiente
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setCoberturaMensual(
+                            new Date(new Date().getFullYear(), 0, 1),
+                            new Date(new Date().getFullYear(), 11, 1)
+                          )
+                        }
+                      >
+                        Anual
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Input
+                      label="Mes que cancela desde"
+                      name="mesCoberturaInicio"
+                      type="month"
+                      value={ingresoData.mesCoberturaInicio}
+                      onChange={handleIngresoChange}
+                      required
+                    />
+                    <Input
+                      label="Mes que cancela hasta"
+                      name="mesCoberturaFin"
+                      type="month"
+                      value={ingresoData.mesCoberturaFin}
+                      onChange={handleIngresoChange}
+                      required
+                    />
+                  </div>
+                </>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Observación</label>
+                <textarea
+                  name="observacion"
+                  value={ingresoData.observacion}
+                  onChange={handleIngresoChange}
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
+                  placeholder="Detalle del pago, referencia o comentario"
+                />
+              </div>
+
+              <Button type="submit" disabled={isSubmittingIngreso} className="w-full">
+                {isSubmittingIngreso ? (editingPagoId ? 'Actualizando pago...' : 'Registrando pago...') : editingPagoId ? 'Guardar cambios' : 'Registrar Pago'}
+              </Button>
+              {editingPagoId && (
+                <Button type="button" variant="outline" className="w-full" onClick={resetIngresoForm}>
+                  Cancelar edición
+                </Button>
+              )}
+            </form>
+          </CardContent>
+        </Card>
+      ) : (
+      <div className="grid grid-cols-1 xl:grid-cols-[280px_minmax(0,1fr)] gap-6">
+        <Card>
+          <CardHeader>
+            <h2 className="text-xl font-semibold text-gray-900">Tipo de movimiento</h2>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Seleccionar</label>
+              <select
+                value={tipoMovimiento}
+                onChange={(e) => setTipoMovimiento(e.target.value as 'ingreso' | 'egreso')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
+              >
+                <option value="ingreso">Ingreso</option>
+                <option value="egreso">Egreso</option>
+              </select>
+            </div>
+            <p className="text-sm text-gray-600">
+              Muestra solo el formulario que necesitas para evitar ruido en caja.
+            </p>
+          </CardContent>
+        </Card>
+
+        {tipoMovimiento === 'ingreso' ? (
         <Card>
           <CardHeader>
             <h2 className="text-xl font-semibold text-gray-900">Registrar Ingreso</h2>
@@ -470,7 +827,7 @@ function CajaPageContent() {
                 />
               </div>
 
-              {ingresoData.concepto === 'mensualidad' && (
+              {(ingresoData.concepto === 'mensualidad' || ingresoData.concepto === 'anualidad') && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
                     label="Mes que cancela desde"
@@ -504,12 +861,17 @@ function CajaPageContent() {
               </div>
 
               <Button type="submit" disabled={isSubmittingIngreso} className="w-full">
-                {isSubmittingIngreso ? 'Registrando ingreso...' : 'Registrar Ingreso'}
+                {isSubmittingIngreso ? (editingPagoId ? 'Actualizando ingreso...' : 'Registrando ingreso...') : editingPagoId ? 'Guardar cambios' : 'Registrar Ingreso'}
               </Button>
+              {editingPagoId && (
+                <Button type="button" variant="outline" className="w-full" onClick={resetIngresoForm}>
+                  Cancelar edición
+                </Button>
+              )}
             </form>
           </CardContent>
         </Card>
-
+        ) : (
         <Card>
           <CardHeader>
             <h2 className="text-xl font-semibold text-gray-900">Registrar Egreso</h2>
@@ -600,14 +962,20 @@ function CajaPageContent() {
             </form>
           </CardContent>
         </Card>
+        )}
       </div>
+      )}
 
       <Card>
         <CardHeader>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Movimientos de Caja</h2>
-              <p className="text-sm text-gray-600 mt-1">Historial consolidado de ingresos y egresos</p>
+              <h2 className="text-xl font-semibold text-gray-900">
+                {pagoDirecto ? 'Historial de pagos' : 'Movimientos de Caja'}
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                {pagoDirecto ? 'Pagos registrados para este deportista.' : 'Historial consolidado de ingresos y egresos'}
+              </p>
             </div>
             <div className="relative w-full sm:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -646,7 +1014,12 @@ function CajaPageContent() {
                       <span>{movimiento.subtitulo}</span>
                       <span>Concepto: {movimiento.concepto}</span>
                       <span>Método: {movimiento.metodo}</span>
-                      <span>Fecha: {new Date(movimiento.fecha).toLocaleDateString('es-PE')}</span>
+                      <span>Fecha: {formatLimaDate(movimiento.fecha)}</span>
+                      <span>
+                        Hora de registro: {formatLimaTime(
+                          movimiento.registradoEn || movimiento.fecha
+                        )}
+                      </span>
                     </div>
                     {movimiento.observacion && (
                       <p className="text-sm text-gray-500 mt-2">{movimiento.observacion}</p>
@@ -661,6 +1034,34 @@ function CajaPageContent() {
                     >
                       {movimiento.tipo === 'ingreso' ? '+' : '-'} S/ {movimiento.monto.toFixed(2)}
                     </p>
+                    {movimiento.tipo === 'ingreso' && (
+                      <div className="mt-3 flex flex-wrap justify-start gap-2 sm:justify-end">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const pago = pagos.find((item) => item.id === movimiento.id)
+                            if (pago) cargarPagoEnFormulario(pago)
+                          }}
+                        >
+                          <Pencil className="h-4 w-4 mr-1" />
+                          Editar
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="danger"
+                          size="sm"
+                          onClick={() => {
+                            const pago = pagos.find((item) => item.id === movimiento.id)
+                            if (pago) handleDeletePago(pago)
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Anular
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

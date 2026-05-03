@@ -83,6 +83,7 @@ describe('/api/pagos', () => {
     const payload = prismaMock.pagoDeportista.create.mock.calls[0][0].data
     expect(payload.monto).toBe(150.5)
     expect(payload.observacion).toBe('pago abril')
+    expect(payload.montoEsperado).toBe(180)
   })
 
   it('creates a mensualidad with explicit covered months', async () => {
@@ -98,6 +99,7 @@ describe('/api/pagos', () => {
         fechaPago: '2026-04-30',
         mesCoberturaInicio: '2026-05',
         mesCoberturaFin: '2026-07',
+        tarifaMensual: 'regular',
         observacion: 'adelanto trimestral',
       }),
     })
@@ -108,7 +110,53 @@ describe('/api/pagos', () => {
     const payload = prismaMock.pagoDeportista.create.mock.calls[0][0].data
     expect(payload.mesCoberturaInicio).toEqual(new Date(2026, 4, 1))
     expect(payload.mesCoberturaFin).toEqual(new Date(2026, 6, 1))
+    expect(payload.montoEsperado).toBe(540)
     expect(payload.observacion).toBe('adelanto trimestral')
+  })
+
+  it('stores a partial recurring payment with custom expected amount', async () => {
+    prismaMock.pagoDeportista.create.mockResolvedValue({ id: 'pago-3b', monto: 90 })
+
+    const request = new NextRequest('http://localhost:3000/api/pagos', {
+      method: 'POST',
+      body: JSON.stringify({
+        deportistaId: 'dep-1',
+        concepto: 'mensualidad',
+        metodo: 'efectivo',
+        monto: '90',
+        montoEsperado: '180',
+        tarifaMensual: 'regular',
+        mesCoberturaInicio: '2026-05',
+        mesCoberturaFin: '2026-05',
+      }),
+    })
+
+    const response = await POST(request)
+    expect(response.status).toBe(201)
+
+    const payload = prismaMock.pagoDeportista.create.mock.calls[0][0].data
+    expect(payload.monto).toBe(90)
+    expect(payload.montoEsperado).toBe(180)
+  })
+
+  it('uses the full uniform cost as expected amount', async () => {
+    prismaMock.pagoDeportista.create.mockResolvedValue({ id: 'pago-uniforme', monto: 80 })
+
+    const request = new NextRequest('http://localhost:3000/api/pagos', {
+      method: 'POST',
+      body: JSON.stringify({
+        deportistaId: 'dep-1',
+        concepto: 'uniforme',
+        metodo: 'efectivo',
+        monto: '80',
+      }),
+    })
+
+    const response = await POST(request)
+    expect(response.status).toBe(201)
+
+    const payload = prismaMock.pagoDeportista.create.mock.calls.at(-1)?.[0].data
+    expect(payload.montoEsperado).toBe(160)
   })
 
   it('rejects mensualidad when final covered month is before initial month', async () => {
@@ -145,6 +193,7 @@ describe('/api/pagos', () => {
         fechaPago: '2026-05-03',
         mesCoberturaInicio: '2026-01',
         mesCoberturaFin: '2026-12',
+        montoEsperado: '1980',
         observacion: 'pago anual',
       }),
     })
@@ -156,6 +205,7 @@ describe('/api/pagos', () => {
     expect(payload.where).toEqual({ id: 'pago-4' })
     expect(payload.data.mesCoberturaInicio).toEqual(new Date(2026, 0, 1))
     expect(payload.data.mesCoberturaFin).toEqual(new Date(2026, 11, 1))
+    expect(payload.data.montoEsperado).toBe(1980)
   })
 
   it('deletes a payment by id', async () => {

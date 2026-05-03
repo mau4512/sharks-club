@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { inferExpectedAmount } from '@/lib/pagos-config'
 
 function parseCoverageMonth(value?: string | null) {
   if (!value) return null
@@ -51,6 +52,15 @@ export async function PATCH(
       }
     }
 
+    const montoEsperado = Number(body.montoEsperado) > 0
+      ? Number(body.montoEsperado)
+      : inferExpectedAmount({
+          concepto: body.concepto,
+          mesCoberturaInicio: body.mesCoberturaInicio,
+          mesCoberturaFin: body.mesCoberturaFin,
+          tarifaMensual: body.tarifaMensual,
+        }) || null
+
     const pago = await prisma.pagoDeportista.update({
       where: { id: params.id },
       data: {
@@ -58,6 +68,7 @@ export async function PATCH(
         concepto: body.concepto,
         metodo: body.metodo,
         monto,
+        montoEsperado,
         fechaPago: body.fechaPago ? new Date(body.fechaPago) : new Date(),
         mesCoberturaInicio,
         mesCoberturaFin,

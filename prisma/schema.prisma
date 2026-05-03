@@ -312,6 +312,7 @@ model PagoDeportista {
   concepto      String      // inscripcion, mensualidad, uniforme, otro
   metodo        String      // efectivo, transferencia, yape, plin, otro
   monto         Float
+  montoEsperado Float?
   fechaPago     DateTime    @default(now())
   mesCoberturaInicio DateTime?
   mesCoberturaFin    DateTime?

@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input'
 import { ArrowDownCircle, ArrowUpCircle, Banknote, CreditCard, Pencil, Search, Trash2, Wallet } from 'lucide-react'
 import { toast } from 'sonner'
 import { confirmDialog } from '@/components/ui/confirm-dialog'
+import { getRecurringMonthsCount, inferExpectedAmount } from '@/lib/pagos-config'
 
 interface Deportista {
   id: string
@@ -22,6 +23,7 @@ interface Pago {
   concepto: string
   metodo: string
   monto: number
+  montoEsperado?: number | null
   fechaPago: string
   createdAt?: string
   mesCoberturaInicio?: string | null
@@ -113,6 +115,8 @@ function CajaPageContent() {
     deportistaId: deportistaIdParam,
     concepto: 'mensualidad',
     metodo: 'efectivo',
+    modoPago: 'total' as 'total' | 'parcial',
+    tarifaMensual: 'regular' as 'regular' | 'hermanas',
     monto: '',
     fechaPago: new Date().toISOString().split('T')[0],
     mesCoberturaInicio: new Date().toISOString().slice(0, 7),
@@ -176,13 +180,19 @@ function CajaPageContent() {
       const coverageInicio = pago.mesCoberturaInicio?.slice(0, 7)
       const coverageFin = pago.mesCoberturaFin?.slice(0, 7)
       const coverageLabel =
-        pago.concepto === 'mensualidad' && coverageInicio
+        (pago.concepto === 'mensualidad' || pago.concepto === 'anualidad') && coverageInicio
           ? coverageInicio === coverageFin || !coverageFin
             ? `Cubre: ${coverageInicio}`
             : `Cubre: ${coverageInicio} a ${coverageFin}`
           : null
+      const paymentStatus =
+        pago.montoEsperado && pago.montoEsperado > 0
+          ? pago.monto >= pago.montoEsperado
+            ? 'Pago total'
+            : `Pago parcial (${Math.round((pago.monto / pago.montoEsperado) * 100)}%)`
+          : null
 
-      const observacion = [coverageLabel, pago.observacion].filter(Boolean).join(' · ') || null
+      const observacion = [coverageLabel, paymentStatus, pago.observacion].filter(Boolean).join(' · ') || null
 
       return {
         id: pago.id,
@@ -264,6 +274,38 @@ function CajaPageContent() {
 
   const deportistaSeleccionado = deportistas.find((deportista) => deportista.id === ingresoData.deportistaId)
 
+  const montoEsperado = useMemo(
+    () =>
+      inferExpectedAmount({
+        concepto: ingresoData.concepto,
+        mesCoberturaInicio: ingresoData.mesCoberturaInicio,
+        mesCoberturaFin: ingresoData.mesCoberturaFin,
+        tarifaMensual: ingresoData.tarifaMensual as 'regular' | 'hermanas',
+      }),
+    [ingresoData.concepto, ingresoData.mesCoberturaFin, ingresoData.mesCoberturaInicio, ingresoData.tarifaMensual]
+  )
+
+  const porcentajeCubierto = useMemo(() => {
+    const monto = Number(ingresoData.monto)
+    if (!montoEsperado || Number.isNaN(monto) || monto <= 0) return 0
+    return Math.max(0, Math.min(100, Math.round((monto / montoEsperado) * 100)))
+  }, [ingresoData.monto, montoEsperado])
+
+  useEffect(() => {
+    if (ingresoData.modoPago !== 'total') return
+    setIngresoData((prev) => ({
+      ...prev,
+      monto: String(montoEsperado),
+    }))
+  }, [
+    ingresoData.concepto,
+    ingresoData.mesCoberturaFin,
+    ingresoData.mesCoberturaInicio,
+    ingresoData.modoPago,
+    ingresoData.tarifaMensual,
+    montoEsperado,
+  ])
+
   const setCoberturaMensual = (inicio: Date, fin?: Date) => {
     const start = `${inicio.getFullYear()}-${String(inicio.getMonth() + 1).padStart(2, '0')}`
     const endDate = fin || inicio
@@ -278,11 +320,25 @@ function CajaPageContent() {
   }
 
   const cargarPagoEnFormulario = (pago: Pago) => {
+    const recurringMonths = getRecurringMonthsCount(
+      pago.mesCoberturaInicio?.slice(0, 7),
+      pago.mesCoberturaFin?.slice(0, 7) || pago.mesCoberturaInicio?.slice(0, 7)
+    )
+    const monthlyExpected =
+      pago.montoEsperado && recurringMonths > 0 ? Math.round(pago.montoEsperado / recurringMonths) : null
+
     setEditingPagoId(pago.id)
     setIngresoData({
       deportistaId: pago.deportista.id,
       concepto: pago.concepto,
       metodo: pago.metodo,
+      modoPago: pago.montoEsperado && pago.monto < pago.montoEsperado ? 'parcial' : 'total',
+      tarifaMensual:
+        pago.concepto === 'mensualidad' || pago.concepto === 'anualidad'
+          ? monthlyExpected === 165
+            ? 'hermanas'
+            : 'regular'
+          : 'regular',
       monto: String(pago.monto),
       fechaPago: pago.fechaPago.slice(0, 10),
       mesCoberturaInicio: pago.mesCoberturaInicio?.slice(0, 7) || new Date().toISOString().slice(0, 7),
@@ -297,6 +353,8 @@ function CajaPageContent() {
       deportistaId: deportistaIdParam,
       concepto: 'mensualidad',
       metodo: 'efectivo',
+      modoPago: 'total',
+      tarifaMensual: 'regular',
       monto: '',
       fechaPago: new Date().toISOString().split('T')[0],
       mesCoberturaInicio: new Date().toISOString().slice(0, 7),
@@ -308,10 +366,38 @@ function CajaPageContent() {
   const handleIngresoChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
-    setIngresoData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }))
+    const { name, value } = e.target
+
+    setIngresoData((prev) => {
+      const next = {
+        ...prev,
+        [name]: value,
+      }
+
+      if (
+        next.modoPago === 'total' &&
+        ['concepto', 'mesCoberturaInicio', 'mesCoberturaFin', 'tarifaMensual', 'modoPago'].includes(name)
+      ) {
+        next.monto = String(
+          inferExpectedAmount({
+            concepto: next.concepto,
+            mesCoberturaInicio: next.mesCoberturaInicio,
+            mesCoberturaFin: next.mesCoberturaFin,
+            tarifaMensual: next.tarifaMensual as 'regular' | 'hermanas',
+          })
+        )
+      }
+
+      if (
+        name === 'concepto' &&
+        value !== 'mensualidad' &&
+        value !== 'anualidad'
+      ) {
+        next.tarifaMensual = 'regular'
+      }
+
+      return next
+    })
   }
 
   const handleEgresoChange = (
@@ -340,7 +426,10 @@ function CajaPageContent() {
       const targetResponse = await fetch(editingPagoId ? `/api/pagos/${editingPagoId}` : '/api/pagos', {
         method: editingPagoId ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ingresoData),
+        body: JSON.stringify({
+          ...ingresoData,
+          montoEsperado,
+        }),
       })
 
       const data = await targetResponse.json()
@@ -618,6 +707,40 @@ function CajaPageContent() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de pago</label>
+                  <select
+                    name="modoPago"
+                    value={ingresoData.modoPago}
+                    onChange={handleIngresoChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
+                  >
+                    <option value="total">Pago total</option>
+                    <option value="parcial">Pago parcial</option>
+                  </select>
+                </div>
+
+                {(ingresoData.concepto === 'mensualidad' || ingresoData.concepto === 'anualidad') ? (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tarifa mensual</label>
+                    <select
+                      name="tarifaMensual"
+                      value={ingresoData.tarifaMensual}
+                      onChange={handleIngresoChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
+                    >
+                      <option value="regular">Regular - S/ 180</option>
+                      <option value="hermanas">Hermanas - S/ 165</option>
+                    </select>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600">
+                    Precio fijo sugerido para este concepto.
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Monto (S/)"
                   name="monto"
@@ -697,6 +820,22 @@ function CajaPageContent() {
                     />
                   </div>
                 </>
+              )}
+
+              {montoEsperado > 0 && (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+                  <p>
+                    Monto esperado: <span className="font-semibold">S/ {montoEsperado.toFixed(2)}</span>
+                  </p>
+                  <p>
+                    Cobertura del pago: <span className="font-semibold">{porcentajeCubierto}%</span>
+                  </p>
+                  {Number(ingresoData.monto || 0) < montoEsperado && (
+                    <p>
+                      Saldo pendiente: <span className="font-semibold">S/ {(montoEsperado - Number(ingresoData.monto || 0)).toFixed(2)}</span>
+                    </p>
+                  )}
+                </div>
               )}
 
               <div>
@@ -806,6 +945,40 @@ function CajaPageContent() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de pago</label>
+                  <select
+                    name="modoPago"
+                    value={ingresoData.modoPago}
+                    onChange={handleIngresoChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
+                  >
+                    <option value="total">Pago total</option>
+                    <option value="parcial">Pago parcial</option>
+                  </select>
+                </div>
+
+                {(ingresoData.concepto === 'mensualidad' || ingresoData.concepto === 'anualidad') ? (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tarifa mensual</label>
+                    <select
+                      name="tarifaMensual"
+                      value={ingresoData.tarifaMensual}
+                      onChange={handleIngresoChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
+                    >
+                      <option value="regular">Regular - S/ 180</option>
+                      <option value="hermanas">Hermanas - S/ 165</option>
+                    </select>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600">
+                    Precio fijo sugerido para este concepto.
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Monto (S/)"
                   name="monto"
@@ -828,23 +1001,78 @@ function CajaPageContent() {
               </div>
 
               {(ingresoData.concepto === 'mensualidad' || ingresoData.concepto === 'anualidad') && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input
-                    label="Mes que cancela desde"
-                    name="mesCoberturaInicio"
-                    type="month"
-                    value={ingresoData.mesCoberturaInicio}
-                    onChange={handleIngresoChange}
-                    required
-                  />
-                  <Input
-                    label="Mes que cancela hasta"
-                    name="mesCoberturaFin"
-                    type="month"
-                    value={ingresoData.mesCoberturaFin}
-                    onChange={handleIngresoChange}
-                    required
-                  />
+                <>
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <p className="text-sm font-medium text-gray-800">Atajos de periodo</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCoberturaMensual(new Date(new Date().getFullYear(), new Date().getMonth(), 1))}
+                      >
+                        Mes actual
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setCoberturaMensual(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1))
+                        }
+                      >
+                        Mes siguiente
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setCoberturaMensual(
+                            new Date(new Date().getFullYear(), 0, 1),
+                            new Date(new Date().getFullYear(), 11, 1)
+                          )
+                        }
+                      >
+                        Anual
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Input
+                      label="Mes que cancela desde"
+                      name="mesCoberturaInicio"
+                      type="month"
+                      value={ingresoData.mesCoberturaInicio}
+                      onChange={handleIngresoChange}
+                      required
+                    />
+                    <Input
+                      label="Mes que cancela hasta"
+                      name="mesCoberturaFin"
+                      type="month"
+                      value={ingresoData.mesCoberturaFin}
+                      onChange={handleIngresoChange}
+                      required
+                    />
+                  </div>
+                </>
+              )}
+
+              {montoEsperado > 0 && (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+                  <p>
+                    Monto esperado: <span className="font-semibold">S/ {montoEsperado.toFixed(2)}</span>
+                  </p>
+                  <p>
+                    Cobertura del pago: <span className="font-semibold">{porcentajeCubierto}%</span>
+                  </p>
+                  {Number(ingresoData.monto || 0) < montoEsperado && (
+                    <p>
+                      Saldo pendiente: <span className="font-semibold">S/ {(montoEsperado - Number(ingresoData.monto || 0)).toFixed(2)}</span>
+                    </p>
+                  )}
                 </div>
               )}
 

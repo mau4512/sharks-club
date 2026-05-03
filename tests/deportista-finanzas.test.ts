@@ -9,6 +9,8 @@ describe('deportista finanzas', () => {
     expect(status.mensualidadPendiente).toBe(true)
     expect(status.uniformePendiente).toBe(true)
     expect(status.tieneDeuda).toBe(true)
+    expect(status.uniformesPendientes).toBe(2)
+    expect(status.etiquetas).toContain('Debe 2 uniformes')
     expect(status.cicloUniforme).toEqual({ inicio: 2026, fin: 2027 })
   })
 
@@ -24,6 +26,8 @@ describe('deportista finanzas', () => {
           deportistaId: 'dep-1',
           concepto: 'uniforme',
           fechaPago: new Date('2026-02-15T10:00:00.000Z'),
+          monto: 160,
+          montoEsperado: 160,
         },
       ],
       new Date('2026-04-29T12:00:00.000Z')
@@ -33,6 +37,25 @@ describe('deportista finanzas', () => {
     expect(status.uniformePendiente).toBe(false)
     expect(status.tieneDeuda).toBe(false)
     expect(status.etiquetas).toEqual([])
+  })
+
+  it('marca un uniforme pendiente cuando solo abonaron un juego', () => {
+    const status = buildDeudaStatus(
+      [
+        {
+          deportistaId: 'dep-1',
+          concepto: 'uniforme',
+          fechaPago: new Date('2026-04-05T10:00:00.000Z'),
+          monto: 80,
+          montoEsperado: 160,
+        },
+      ],
+      new Date('2026-04-29T12:00:00.000Z')
+    )
+
+    expect(status.uniformePendiente).toBe(true)
+    expect(status.uniformesPendientes).toBe(1)
+    expect(status.etiquetas).toContain('Debe 1 uniforme (50% cubierto)')
   })
 
   it('cuenta meses adeudados desde la fecha de alta del deportista', () => {
@@ -75,6 +98,27 @@ describe('deportista finanzas', () => {
 
     expect(status.mensualidadPendiente).toBe(false)
     expect(status.mesesDeudaMensualidad).toBe(0)
-    expect(status.etiquetas).toEqual(['Uniforme pendiente'])
+    expect(status.etiquetas).toEqual(['Debe 2 uniformes'])
+  })
+
+  it('muestra porcentaje cubierto cuando solo hubo un abono parcial del mes', () => {
+    const status = buildDeudaStatusDesdeAlta(
+      [
+        {
+          deportistaId: 'dep-1',
+          concepto: 'mensualidad',
+          fechaPago: new Date('2026-05-03T10:00:00.000Z'),
+          monto: 90,
+          montoEsperado: 180,
+          mesCoberturaInicio: new Date('2026-05-01T00:00:00.000Z'),
+          mesCoberturaFin: new Date('2026-05-01T00:00:00.000Z'),
+        },
+      ],
+      new Date('2026-05-01T12:00:00.000Z'),
+      new Date('2026-05-29T12:00:00.000Z')
+    )
+
+    expect(status.mensualidadPendiente).toBe(true)
+    expect(status.etiquetas).toContain('mayo de 2026 pendiente (50% cubierto)')
   })
 })

@@ -117,6 +117,7 @@ function CajaPageContent() {
     metodo: 'efectivo',
     modoPago: 'total' as 'total' | 'parcial',
     tarifaMensual: 'regular' as TarifaMensual,
+    montoEspecialComoTotal: false,
     monto: '',
     fechaPago: new Date().toISOString().split('T')[0],
     mesCoberturaInicio: new Date().toISOString().slice(0, 7),
@@ -274,7 +275,7 @@ function CajaPageContent() {
 
   const deportistaSeleccionado = deportistas.find((deportista) => deportista.id === ingresoData.deportistaId)
 
-  const montoEsperado = useMemo(
+  const montoEsperadoSugerido = useMemo(
     () =>
       inferExpectedAmount({
         concepto: ingresoData.concepto,
@@ -285,6 +286,20 @@ function CajaPageContent() {
     [ingresoData.concepto, ingresoData.mesCoberturaFin, ingresoData.mesCoberturaInicio, ingresoData.tarifaMensual]
   )
 
+  const montoEsperado = useMemo(() => {
+    const montoIngresado = Number(ingresoData.monto)
+    if (
+      ingresoData.modoPago === 'total' &&
+      ingresoData.montoEspecialComoTotal &&
+      !Number.isNaN(montoIngresado) &&
+      montoIngresado > 0
+    ) {
+      return montoIngresado
+    }
+
+    return montoEsperadoSugerido
+  }, [ingresoData.modoPago, ingresoData.monto, ingresoData.montoEspecialComoTotal, montoEsperadoSugerido])
+
   const porcentajeCubierto = useMemo(() => {
     const monto = Number(ingresoData.monto)
     if (!montoEsperado || Number.isNaN(monto) || monto <= 0) return 0
@@ -292,7 +307,7 @@ function CajaPageContent() {
   }, [ingresoData.monto, montoEsperado])
 
   useEffect(() => {
-    if (ingresoData.modoPago !== 'total') return
+    if (ingresoData.modoPago !== 'total' || ingresoData.montoEspecialComoTotal) return
     setIngresoData((prev) => ({
       ...prev,
       monto: String(montoEsperado),
@@ -301,6 +316,7 @@ function CajaPageContent() {
     ingresoData.concepto,
     ingresoData.mesCoberturaFin,
     ingresoData.mesCoberturaInicio,
+    ingresoData.montoEspecialComoTotal,
     ingresoData.modoPago,
     ingresoData.tarifaMensual,
     montoEsperado,
@@ -328,23 +344,35 @@ function CajaPageContent() {
       pago.montoEsperado && recurringMonths > 0 ? Math.round(pago.montoEsperado / recurringMonths) : null
 
     setEditingPagoId(pago.id)
+    const tarifaMensual =
+      pago.concepto === 'mensualidad' || pago.concepto === 'anualidad'
+        ? monthlyExpected === 165
+          ? 'hermanas'
+          : monthlyExpected === 120
+            ? 'finSemana'
+            : monthlyExpected === 110
+              ? 'finSemanaHermanas'
+              : monthlyExpected === 60
+                ? 'finSemana4'
+                : 'regular'
+        : 'regular'
+    const montoEsperadoBase = inferExpectedAmount({
+      concepto: pago.concepto,
+      mesCoberturaInicio: pago.mesCoberturaInicio?.slice(0, 7),
+      mesCoberturaFin: pago.mesCoberturaFin?.slice(0, 7) || pago.mesCoberturaInicio?.slice(0, 7),
+      tarifaMensual,
+    })
+
     setIngresoData({
       deportistaId: pago.deportista.id,
       concepto: pago.concepto,
       metodo: pago.metodo,
       modoPago: pago.montoEsperado && pago.monto < pago.montoEsperado ? 'parcial' : 'total',
-      tarifaMensual:
-        pago.concepto === 'mensualidad' || pago.concepto === 'anualidad'
-          ? monthlyExpected === 165
-            ? 'hermanas'
-            : monthlyExpected === 120
-              ? 'finSemana'
-              : monthlyExpected === 110
-                ? 'finSemanaHermanas'
-                : monthlyExpected === 60
-                  ? 'finSemana4'
-                  : 'regular'
-          : 'regular',
+      tarifaMensual,
+      montoEspecialComoTotal:
+        Boolean(pago.montoEsperado) &&
+        pago.monto === pago.montoEsperado &&
+        pago.montoEsperado !== montoEsperadoBase,
       monto: String(pago.monto),
       fechaPago: pago.fechaPago.slice(0, 10),
       mesCoberturaInicio: pago.mesCoberturaInicio?.slice(0, 7) || new Date().toISOString().slice(0, 7),
@@ -361,6 +389,7 @@ function CajaPageContent() {
       metodo: 'efectivo',
       modoPago: 'total',
       tarifaMensual: 'regular',
+      montoEspecialComoTotal: false,
       monto: '',
       fechaPago: new Date().toISOString().split('T')[0],
       mesCoberturaInicio: new Date().toISOString().slice(0, 7),
@@ -373,15 +402,18 @@ function CajaPageContent() {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target
+    const isCheckbox = e.target instanceof HTMLInputElement && e.target.type === 'checkbox'
+    const nextValue = isCheckbox ? e.target.checked : value
 
     setIngresoData((prev) => {
       const next = {
         ...prev,
-        [name]: value,
+        [name]: nextValue,
       }
 
       if (
         next.modoPago === 'total' &&
+        !next.montoEspecialComoTotal &&
         ['concepto', 'mesCoberturaInicio', 'mesCoberturaFin', 'tarifaMensual', 'modoPago'].includes(name)
       ) {
         next.monto = String(
@@ -400,6 +432,10 @@ function CajaPageContent() {
         value !== 'anualidad'
       ) {
         next.tarifaMensual = 'regular'
+      }
+
+      if (name === 'modoPago' && value === 'parcial') {
+        next.montoEspecialComoTotal = false
       }
 
       return next
@@ -749,6 +785,21 @@ function CajaPageContent() {
                 )}
               </div>
 
+              {ingresoData.modoPago === 'total' && (
+                <label className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  <input
+                    type="checkbox"
+                    name="montoEspecialComoTotal"
+                    checked={ingresoData.montoEspecialComoTotal}
+                    onChange={handleIngresoChange}
+                    className="mt-1 h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500"
+                  />
+                  <span>
+                    Marcar como pago completo con monto especial. Úsalo para descuentos autorizados sin dejar deuda.
+                  </span>
+                </label>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Monto (S/)"
@@ -989,6 +1040,21 @@ function CajaPageContent() {
                   </div>
                 )}
               </div>
+
+              {ingresoData.modoPago === 'total' && (
+                <label className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  <input
+                    type="checkbox"
+                    name="montoEspecialComoTotal"
+                    checked={ingresoData.montoEspecialComoTotal}
+                    onChange={handleIngresoChange}
+                    className="mt-1 h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500"
+                  />
+                  <span>
+                    Marcar como pago completo con monto especial. Úsalo para descuentos autorizados sin dejar deuda.
+                  </span>
+                </label>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input

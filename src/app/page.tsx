@@ -31,6 +31,15 @@ const competencias = [
 
 export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [plantelActivo, setPlantelActivo] = useState(0)
+
+  const nextPlantel = () => {
+    setPlantelActivo((current) => (current + 1) % planteles.length)
+  }
+
+  const prevPlantel = () => {
+    setPlantelActivo((current) => (current - 1 + planteles.length) % planteles.length)
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -330,7 +339,82 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+          <div className="xl:hidden">
+            <div className="overflow-hidden">
+              <div
+                className="flex transition-transform duration-500 ease-out"
+                style={{ transform: `translateX(-${plantelActivo * 100}%)` }}
+              >
+                {planteles.map((plantel) => (
+                  <div key={plantel.nombre} className="w-full flex-shrink-0 px-1">
+                    <Card
+                      className={`border-2 transition-all ${
+                        plantel.destacado ? 'border-primary-500 shadow-xl' : 'hover:border-primary-300'
+                      }`}
+                    >
+                      {plantel.destacado && (
+                        <div className="rounded-t-lg bg-primary-600 py-2 text-center text-sm font-semibold text-white">
+                          PLANTEL DE ALTA COMPETENCIA
+                        </div>
+                      )}
+                      <CardContent className="pt-6">
+                        <h3 className="text-2xl font-bold text-gray-900">{plantel.nombre}</h3>
+                        <div className="mt-4 text-3xl font-bold text-primary-600">{plantel.horario}</div>
+                        <div className="mt-2 text-sm font-medium uppercase tracking-wide text-gray-500">
+                          {plantel.frecuencia}
+                        </div>
+
+                        <ul className="mb-8 mt-6 space-y-3">
+                          <li className="flex items-start">
+                            <CheckCircle className="mr-2 mt-0.5 h-5 w-5 flex-shrink-0 text-green-600" />
+                            <span className="text-gray-600">Planificación adaptada a la categoría y etapa competitiva.</span>
+                          </li>
+                          <li className="flex items-start">
+                            <CheckCircle className="mr-2 mt-0.5 h-5 w-5 flex-shrink-0 text-green-600" />
+                            <span className="text-gray-600">Trabajo técnico, táctico y físico según el grupo asignado.</span>
+                          </li>
+                          <li className="flex items-start">
+                            <CheckCircle className="mr-2 mt-0.5 h-5 w-5 flex-shrink-0 text-green-600" />
+                            <span className="text-gray-600">Seguimiento del club para asistencia, pagos y progresión deportiva.</span>
+                          </li>
+                        </ul>
+
+                        <Link href="#contacto">
+                          <Button className="w-full" variant={plantel.destacado ? 'primary' : 'outline'}>
+                            Solicitar cupo
+                          </Button>
+                        </Link>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-between gap-4">
+              <Button type="button" variant="outline" onClick={prevPlantel}>
+                Anterior
+              </Button>
+              <div className="flex items-center gap-2">
+                {planteles.map((plantel, index) => (
+                  <button
+                    key={`${plantel.nombre}-dot`}
+                    type="button"
+                    aria-label={`Ir a ${plantel.nombre}`}
+                    onClick={() => setPlantelActivo(index)}
+                    className={`h-2.5 rounded-full transition-all ${
+                      plantelActivo === index ? 'w-8 bg-primary-600' : 'w-2.5 bg-gray-300'
+                    }`}
+                  />
+                ))}
+              </div>
+              <Button type="button" variant="outline" onClick={nextPlantel}>
+                Siguiente
+              </Button>
+            </div>
+          </div>
+
+          <div className="hidden xl:grid xl:grid-cols-4 gap-6">
             {planteles.map((plantel) => (
               <Card
                 key={plantel.nombre}

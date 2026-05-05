@@ -401,9 +401,12 @@ function CajaPageContent() {
   const handleIngresoChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
-    const { name, value } = e.target
-    const isCheckbox = e.target instanceof HTMLInputElement && e.target.type === 'checkbox'
-    const nextValue = isCheckbox ? e.target.checked : value
+    const target = e.target
+    const { name, value } = target
+    const nextValue =
+      target instanceof HTMLInputElement && target.type === 'checkbox'
+        ? target.checked
+        : value
 
     setIngresoData((prev) => {
       const next = {

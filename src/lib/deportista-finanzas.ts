@@ -86,6 +86,13 @@ export function buildDeudaStatus(pagos: PagoLite[], now = new Date()) {
   })
 
   const montoUniformePagado = pagosUniforme.reduce((acc, pago) => {
+    if (
+      pago.monto != null &&
+      pago.montoEsperado != null &&
+      pago.monto + 0.01 >= pago.montoEsperado
+    ) {
+      return acc + DEFAULT_UNIFORM_EXPECTED
+    }
     if (pago.monto != null) return acc + pago.monto
     if (pago.montoEsperado != null) return acc + pago.montoEsperado
     return acc + DEFAULT_UNIFORM_UNIT

@@ -58,6 +58,26 @@ describe('deportista finanzas', () => {
     expect(status.etiquetas).toContain('Debe 1 uniforme (50% cubierto)')
   })
 
+  it('respeta un uniforme con descuento si fue registrado como pago completo', () => {
+    const status = buildDeudaStatus(
+      [
+        {
+          deportistaId: 'dep-1',
+          concepto: 'uniforme',
+          fechaPago: new Date('2026-04-05T10:00:00.000Z'),
+          monto: 140,
+          montoEsperado: 140,
+        },
+      ],
+      new Date('2026-04-29T12:00:00.000Z')
+    )
+
+    expect(status.uniformePendiente).toBe(false)
+    expect(status.uniformesPendientes).toBe(0)
+    expect(status.etiquetas).not.toContain('Debe 1 uniforme')
+    expect(status.etiquetas).not.toContain('Debe 2 uniformes')
+  })
+
   it('cuenta meses adeudados desde la fecha de alta del deportista', () => {
     const status = buildDeudaStatusDesdeAlta(
       [

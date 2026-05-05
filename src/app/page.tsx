@@ -9,6 +9,10 @@ import { Card, CardContent } from '@/components/ui/Card'
 import MatriculaForm from '@/components/MatriculaForm'
 
 const planteles = [
+  { nombre: 'U7-U9 Mixto', frecuencia: '3 sesiones por semana', horario: '16:30 hrs' },
+  { nombre: 'U11 Damas', frecuencia: '3 sesiones por semana', horario: '17:30 hrs' },
+  { nombre: 'U11 Varones', frecuencia: '3 sesiones por semana', horario: '17:30 hrs' },
+  { nombre: 'Minibasket Fines de Semana', frecuencia: 'Sesión sabatina', horario: '8:00 - 9:00 hrs' },
   { nombre: 'U13 Varones', frecuencia: '3 días por semana', horario: '16:30 hrs' },
   { nombre: 'U13 Damas', frecuencia: '3 días por semana', horario: '17:30 hrs' },
   { nombre: 'U15 Damas', frecuencia: '5 días por semana', horario: '17:30 hrs' },

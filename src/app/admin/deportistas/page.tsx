@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import Link from 'next/link'
 import { Plus, Search, Edit, Trash2, UserCircle, Loader2, Eye, Wallet } from 'lucide-react'
-import { formatDate } from '@/lib/utils'
+import { formatOptionalDate, formatOptionalText } from '@/lib/utils'
 import { toast } from 'sonner'
 import { confirmDialog } from '@/components/ui/confirm-dialog'
 
@@ -13,8 +13,8 @@ interface Deportista {
   id: string
   nombre: string
   apellidos: string
-  documentoIdentidad: string
-  fechaNacimiento: string
+  documentoIdentidad?: string | null
+  fechaNacimiento?: string | null
   email: string
   celular?: string
   posicion?: string
@@ -90,7 +90,7 @@ export default function DeportistasPage() {
   const deportistasFiltrados = deportistas.filter(d =>
     d.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
     d.apellidos.toLowerCase().includes(busqueda.toLowerCase()) ||
-    d.documentoIdentidad.includes(busqueda)
+    (d.documentoIdentidad || '').includes(busqueda)
   )
 
   // Mostrar estado de carga
@@ -183,8 +183,8 @@ export default function DeportistasPage() {
                         {deportista.nombre} {deportista.apellidos}
                       </h3>
                       <div className="mt-1 flex flex-col gap-1 text-sm text-gray-600 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-                        <span>ID: {deportista.documentoIdentidad}</span>
-                        <span>Nacimiento: {formatDate(deportista.fechaNacimiento)}</span>
+                        <span>ID: {formatOptionalText(deportista.documentoIdentidad)}</span>
+                        <span>Nacimiento: {formatOptionalDate(deportista.fechaNacimiento)}</span>
                         {deportista.posicion && (
                           <>
                             <span>{deportista.posicion}</span>

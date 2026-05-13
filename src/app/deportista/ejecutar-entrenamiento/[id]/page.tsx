@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input'
 import { ArrowLeft, Clock, CheckCircle, Target, Save } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import { getPizarrasEjercicio, type PizarraEjercicio } from '@/lib/ejercicio-pizarras'
 
 interface PuntoTiro {
   posicion: string
@@ -31,9 +32,10 @@ interface Ejercicio {
   puntosTiro?: PuntoTiro[]
   tipoRecurso: string
   pizarra?: {
-    tipo: string
+    tipo: 'media' | 'completa'
     data: string
   }
+  pizarras?: PizarraEjercicio[]
   videoUrl?: string
 }
 
@@ -325,16 +327,22 @@ export default function EjecutarEntrenamientoPage() {
                 </div>
 
                 {/* Pizarra táctica */}
-                {ejercicio.tipoRecurso === 'pizarra' && ejercicio.pizarra && (
+                {ejercicio.tipoRecurso === 'pizarra' && getPizarrasEjercicio(ejercicio).length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">
-                      📋 Pizarra: {ejercicio.pizarra.tipo === 'media' ? 'Media Cancha' : 'Cancha Completa'}
-                    </p>
-                    <img
-                      src={ejercicio.pizarra.data}
-                      alt="Pizarra táctica"
-                      className="border border-gray-300 rounded max-w-full h-auto"
-                    />
+                    <div className="space-y-4">
+                      {getPizarrasEjercicio(ejercicio).map((pizarra, idx) => (
+                        <div key={`${ejercicio.id}-board-${idx}`}>
+                          <p className="text-sm font-medium text-gray-700 mb-2">
+                            📋 Pizarra {idx + 1}: {pizarra.tipo === 'media' ? 'Media Cancha' : 'Cancha Completa'}
+                          </p>
+                          <img
+                            src={pizarra.data}
+                            alt={`Pizarra táctica ${idx + 1}`}
+                            className="border border-gray-300 rounded max-w-full h-auto"
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 

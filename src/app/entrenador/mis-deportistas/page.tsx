@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import Link from 'next/link'
-import { ArrowLeft, User, Calendar, TrendingUp, Mail, Phone } from 'lucide-react'
+import { ArrowLeft, User, Calendar, TrendingUp, Mail, Phone, Plus } from 'lucide-react'
 
 export default function MisDeportistasPage() {
   const router = useRouter()
@@ -72,8 +72,19 @@ export default function MisDeportistasPage() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver al Dashboard
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900">Mis Deportistas</h1>
-          <p className="text-gray-600 mt-1">{deportistas.length} deportistas a tu cargo</p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Mis Deportistas</h1>
+              <p className="text-gray-600 mt-1">{deportistas.length} deportistas a tu cargo</p>
+            </div>
+            <Link
+              href="/entrenador/mis-deportistas/nuevo"
+              className="inline-flex items-center justify-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Agregar Deportista
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -83,6 +94,13 @@ export default function MisDeportistasPage() {
             <CardContent className="py-12 text-center">
               <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600">No tienes deportistas asignados aún</p>
+              <Link
+                href="/entrenador/mis-deportistas/nuevo"
+                className="mt-4 inline-flex items-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Agregar primer deportista
+              </Link>
             </CardContent>
           </Card>
         ) : (
@@ -105,12 +123,12 @@ export default function MisDeportistasPage() {
                 <CardContent className="space-y-3">
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Mail className="h-4 w-4" />
-                    {deportista.email}
+                    {deportista.email || 'Email pendiente'}
                   </div>
-                  {deportista.telefono && (
+                  {(deportista.celular || deportista.telefonoApoderado) && (
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Phone className="h-4 w-4" />
-                      {deportista.telefono}
+                      {deportista.celular || deportista.telefonoApoderado}
                     </div>
                   )}
                   <div className="flex items-center gap-2 text-sm text-gray-600">

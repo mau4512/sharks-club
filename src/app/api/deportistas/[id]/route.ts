@@ -82,16 +82,36 @@ export async function PUT(
     // Actualizar otros campos si están presentes
     if (body.nombre !== undefined) updateData.nombre = body.nombre
     if (body.apellidos !== undefined) updateData.apellidos = body.apellidos
-    if (body.documentoIdentidad !== undefined) updateData.documentoIdentidad = body.documentoIdentidad
+    if (body.documentoIdentidad !== undefined) {
+      updateData.documentoIdentidad =
+        typeof body.documentoIdentidad === 'string' && body.documentoIdentidad.trim()
+          ? body.documentoIdentidad.trim()
+          : null
+    }
     if (body.email !== undefined) {
       updateData.email = typeof body.email === 'string' && body.email.trim()
         ? body.email.trim().toLowerCase()
         : null
     }
     if ('celular' in body) updateData.celular = body.celular || null
-    if (body.nombreApoderado !== undefined) updateData.nombreApoderado = body.nombreApoderado
-    if (body.telefonoApoderado !== undefined) updateData.telefonoApoderado = body.telefonoApoderado
-    if (body.fechaNacimiento !== undefined) updateData.fechaNacimiento = new Date(body.fechaNacimiento)
+    if (body.nombreApoderado !== undefined) {
+      updateData.nombreApoderado =
+        typeof body.nombreApoderado === 'string' && body.nombreApoderado.trim()
+          ? body.nombreApoderado.trim()
+          : null
+    }
+    if (body.telefonoApoderado !== undefined) {
+      updateData.telefonoApoderado =
+        typeof body.telefonoApoderado === 'string' && body.telefonoApoderado.trim()
+          ? body.telefonoApoderado.trim()
+          : null
+    }
+    if (body.fechaNacimiento !== undefined) {
+      updateData.fechaNacimiento =
+        typeof body.fechaNacimiento === 'string' && body.fechaNacimiento.trim()
+          ? new Date(body.fechaNacimiento)
+          : null
+    }
     if ('altura' in body) updateData.altura = body.altura ? parseFloat(body.altura) : null
     if ('peso' in body) updateData.peso = body.peso ? parseFloat(body.peso) : null
     if ('posicion' in body) updateData.posicion = body.posicion || null

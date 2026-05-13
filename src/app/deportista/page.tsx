@@ -8,6 +8,23 @@ import { Users, Calendar, TrendingUp, LogOut, User, Trophy, Camera, CheckCircle,
 import Link from 'next/link'
 import Image from 'next/image'
 import { toast } from 'sonner'
+import { getPizarrasEjercicio, type PizarraEjercicio } from '@/lib/ejercicio-pizarras'
+
+interface EjercicioPlan {
+  id: string
+  titulo: string
+  descripcion?: string
+  duracion: number
+  meta?: {
+    cantidad?: number
+    unidad?: string
+    tipoTiro?: string
+  }
+  tipoRecurso?: string
+  pizarra?: PizarraEjercicio
+  pizarras?: PizarraEjercicio[]
+  videoUrl?: string
+}
 
 export default function DeportistaDashboard() {
   const router = useRouter()
@@ -460,16 +477,22 @@ export default function DeportistaDashboard() {
                                       </div>
 
                                       {/* Pizarra táctica */}
-                                      {ejercicio.tipoRecurso === 'pizarra' && ejercicio.pizarra && (
+                                      {ejercicio.tipoRecurso === 'pizarra' && getPizarrasEjercicio(ejercicio as EjercicioPlan).length > 0 && (
                                         <div className="mt-3">
-                                          <p className="text-xs font-medium text-gray-700 mb-2">
-                                            📋 Pizarra: {ejercicio.pizarra.tipo === 'media' ? 'Media Cancha' : 'Cancha Completa'}
-                                          </p>
-                                          <img
-                                            src={ejercicio.pizarra.data}
-                                            alt="Pizarra táctica"
-                                            className="border border-gray-300 rounded max-w-full h-auto"
-                                          />
+                                          <div className="space-y-3">
+                                            {getPizarrasEjercicio(ejercicio as EjercicioPlan).map((pizarra, idx) => (
+                                              <div key={`${ejercicio.id}-pizarra-${idx}`}>
+                                                <p className="text-xs font-medium text-gray-700 mb-2">
+                                                  📋 Pizarra {idx + 1}: {pizarra.tipo === 'media' ? 'Media Cancha' : 'Cancha Completa'}
+                                                </p>
+                                                <img
+                                                  src={pizarra.data}
+                                                  alt={`Pizarra táctica ${idx + 1}`}
+                                                  className="border border-gray-300 rounded max-w-full h-auto"
+                                                />
+                                              </div>
+                                            ))}
+                                          </div>
                                         </div>
                                       )}
 

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import Link from 'next/link'
-import { Users, Calendar, ClipboardCheck, LogOut, Activity } from 'lucide-react'
+import { Users, Calendar, ClipboardCheck, LogOut, Activity, ClipboardList } from 'lucide-react'
 
 export default function EntrenadorDashboard() {
   const router = useRouter()
@@ -113,7 +113,7 @@ export default function EntrenadorDashboard() {
             <h2 className="text-xl font-semibold text-gray-900">Acciones Rápidas</h2>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
               <Link
                 href="/entrenador/entrenamientos"
                 className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition text-center group"
@@ -147,7 +147,16 @@ export default function EntrenadorDashboard() {
               >
                 <Users className="h-12 w-12 text-gray-400 group-hover:text-primary-600 mx-auto mb-3" />
                 <p className="font-medium text-gray-900 mb-2">Mis Deportistas</p>
-                <p className="text-sm text-gray-600">Ingresar al listado completo de deportistas</p>
+                <p className="text-sm text-gray-600">Ver tu listado completo y agregar nuevos deportistas</p>
+              </Link>
+
+              <Link
+                href="/entrenador/reportes"
+                className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition text-center group"
+              >
+                <ClipboardList className="h-12 w-12 text-gray-400 group-hover:text-primary-600 mx-auto mb-3" />
+                <p className="font-medium text-gray-900 mb-2">Reportes</p>
+                <p className="text-sm text-gray-600">Registrar cómo se desarrolló cada práctica del mes</p>
               </Link>
             </div>
           </CardContent>

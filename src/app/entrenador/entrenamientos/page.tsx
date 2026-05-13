@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { ArrowLeft, Plus, Trash2, Save, Clipboard, Edit, Calendar, Clock, BookOpen } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Save, Clipboard, Edit, Calendar, Clock, BookOpen, FileText } from 'lucide-react'
 import Link from 'next/link'
 import PizarraTactica from '@/components/PizarraTactica'
 import SelectorEjerciciosBiblioteca from '@/components/SelectorEjerciciosBiblioteca'
+import { getPizarrasEjercicio, type PizarraEjercicio } from '@/lib/ejercicio-pizarras'
 import { toast } from 'sonner'
 import { confirmDialog } from '@/components/ui/confirm-dialog'
 
@@ -35,6 +36,7 @@ interface Ejercicio {
     tipo: 'media' | 'completa'
     data: string
   }
+  pizarras?: PizarraEjercicio[]
   videoUrl?: string
 }
 
@@ -74,8 +76,7 @@ export default function PrepararEntrenamientoPage() {
     usarPuntosTiro: false,
     puntosTiro: [] as Array<{posicion: string, cantidad: number, amboLados: boolean}>,
     tipoRecurso: 'ninguno' as 'pizarra' | 'video' | 'ninguno',
-    tipoPizarra: 'media' as 'media' | 'completa',
-    pizarraData: '',
+    pizarras: [] as Array<{ id: string; tipo: 'media' | 'completa'; data: string }>,
     videoFile: null as File | null
   })
 
@@ -134,6 +135,35 @@ export default function PrepararEntrenamientoPage() {
     }
   }
 
+  const agregarPizarraAlEjercicio = () => {
+    setNuevoEjercicio({
+      ...nuevoEjercicio,
+      pizarras: [
+        ...nuevoEjercicio.pizarras,
+        { id: `${Date.now()}-${nuevoEjercicio.pizarras.length}`, tipo: 'media', data: '' },
+      ],
+    })
+  }
+
+  const actualizarPizarraEjercicio = (
+    pizarraId: string,
+    changes: Partial<{ tipo: 'media' | 'completa'; data: string }>
+  ) => {
+    setNuevoEjercicio({
+      ...nuevoEjercicio,
+      pizarras: nuevoEjercicio.pizarras.map((pizarra) =>
+        pizarra.id === pizarraId ? { ...pizarra, ...changes } : pizarra
+      ),
+    })
+  }
+
+  const eliminarPizarraDelEjercicio = (pizarraId: string) => {
+    setNuevoEjercicio({
+      ...nuevoEjercicio,
+      pizarras: nuevoEjercicio.pizarras.filter((pizarra) => pizarra.id !== pizarraId),
+    })
+  }
+
   const agregarEjercicio = async () => {
     if (!nuevoEjercicio.titulo.trim()) {
       toast.error('El título del ejercicio es obligatorio')
@@ -162,10 +192,14 @@ export default function PrepararEntrenamientoPage() {
     }
 
     // Agregar datos según el tipo de recurso
-    if (nuevoEjercicio.tipoRecurso === 'pizarra' && nuevoEjercicio.pizarraData) {
-      ejercicio.pizarra = {
-        tipo: nuevoEjercicio.tipoPizarra,
-        data: nuevoEjercicio.pizarraData
+    if (nuevoEjercicio.tipoRecurso === 'pizarra') {
+      const pizarrasValidas = nuevoEjercicio.pizarras
+        .filter((pizarra) => pizarra.data)
+        .map(({ tipo, data }) => ({ tipo, data }))
+
+      if (pizarrasValidas.length > 0) {
+        ejercicio.pizarras = pizarrasValidas
+        ejercicio.pizarra = pizarrasValidas[0]
       }
     } else if (nuevoEjercicio.tipoRecurso === 'video' && nuevoEjercicio.videoFile) {
       // Aquí podrías subir el video a un servidor
@@ -213,8 +247,7 @@ export default function PrepararEntrenamientoPage() {
       usarPuntosTiro: false,
       puntosTiro: [],
       tipoRecurso: 'ninguno',
-      tipoPizarra: 'media',
-      pizarraData: '',
+      pizarras: [],
       videoFile: null
     })
     setMostrarFormulario(false)
@@ -561,16 +594,25 @@ export default function PrepararEntrenamientoPage() {
                             )}
 
                             {/* Pizarra */}
-                            {ejercicio.tipoRecurso === 'pizarra' && ejercicio.pizarra && (
+                            {ejercicio.tipoRecurso === 'pizarra' && getPizarrasEjercicio(ejercicio).length > 0 && (
                               <div className="mt-3 mb-2">
-                                <p className="text-xs font-medium text-gray-600 mb-1">
-                                  Pizarra: {ejercicio.pizarra.tipo === 'media' ? 'Media Cancha' : 'Cancha Completa'}
+                                <p className="text-xs font-medium text-gray-600 mb-2">
+                                  Pizarras: {getPizarrasEjercicio(ejercicio).length}
                                 </p>
-                                <img
-                                  src={ejercicio.pizarra.data}
-                                  alt="Pizarra táctica"
-                                  className="border border-gray-300 rounded max-w-full h-auto"
-                                />
+                                <div className="space-y-3">
+                                  {getPizarrasEjercicio(ejercicio).map((pizarra, idx) => (
+                                    <div key={`${ejercicio.id}-preview-${idx}`}>
+                                      <p className="text-xs font-medium text-gray-600 mb-1">
+                                        Pizarra {idx + 1}: {pizarra.tipo === 'media' ? 'Media Cancha' : 'Cancha Completa'}
+                                      </p>
+                                      <img
+                                        src={pizarra.data}
+                                        alt={`Pizarra táctica ${idx + 1}`}
+                                        className="border border-gray-300 rounded max-w-full h-auto"
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             )}
 
@@ -590,7 +632,9 @@ export default function PrepararEntrenamientoPage() {
                               </span>
                               {ejercicio.tipoRecurso !== 'ninguno' && (
                                 <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
-                                  {ejercicio.tipoRecurso === 'pizarra' ? '🏀 Con pizarra' : '📹 Con video'}
+                                  {ejercicio.tipoRecurso === 'pizarra'
+                                    ? `🏀 ${getPizarrasEjercicio(ejercicio).length || 1} pizarra${(getPizarrasEjercicio(ejercicio).length || 1) > 1 ? 's' : ''}`
+                                    : '📹 Con video'}
                                 </span>
                               )}
                             </div>
@@ -908,39 +952,69 @@ export default function PrepararEntrenamientoPage() {
                     {/* Si selecciona Pizarra */}
                     {nuevoEjercicio.tipoRecurso === 'pizarra' && (
                       <div className="space-y-3">
-                        <label className="block text-sm font-medium text-gray-700">
-                          Tipo de cancha
-                        </label>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setNuevoEjercicio({ ...nuevoEjercicio, tipoPizarra: 'media' })}
-                            className={`flex-1 py-2 px-4 rounded-lg border-2 transition ${
-                              nuevoEjercicio.tipoPizarra === 'media'
-                                ? 'border-primary-600 bg-primary-50 text-primary-700'
-                                : 'border-gray-300 hover:border-gray-400'
-                            }`}
-                          >
-                            Media Cancha
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setNuevoEjercicio({ ...nuevoEjercicio, tipoPizarra: 'completa' })}
-                            className={`flex-1 py-2 px-4 rounded-lg border-2 transition ${
-                              nuevoEjercicio.tipoPizarra === 'completa'
-                                ? 'border-primary-600 bg-primary-50 text-primary-700'
-                                : 'border-gray-300 hover:border-gray-400'
-                            }`}
-                          >
-                            Cancha Completa
-                          </button>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Pizarras tácticas del ejercicio
+                          </label>
+                          <Button type="button" variant="outline" size="sm" onClick={agregarPizarraAlEjercicio}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Agregar pizarra
+                          </Button>
                         </div>
-                        <div className="border-2 border-gray-200 rounded-lg p-2">
-                          <PizarraTactica
-                            tipo={nuevoEjercicio.tipoPizarra}
-                            onSave={(data) => setNuevoEjercicio({ ...nuevoEjercicio, pizarraData: data })}
-                            initialData={nuevoEjercicio.pizarraData}
-                          />
+                        {nuevoEjercicio.pizarras.length === 0 && (
+                          <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">
+                            Agrega una o más pizarras según la secuencia del ejercicio.
+                          </div>
+                        )}
+                        <div className="space-y-4">
+                          {nuevoEjercicio.pizarras.map((pizarra, index) => (
+                            <div key={pizarra.id} className="rounded-xl border border-gray-200 p-4">
+                              <div className="mb-3 flex items-center justify-between gap-3">
+                                <div>
+                                  <p className="text-sm font-semibold text-gray-900">Pizarra {index + 1}</p>
+                                  <p className="text-xs text-gray-500">Úsala para el siguiente movimiento o cambio de posición.</p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => eliminarPizarraDelEjercicio(pizarra.id)}
+                                  className="rounded-lg p-2 text-red-600 hover:bg-red-50 hover:text-red-700"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                              <div className="mb-3 flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => actualizarPizarraEjercicio(pizarra.id, { tipo: 'media' })}
+                                  className={`flex-1 rounded-lg border-2 px-4 py-2 transition ${
+                                    pizarra.tipo === 'media'
+                                      ? 'border-primary-600 bg-primary-50 text-primary-700'
+                                      : 'border-gray-300 hover:border-gray-400'
+                                  }`}
+                                >
+                                  Media Cancha
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => actualizarPizarraEjercicio(pizarra.id, { tipo: 'completa' })}
+                                  className={`flex-1 rounded-lg border-2 px-4 py-2 transition ${
+                                    pizarra.tipo === 'completa'
+                                      ? 'border-primary-600 bg-primary-50 text-primary-700'
+                                      : 'border-gray-300 hover:border-gray-400'
+                                  }`}
+                                >
+                                  Cancha Completa
+                                </button>
+                              </div>
+                              <div className="border-2 border-gray-200 rounded-lg p-2">
+                                <PizarraTactica
+                                  tipo={pizarra.tipo}
+                                  onSave={(data) => actualizarPizarraEjercicio(pizarra.id, { data })}
+                                  initialData={pizarra.data}
+                                />
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}
@@ -1020,8 +1094,7 @@ export default function PrepararEntrenamientoPage() {
                             usarPuntosTiro: false,
                             puntosTiro: [],
                             tipoRecurso: 'ninguno',
-                            tipoPizarra: 'media',
-                            pizarraData: '',
+                            pizarras: [],
                             videoFile: null
                           })
                         }}
@@ -1085,6 +1158,14 @@ export default function PrepararEntrenamientoPage() {
                         >
                           <Edit className="h-4 w-4" />
                         </button>
+                        <Link
+                          href={`/entrenador/entrenamientos/${plan.id}/pdf`}
+                          target="_blank"
+                          className="p-2 text-primary-700 hover:bg-primary-50 rounded transition"
+                          title="Exportar PDF"
+                        >
+                          <FileText className="h-4 w-4" />
+                        </Link>
                         <button
                           onClick={() => eliminarPlan(plan.id)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded transition"

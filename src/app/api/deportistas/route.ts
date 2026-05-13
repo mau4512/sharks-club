@@ -45,22 +45,43 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
+    const nombre = typeof body.nombre === 'string' ? body.nombre.trim() : ''
+    const apellidos = typeof body.apellidos === 'string' ? body.apellidos.trim() : ''
+    const documentoIdentidad = typeof body.documentoIdentidad === 'string' && body.documentoIdentidad.trim()
+      ? body.documentoIdentidad.trim()
+      : null
+    const nombreApoderado = typeof body.nombreApoderado === 'string' && body.nombreApoderado.trim()
+      ? body.nombreApoderado.trim()
+      : null
+    const telefonoApoderado = typeof body.telefonoApoderado === 'string' && body.telefonoApoderado.trim()
+      ? body.telefonoApoderado.trim()
+      : null
+    const fechaNacimiento = typeof body.fechaNacimiento === 'string' && body.fechaNacimiento.trim()
+      ? new Date(body.fechaNacimiento)
+      : null
     const password = body.password ? await hashPassword(body.password) : null
     const email = typeof body.email === 'string' && body.email.trim()
       ? body.email.trim().toLowerCase()
       : null
+
+    if (!nombre || !apellidos) {
+      return NextResponse.json(
+        { error: 'Nombre y apellidos son requeridos' },
+        { status: 400 }
+      )
+    }
     
     const deportista = await prisma.deportista.create({
       data: {
-        nombre: body.nombre,
-        apellidos: body.apellidos,
-        documentoIdentidad: body.documentoIdentidad,
+        nombre,
+        apellidos,
+        documentoIdentidad,
         email,
         password,
         celular: body.celular || null,
-        nombreApoderado: body.nombreApoderado,
-        telefonoApoderado: body.telefonoApoderado,
-        fechaNacimiento: new Date(body.fechaNacimiento),
+        nombreApoderado,
+        telefonoApoderado,
+        fechaNacimiento,
         altura: body.altura ? parseFloat(body.altura) : null,
         peso: body.peso ? parseFloat(body.peso) : null,
         posicion: body.posicion || null,

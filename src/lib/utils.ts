@@ -23,6 +23,17 @@ export function formatDate(date: Date | string): string {
   })
 }
 
+export function formatOptionalDate(date?: Date | string | null, fallback = 'Pendiente'): string {
+  if (!date) return fallback
+  return formatDate(date)
+}
+
+export function formatOptionalText(value?: string | null, fallback = 'Pendiente'): string {
+  if (typeof value !== 'string') return fallback
+  const trimmed = value.trim()
+  return trimmed ? trimmed : fallback
+}
+
 export function calculatePercentage(aciertos: number, intentos: number): number {
   if (intentos === 0) return 0
   return Math.round((aciertos / intentos) * 100 * 100) / 100

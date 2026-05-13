@@ -15,7 +15,7 @@ interface Deportista {
   id: string
   nombre: string
   apellidos: string
-  documentoIdentidad: string
+  documentoIdentidad?: string | null
 }
 
 interface Pago {
@@ -110,6 +110,7 @@ function CajaPageContent() {
   const [busqueda, setBusqueda] = useState('')
   const [mesSeleccionado, setMesSeleccionado] = useState(currentMonth)
   const [tipoMovimiento, setTipoMovimiento] = useState<'ingreso' | 'egreso'>('ingreso')
+  const [vistaMovimientos, setVistaMovimientos] = useState<'todos' | 'ingresos' | 'egresos'>('todos')
   const [editingPagoId, setEditingPagoId] = useState<string | null>(null)
   const [ingresoData, setIngresoData] = useState({
     deportistaId: deportistaIdParam,
@@ -205,7 +206,7 @@ function CajaPageContent() {
         registradoEn: pago.createdAt || pago.fechaPago,
         deportistaId: pago.deportista.id,
         titulo: `${pago.deportista.nombre} ${pago.deportista.apellidos}`,
-        subtitulo: `DNI: ${pago.deportista.documentoIdentidad}`,
+        subtitulo: `DNI: ${pago.deportista.documentoIdentidad || 'Pendiente'}`,
         observacion,
       }
     })
@@ -244,15 +245,24 @@ function CajaPageContent() {
 
   const movimientosFiltrados = useMemo(() => {
     const term = busqueda.trim().toLowerCase()
-    if (!term) return movimientosDelPeriodo
+    const movimientosPorVista = pagoDirecto
+      ? movimientosDelPeriodo
+      : movimientosDelPeriodo.filter((movimiento) => {
+          if (vistaMovimientos === 'todos') return true
+          return vistaMovimientos === 'ingresos'
+            ? movimiento.tipo === 'ingreso'
+            : movimiento.tipo === 'egreso'
+        })
 
-    return movimientosDelPeriodo.filter((movimiento) =>
+    if (!term) return movimientosPorVista
+
+    return movimientosPorVista.filter((movimiento) =>
       movimiento.titulo.toLowerCase().includes(term) ||
       movimiento.subtitulo.toLowerCase().includes(term) ||
       movimiento.concepto.toLowerCase().includes(term) ||
       movimiento.metodo.toLowerCase().includes(term)
     )
-  }, [movimientosDelPeriodo, busqueda])
+  }, [movimientosDelPeriodo, busqueda, pagoDirecto, vistaMovimientos])
 
   const resumen = useMemo(() => {
     const ingresosPeriodo = pagoDirecto
@@ -582,7 +592,7 @@ function CajaPageContent() {
             <p className="mt-1 text-xl font-semibold text-gray-900">
               {deportistaSeleccionado.nombre} {deportistaSeleccionado.apellidos}
             </p>
-            <p className="text-sm text-gray-600">DNI: {deportistaSeleccionado.documentoIdentidad}</p>
+            <p className="text-sm text-gray-600">DNI: {deportistaSeleccionado.documentoIdentidad || 'Pendiente'}</p>
           </CardContent>
         </Card>
       )}
@@ -711,7 +721,7 @@ function CajaPageContent() {
                   <option value="">Seleccionar deportista</option>
                   {deportistas.map((deportista) => (
                     <option key={deportista.id} value={deportista.id}>
-                      {deportista.nombre} {deportista.apellidos} - {deportista.documentoIdentidad}
+                      {deportista.nombre} {deportista.apellidos} - {deportista.documentoIdentidad || 'Pendiente'}
                     </option>
                   ))}
                 </select>
@@ -967,7 +977,7 @@ function CajaPageContent() {
                   <option value="">Seleccionar deportista</option>
                   {deportistas.map((deportista) => (
                     <option key={deportista.id} value={deportista.id}>
-                      {deportista.nombre} {deportista.apellidos} - {deportista.documentoIdentidad}
+                      {deportista.nombre} {deportista.apellidos} - {deportista.documentoIdentidad || 'Pendiente'}
                     </option>
                   ))}
                 </select>
@@ -1277,13 +1287,55 @@ function CajaPageContent() {
 
       <Card>
         <CardHeader>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4">
+            {!pagoDirecto && (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={vistaMovimientos === 'todos' ? 'primary' : 'outline'}
+                  onClick={() => setVistaMovimientos('todos')}
+                >
+                  Todos
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={vistaMovimientos === 'ingresos' ? 'primary' : 'outline'}
+                  onClick={() => setVistaMovimientos('ingresos')}
+                >
+                  Ingresos
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={vistaMovimientos === 'egresos' ? 'primary' : 'outline'}
+                  onClick={() => setVistaMovimientos('egresos')}
+                >
+                  Egresos
+                </Button>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">
-                {pagoDirecto ? 'Historial de pagos' : 'Movimientos de Caja'}
+                {pagoDirecto
+                  ? 'Historial de pagos'
+                  : vistaMovimientos === 'ingresos'
+                    ? 'Ingresos del Mes'
+                    : vistaMovimientos === 'egresos'
+                      ? 'Egresos del Mes'
+                      : 'Movimientos de Caja'}
               </h2>
               <p className="text-sm text-gray-600 mt-1">
-                {pagoDirecto ? 'Pagos registrados para este deportista.' : 'Historial consolidado de ingresos y egresos'}
+                {pagoDirecto
+                  ? 'Pagos registrados para este deportista.'
+                  : vistaMovimientos === 'ingresos'
+                    ? 'Pagos e ingresos registrados durante el periodo seleccionado.'
+                    : vistaMovimientos === 'egresos'
+                      ? 'Egresos registrados durante el periodo seleccionado.'
+                      : 'Historial consolidado de ingresos y egresos'}
               </p>
             </div>
             <div className="relative w-full sm:w-80">
@@ -1292,10 +1344,19 @@ function CajaPageContent() {
                 type="text"
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="Buscar por persona, categoría o método"
+                placeholder={
+                  pagoDirecto
+                    ? 'Buscar por concepto o método'
+                    : vistaMovimientos === 'egresos'
+                      ? 'Buscar egresos por beneficiario, categoría o método'
+                      : vistaMovimientos === 'ingresos'
+                        ? 'Buscar ingresos por deportista, concepto o método'
+                        : 'Buscar por persona, categoría o método'
+                }
                 className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-gray-900"
               />
             </div>
+          </div>
           </div>
         </CardHeader>
         <CardContent>

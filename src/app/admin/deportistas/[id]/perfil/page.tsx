@@ -21,7 +21,7 @@ import {
   Edit,
   Wallet
 } from 'lucide-react'
-import { formatDate, calculateIMC } from '@/lib/utils'
+import { formatDate, formatOptionalDate, formatOptionalText, calculateIMC } from '@/lib/utils'
 import Image from 'next/image'
 import { toast } from 'sonner'
 
@@ -29,12 +29,12 @@ interface Deportista {
   id: string
   nombre: string
   apellidos: string
-  documentoIdentidad: string
-  email: string
+  documentoIdentidad?: string | null
+  email?: string | null
   celular?: string
-  nombreApoderado: string
-  telefonoApoderado: string
-  fechaNacimiento: string
+  nombreApoderado?: string | null
+  telefonoApoderado?: string | null
+  fechaNacimiento?: string | null
   altura?: number
   peso?: number
   posicion?: string
@@ -167,7 +167,8 @@ export default function PerfilDeportistaPage() {
     }
   }
 
-  const calcularEdad = (fechaNacimiento: string) => {
+  const calcularEdad = (fechaNacimiento?: string | null) => {
+    if (!fechaNacimiento) return null
     const hoy = new Date()
     const nacimiento = new Date(fechaNacimiento)
     let edad = hoy.getFullYear() - nacimiento.getFullYear()
@@ -315,7 +316,7 @@ export default function PerfilDeportistaPage() {
                   </div>
                   <div>
                     <p className="text-xs text-gray-600">Email</p>
-                    <p className="text-sm font-medium">{deportista.email}</p>
+                    <p className="text-sm font-medium">{formatOptionalText(deportista.email)}</p>
                   </div>
                 </div>
 
@@ -337,7 +338,7 @@ export default function PerfilDeportistaPage() {
                   </div>
                   <div>
                     <p className="text-xs text-gray-600">Edad</p>
-                    <p className="text-sm font-medium">{edad} años</p>
+                    <p className="text-sm font-medium">{edad !== null ? `${edad} años` : 'Pendiente'}</p>
                   </div>
                 </div>
 
@@ -478,11 +479,11 @@ export default function PerfilDeportistaPage() {
             <div className="space-y-3">
               <div>
                 <p className="text-sm text-gray-600">Documento de Identidad</p>
-                <p className="font-medium">{deportista.documentoIdentidad}</p>
+                <p className="font-medium">{formatOptionalText(deportista.documentoIdentidad)}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Fecha de Nacimiento</p>
-                <p className="font-medium">{formatDate(deportista.fechaNacimiento)}</p>
+                <p className="font-medium">{formatOptionalDate(deportista.fechaNacimiento)}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Fecha de Registro</p>
@@ -490,11 +491,11 @@ export default function PerfilDeportistaPage() {
               </div>
               <div>
                 <p className="text-sm text-gray-600">Padre o Apoderado</p>
-                <p className="font-medium">{deportista.nombreApoderado}</p>
+                <p className="font-medium">{formatOptionalText(deportista.nombreApoderado)}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Número del Padre o Apoderado</p>
-                <p className="font-medium">{deportista.telefonoApoderado}</p>
+                <p className="font-medium">{formatOptionalText(deportista.telefonoApoderado)}</p>
               </div>
               {deportista.deudaStatus && (
                 <div>

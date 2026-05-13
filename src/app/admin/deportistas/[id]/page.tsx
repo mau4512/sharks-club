@@ -99,12 +99,14 @@ export default function EditarDeportistaPage() {
       const data = await response.json()
       
       // Formatear fecha para input date
-      const fechaNacimiento = new Date(data.fechaNacimiento).toISOString().split('T')[0]
+      const fechaNacimiento = data.fechaNacimiento
+        ? new Date(data.fechaNacimiento).toISOString().split('T')[0]
+        : ''
       
       setFormData({
         nombre: data.nombre,
         apellidos: data.apellidos,
-        documentoIdentidad: data.documentoIdentidad,
+        documentoIdentidad: data.documentoIdentidad || '',
         email: data.email || '',
         celular: data.celular || '',
         nombreApoderado: data.nombreApoderado || '',
@@ -251,20 +253,18 @@ export default function EditarDeportistaPage() {
                   placeholder="Ej: García López"
                 />
                 <Input
-                  label="Documento de Identidad *"
+                  label="Documento de Identidad"
                   name="documentoIdentidad"
                   value={formData.documentoIdentidad}
                   onChange={handleChange}
-                  required
                   placeholder="Ej: 12345678X"
                 />
                 <Input
-                  label="Fecha de Nacimiento *"
+                  label="Fecha de Nacimiento"
                   name="fechaNacimiento"
                   type="date"
                   value={formData.fechaNacimiento}
                   onChange={handleChange}
-                  required
                 />
                 <Input
                   label="Email"
@@ -283,20 +283,18 @@ export default function EditarDeportistaPage() {
                   placeholder="Ej: +34 600 123 456"
                 />
                 <Input
-                  label="Nombre del Padre o Apoderado *"
+                  label="Nombre del Padre o Apoderado"
                   name="nombreApoderado"
                   value={formData.nombreApoderado}
                   onChange={handleChange}
-                  required
                   placeholder="Ej: Carlos García"
                 />
                 <Input
-                  label="Número del Padre o Apoderado *"
+                  label="Número del Padre o Apoderado"
                   name="telefonoApoderado"
                   type="tel"
                   value={formData.telefonoApoderado}
                   onChange={handleChange}
-                  required
                   placeholder="Ej: 999 888 777"
                 />
               </div>

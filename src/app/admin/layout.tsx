@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Users, Home, Clock, Calendar, UserCog, LogOut, User, BookOpen, Wallet } from 'lucide-react'
+import { Users, Home, Clock, Calendar, UserCog, LogOut, User, BookOpen, Wallet, ClipboardList } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 export default function AdminLayout({
@@ -77,6 +77,13 @@ export default function AdminLayout({
                 >
                   <Wallet className="h-5 w-5 lg:mr-2" />
                   Caja
+                </Link>
+                <Link
+                  href="/admin/sesiones-entrenamiento"
+                  className="flex shrink-0 items-center px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition"
+                >
+                  <ClipboardList className="h-5 w-5 lg:mr-2" />
+                  Sesiones
                 </Link>
                 <Link
                   href="/admin/biblioteca-ejercicios"

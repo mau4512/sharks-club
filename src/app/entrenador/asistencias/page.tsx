@@ -273,7 +273,7 @@ export default function AsistenciasEntrenadorPage() {
                                 {deportista.nombre} {deportista.apellidos}
                               </p>
                               <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
-                                <span>DNI: {deportista.documentoIdentidad}</span>
+                                <span>DNI: {deportista.documentoIdentidad || 'Pendiente'}</span>
                                 {deportista.numeroCamiseta && <span>• #{deportista.numeroCamiseta}</span>}
                               </div>
                               {deportista.deudaStatus?.tieneDeuda && (

@@ -19,6 +19,12 @@ export async function GET(
             hora: true,
           },
         },
+        reportesEntrenador: {
+          orderBy: {
+            updatedAt: 'desc',
+          },
+          take: 1,
+        },
       },
     });
 

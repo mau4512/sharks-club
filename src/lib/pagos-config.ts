@@ -19,6 +19,21 @@ export function getTurnoModalidadLabel(modalidad: string) {
   )
 }
 
+export function getPlanSesionesByModalidad(modalidad?: string | null) {
+  switch (modalidad) {
+    case 'diario':
+      return '20'
+    case 'interdiario':
+      return '12'
+    case 'fin_semana_8':
+      return '8'
+    case 'fin_semana_4':
+      return '4'
+    default:
+      return '12'
+  }
+}
+
 export const TARIFA_MENSUAL_OPTIONS = [
   { value: 'regular', label: 'Plan regular - S/ 180' },
   { value: 'hermanas', label: 'Combo hermanas - S/ 165 c/u' },

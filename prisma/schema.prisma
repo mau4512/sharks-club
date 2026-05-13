@@ -29,13 +29,13 @@ model Deportista {
   id            String        @id @default(cuid())
   nombre        String
   apellidos     String
-  documentoIdentidad String   @unique
+  documentoIdentidad String?  @unique
   email         String?       @unique
   celular       String?
-  nombreApoderado String
-  telefonoApoderado String
+  nombreApoderado String?
+  telefonoApoderado String?
   password      String?
-  fechaNacimiento DateTime
+  fechaNacimiento DateTime?
   altura        Float?        // en cm
   peso          Float?        // en kg
   posicion      String?       // Base, Escolta, Alero, etc.
@@ -81,6 +81,7 @@ model Turno {
   entrenador    Entrenador?   @relation(fields: [entrenadorId], references: [id], onDelete: SetNull)
   ejerciciosTiro EjercicioTiro[]
   planes        PlanEntrenamiento[]
+  reportesEntrenador ReporteEntrenador[]
   
   @@map("turnos")
 }
@@ -103,6 +104,7 @@ model Entrenador {
   turnos        Turno[]
   planes        PlanEntrenamiento[]
   ejerciciosCreados EjercicioBiblioteca[]
+  reportes      ReporteEntrenador[]
   
   @@map("entrenadores")
 }
@@ -355,8 +357,30 @@ model PlanEntrenamiento {
   
   // Relación con sesiones ejecutadas
   sesionesEjecutadas SesionEntrenamiento[]
+  reportesEntrenador ReporteEntrenador[]
   
   @@map("planes_entrenamiento")
+}
+
+model ReporteEntrenador {
+  id                  String             @id @default(cuid())
+  fechaSesion         DateTime
+  entrenadorId        String
+  entrenador          Entrenador         @relation(fields: [entrenadorId], references: [id], onDelete: Cascade)
+  turnoId             String
+  turno               Turno              @relation(fields: [turnoId], references: [id], onDelete: Cascade)
+  planEntrenamientoId String?
+  planEntrenamiento   PlanEntrenamiento? @relation(fields: [planEntrenamientoId], references: [id], onDelete: SetNull)
+  completada          Boolean            @default(true)
+  observaciones       String?            @db.Text
+  motivoIncompleta    String?            @db.Text
+  requerimientos      String?            @db.Text
+  detalleEjercicios   Json?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@unique([entrenadorId, turnoId, fechaSesion, planEntrenamientoId])
+  @@map("reportes_entrenador")
 }
 
 // Sesión de Entrenamiento Ejecutada (deportistas que completaron un plan)

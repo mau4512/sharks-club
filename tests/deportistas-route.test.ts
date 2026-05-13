@@ -143,6 +143,32 @@ describe('/api/deportistas', () => {
     expect(payload.email).toBeNull()
   })
 
+  it('creates an athlete with partial data for trainer registration', async () => {
+    prismaMock.deportista.create.mockResolvedValue({ id: 'dep-4', nombre: 'Mateo' })
+
+    const request = new Request('http://localhost:3000/api/deportistas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: 'Mateo',
+        apellidos: 'Soto',
+        celular: '999111222',
+        turnoId: 'turno-profesor-1',
+        planSesiones: '8',
+      }),
+    })
+
+    const response = await POST(request)
+
+    expect(response.status).toBe(201)
+    const payload = prismaMock.deportista.create.mock.calls[0][0].data
+    expect(payload.documentoIdentidad).toBeNull()
+    expect(payload.nombreApoderado).toBeNull()
+    expect(payload.telefonoApoderado).toBeNull()
+    expect(payload.fechaNacimiento).toBeNull()
+    expect(payload.planSesiones).toBe(8)
+  })
+
   it('returns a friendly message when the document or email already exists', async () => {
     prismaMock.deportista.create.mockRejectedValue({ code: 'P2002' })
 

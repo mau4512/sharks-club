@@ -17,7 +17,15 @@ vi.mock('next/link', () => ({
 }))
 
 vi.mock('@/components/PizarraTactica', () => ({
-  default: () => React.createElement('div', null, 'Pizarra mock'),
+  default: ({ onSave }: any) =>
+    React.createElement(
+      'button',
+      {
+        type: 'button',
+        onClick: () => onSave?.('data:image/png;base64,pizarra-mock'),
+      },
+      'Guardar pizarra mock'
+    ),
 }))
 
 vi.mock('@/components/SelectorEjerciciosBiblioteca', () => ({
@@ -126,6 +134,72 @@ describe('Entrenador entrenamientos page', () => {
       descripcion: 'Cerrar línea y finalizar',
       duracion: 15,
       tipoRecurso: 'ninguno',
+    })
+  })
+
+  it('guarda multiples pizarras dentro de un ejercicio', async () => {
+    localStorage.setItem('entrenador', JSON.stringify({ id: 'ent-1', nombre: 'Martina' }))
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ id: 'turno-1', nombre: 'Sub 14', hora: '18:00', entrenadorId: 'ent-1' }],
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: 'bib-1' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: 'plan-1' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
+      })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    const user = userEvent.setup()
+    render(React.createElement(PrepararEntrenamientoPage))
+
+    expect(await screen.findByText('Preparar Entrenamiento')).toBeInTheDocument()
+
+    await user.type(
+      screen.getByPlaceholderText(/ej: entrenamiento técnica de tiro/i),
+      'Plan con secuencia'
+    )
+
+    const turnoSelect = screen
+      .getByText('Turno *')
+      .parentElement
+      ?.querySelector('select') as HTMLSelectElement
+    await user.selectOptions(turnoSelect, 'turno-1')
+
+    await user.click(screen.getByRole('button', { name: /crear nuevo ejercicio/i }))
+    await user.type(screen.getByPlaceholderText(/nombre del ejercicio/i), 'Transición 3 carriles')
+    await user.click(screen.getByLabelText(/usar pizarra táctica/i))
+    await user.click(screen.getByRole('button', { name: /agregar pizarra/i }))
+    await user.click(screen.getByRole('button', { name: 'Guardar pizarra mock' }))
+    await user.click(screen.getByRole('button', { name: /agregar pizarra/i }))
+    const saveBoardButtons = screen.getAllByRole('button', { name: 'Guardar pizarra mock' })
+    await user.click(saveBoardButtons[1])
+    await user.click(screen.getByRole('button', { name: /guardar ejercicio/i }))
+    await user.click(screen.getByRole('button', { name: /guardar plan de entrenamiento/i }))
+
+    const planCall = fetchMock.mock.calls.find((call) => call[0] === '/api/planes-entrenamiento')
+    const payload = JSON.parse(planCall?.[1]?.body as string)
+
+    expect(payload.ejercicios[0].tipoRecurso).toBe('pizarra')
+    expect(payload.ejercicios[0].pizarras).toHaveLength(2)
+    expect(payload.ejercicios[0].pizarra).toMatchObject({
+      tipo: 'media',
+      data: 'data:image/png;base64,pizarra-mock',
     })
   })
 })

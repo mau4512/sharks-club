@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+type DetalleEjercicioInput = {
+  ejercicioId: string
+  titulo: string
+  completado: boolean
+  observaciones: string
+  ajuste: string
+}
+
 function sanitizeDetalleEjercicios(value: unknown) {
   if (!Array.isArray(value)) return null
 
@@ -29,7 +37,7 @@ function sanitizeDetalleEjercicios(value: unknown) {
             : '',
       }
     })
-    .filter(Boolean)
+    .filter((item): item is DetalleEjercicioInput => item !== null)
 
   return detalle.length > 0 ? detalle : null
 }

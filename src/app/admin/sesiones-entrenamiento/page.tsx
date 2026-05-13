@@ -142,7 +142,7 @@ export default async function SesionesEntrenamientoAdminPage({
                 {weekPlanes.map((plan) => {
                   const reporte = plan.reportesEntrenador[0] || null
                   const detalleEjercicios = Array.isArray(reporte?.detalleEjercicios)
-                    ? (reporte?.detalleEjercicios as DetalleEjercicioReporte[])
+                    ? (reporte?.detalleEjercicios as unknown as DetalleEjercicioReporte[])
                     : []
 
                   return (

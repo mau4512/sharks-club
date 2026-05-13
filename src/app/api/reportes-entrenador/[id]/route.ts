@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 type DetalleEjercicioInput = {
   ejercicioId: string
@@ -56,7 +57,7 @@ export async function PUT(
         observaciones: body.observaciones?.trim() || null,
         motivoIncompleta: body.motivoIncompleta?.trim() || null,
         requerimientos: body.requerimientos?.trim() || null,
-        detalleEjercicios: sanitizeDetalleEjercicios(body.detalleEjercicios),
+        detalleEjercicios: sanitizeDetalleEjercicios(body.detalleEjercicios) ?? Prisma.DbNull,
       },
       include: {
         turno: {

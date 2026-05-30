@@ -5,6 +5,7 @@ const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
     reporteEntrenador: {
       findMany: vi.fn(),
+      findUnique: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
     },
@@ -21,6 +22,7 @@ import { PUT } from '@/app/api/reportes-entrenador/[id]/route'
 describe('/api/reportes-entrenador', () => {
   beforeEach(() => {
     prismaMock.reporteEntrenador.findMany.mockReset()
+    prismaMock.reporteEntrenador.findUnique.mockReset()
     prismaMock.reporteEntrenador.create.mockReset()
     prismaMock.reporteEntrenador.update.mockReset()
   })
@@ -101,6 +103,12 @@ describe('/api/reportes-entrenador', () => {
   })
 
   it('actualiza un reporte existente', async () => {
+    prismaMock.reporteEntrenador.findUnique.mockResolvedValue({
+      id: 'rep-3',
+      entrenadorId: 'ent-1',
+      entrenador: { id: 'ent-1', nombre: 'Ivan', apellidos: 'Campos' },
+      planEntrenamiento: { id: 'plan-1', titulo: 'Plan semanal' },
+    })
     prismaMock.reporteEntrenador.update.mockResolvedValue({ id: 'rep-3' })
 
     const request = new NextRequest('http://localhost:3000/api/reportes-entrenador/rep-3', {

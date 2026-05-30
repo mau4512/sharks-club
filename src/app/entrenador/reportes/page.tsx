@@ -51,6 +51,7 @@ interface ReporteEntrenador {
   motivoIncompleta?: string | null
   requerimientos?: string | null
   detalleEjercicios?: DetalleEjercicioReporte[] | null
+  feedbackAdmin?: string | null
 }
 
 interface FormReporte {
@@ -248,6 +249,8 @@ export default function ReportesEntrenadorPage() {
         motivoIncompleta: form.completada ? '' : form.motivoIncompleta,
         requerimientos: form.requerimientos,
         detalleEjercicios: form.detalleEjercicios,
+        actorType: 'entrenador',
+        entrenadorNombre: `${entrenador.nombre || ''} ${entrenador.apellidos || ''}`.trim(),
       }
 
       const response = await fetch(
@@ -402,6 +405,7 @@ export default function ReportesEntrenadorPage() {
             {planes.map((plan) => {
               const form = formularios[plan.id]
               const saved = Boolean(form?.id)
+              const reporteActual = reportes.find((item) => item.planEntrenamientoId === plan.id)
 
               return (
                 <Card key={plan.id}>
@@ -465,6 +469,15 @@ export default function ReportesEntrenadorPage() {
                         placeholder="Cómo se llevó la práctica, respuesta del grupo, ajustes que se hicieron..."
                       />
                     </div>
+
+                    {saved && reporteActual?.feedbackAdmin && (
+                      <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+                        <p className="text-sm font-semibold text-blue-900">Feedback de administración</p>
+                        <p className="mt-2 whitespace-pre-wrap text-sm text-blue-950">
+                          {reporteActual.feedbackAdmin}
+                        </p>
+                      </div>
+                    )}
 
                     {!form?.completada && (
                       <div>

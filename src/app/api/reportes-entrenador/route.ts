@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { notificarAdmins } from '@/lib/notificaciones'
 
 type DetalleEjercicioInput = {
   ejercicioId: string
@@ -129,6 +130,7 @@ export async function POST(request: NextRequest) {
         motivoIncompleta: body.motivoIncompleta?.trim() || null,
         requerimientos: body.requerimientos?.trim() || null,
         detalleEjercicios: sanitizeDetalleEjercicios(body.detalleEjercicios) ?? Prisma.DbNull,
+        feedbackAdmin: body.feedbackAdmin?.trim() || null,
       },
       include: {
         turno: {
@@ -147,6 +149,24 @@ export async function POST(request: NextRequest) {
         },
       },
     })
+
+    if (body.actorType === 'entrenador') {
+      const entrenadorNombre = body.entrenadorNombre?.trim() || 'Entrenador'
+
+      await notificarAdmins({
+        tipo: 'reporte_entrenador',
+        titulo: 'Nuevo reporte enviado',
+        mensaje: `${entrenadorNombre} envió el reporte de ${reporte.planEntrenamiento?.titulo || 'una sesión'} para revisión.`,
+        enlace: '/admin/sesiones-entrenamiento',
+        remitenteTipo: 'entrenador',
+        remitenteId: reporte.entrenadorId,
+        remitenteNombre: entrenadorNombre,
+        metadata: {
+          reporteId: reporte.id,
+          planEntrenamientoId: reporte.planEntrenamientoId,
+        },
+      })
+    }
 
     return NextResponse.json(reporte, { status: 201 })
   } catch (error: any) {

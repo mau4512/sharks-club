@@ -12,6 +12,8 @@ interface EjercicioPlan {
   id: string
   titulo: string
   descripcion?: string
+  categoria?: string
+  tags?: string[]
   duracion: number
   meta?: {
     tipo?: string
@@ -47,6 +49,7 @@ interface PlanEntrenamientoDetalle {
     observaciones?: string | null
     motivoIncompleta?: string | null
     requerimientos?: string | null
+    feedbackAdmin?: string | null
     detalleEjercicios?: Array<{
       ejercicioId: string
       titulo: string
@@ -63,6 +66,71 @@ const nombresPunto: Record<string, string> = {
   medio: 'Centro',
   codo_der: 'Codo derecho',
   esquina_der: 'Esquina derecha',
+}
+
+function normalizarHora(hora?: string) {
+  const match = String(hora || '').match(/(\d{1,2}):(\d{2})/)
+  if (!match) return null
+
+  return {
+    hours: Number(match[1]),
+    minutes: Number(match[2]),
+  }
+}
+
+function sumarMinutos(hora: string | undefined, minutos: number) {
+  const parsed = normalizarHora(hora)
+  if (!parsed) return ''
+
+  const date = new Date(2026, 0, 1, parsed.hours, parsed.minutes + minutos)
+  return date.toLocaleTimeString('es-PE', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
+}
+
+function formatearDuracion(minutos?: number) {
+  const value = Number(minutos || 0)
+  return `${String(value).padStart(2, '0')} min`
+}
+
+function getEtiquetaEjercicio(ejercicio: EjercicioPlan) {
+  const categoria = ejercicio.categoria || ejercicio.tags?.[0]
+  if (categoria) return categoria.slice(0, 3).toUpperCase()
+  if (ejercicio.meta?.tipoTiro) return 'TIR'
+  if (ejercicio.tipoRecurso === 'video') return 'VID'
+  if (ejercicio.tipoRecurso === 'pizarra') return 'TAC'
+  return 'GEN'
+}
+
+function getColorEtiqueta(etiqueta: string) {
+  if (['GEN', 'CAL', 'ENF'].includes(etiqueta)) return 'bg-yellow-300 text-black'
+  if (['TEC', 'TÉC', 'TIR'].includes(etiqueta)) return 'bg-green-400 text-black'
+  if (['COM', 'TAC', 'DEF', 'ATA'].includes(etiqueta)) return 'bg-red-500 text-black'
+  return 'bg-slate-200 text-slate-900'
+}
+
+function getMetaTexto(ejercicio: EjercicioPlan) {
+  const partes: string[] = []
+
+  if (ejercicio.meta?.cantidad) {
+    partes.push(`${ejercicio.meta.cantidad} ${ejercicio.meta.unidad || ''}`.trim())
+  }
+
+  if (ejercicio.meta?.tipoTiro) {
+    partes.push(ejercicio.meta.tipoTiro === '2puntos' ? '2 pts' : '3 pts')
+  }
+
+  if (ejercicio.puntosTiro?.length) {
+    partes.push(
+      ejercicio.puntosTiro
+        .map((punto) => `${nombresPunto[punto.posicion] || punto.posicion}: ${punto.cantidad}`)
+        .join(' · ')
+    )
+  }
+
+  return partes.join(' · ')
 }
 
 export default function PlanEntrenamientoPdfPage() {
@@ -178,15 +246,15 @@ export default function PlanEntrenamientoPdfPage() {
           </div>
         </div>
 
-        <article className="mx-auto max-w-4xl rounded-3xl bg-white p-6 shadow-lg print:rounded-none print:shadow-none">
-          <header className="border-b border-slate-200 pb-6">
+        <article className="mx-auto max-w-5xl rounded-2xl bg-white p-5 shadow-lg print:rounded-none print:p-0 print:shadow-none">
+          <header className="border-b border-slate-200 pb-4 print:border-0 print:pb-2">
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary-700">Sharks Basketball</p>
-                <h1 className="mt-2 text-3xl font-bold text-slate-900">{plan.titulo}</h1>
-                <p className="mt-2 text-sm text-slate-600">Planificación de entrenamiento exportable en PDF</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-700 print:hidden">Sharks Basketball</p>
+                <h1 className="mt-1 text-2xl font-bold text-slate-900 print:text-lg">{plan.titulo}</h1>
+                <p className="mt-1 text-sm text-slate-600 print:hidden">Planificación de entrenamiento exportable en PDF</p>
               </div>
-              <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+              <div className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 print:hidden">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-primary-700" />
                   <span>{fechaFormateada}</span>
@@ -203,30 +271,27 @@ export default function PlanEntrenamientoPdfPage() {
             </div>
           </header>
 
-          <section className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Ejercicios</p>
-              <p className="mt-2 text-3xl font-bold text-slate-900">{plan.ejercicios.length}</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Duración total</p>
-              <p className="mt-2 text-3xl font-bold text-slate-900">{duracionTotal} min</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Turno</p>
-              <p className="mt-2 text-xl font-bold text-slate-900">{plan.turno.nombre}</p>
-            </div>
+          <section className="mt-5 grid gap-x-8 gap-y-2 text-sm text-slate-900 sm:grid-cols-3 print:grid-cols-3">
+            <p><span className="font-bold text-teal-900">Equipo:</span> {plan.turno.nombre}</p>
+            <p><span className="font-bold text-teal-900">Micro:</span> {plan.ejercicios.length}</p>
+            <p><span className="font-bold text-teal-900">Lugar:</span> Cancha</p>
+            <p className="font-bold text-teal-900">{plan.notas || 'Sin objetivo establecido'}</p>
+            <p><span className="font-bold text-teal-900">Día:</span> {new Date(plan.fecha).toLocaleDateString('es-PE', { timeZone: 'America/Lima' })}</p>
+            <p>
+              <span className="font-bold text-teal-900">Hora:</span> {plan.turno.hora}
+              <span className="ml-4 font-bold text-teal-900">Duración:</span> {String(Math.floor(duracionTotal / 60)).padStart(2, '0')}:{String(duracionTotal % 60).padStart(2, '0')}
+            </p>
           </section>
 
           {plan.notas && (
-            <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 print:hidden">
               <p className="text-sm font-semibold text-amber-900">Notas del entrenamiento</p>
               <p className="mt-2 whitespace-pre-wrap text-sm text-amber-950">{plan.notas}</p>
             </section>
           )}
 
           {reporte && (
-            <section className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+            <section className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 print:hidden">
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-emerald-900">Reporte del entrenamiento</p>
@@ -261,116 +326,93 @@ export default function PlanEntrenamientoPdfPage() {
                   </p>
                 </div>
               </div>
+
+              {reporte.feedbackAdmin && (
+                <div className="mt-4 rounded-xl bg-white p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Feedback de administración</p>
+                  <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
+                    {reporte.feedbackAdmin}
+                  </p>
+                </div>
+              )}
             </section>
           )}
 
-          <section className="mt-8 space-y-6">
-            {plan.ejercicios.map((ejercicio, index) => {
-              const pizarras = getPizarrasEjercicio(ejercicio)
-              const detalleEjercicio = Array.isArray(reporte?.detalleEjercicios)
-                ? reporte?.detalleEjercicios.find(
-                    (item) => item.ejercicioId === ejercicio.id || item.titulo === ejercicio.titulo
+          <section className="mt-5 overflow-hidden border border-slate-500">
+            <table className="w-full border-collapse text-left text-[11px] leading-tight text-slate-950">
+              <colgroup>
+                <col className="w-[7%]" />
+                <col className="w-[20%]" />
+                <col className="w-[10%]" />
+                <col className="w-[33%]" />
+                <col className="w-[30%]" />
+              </colgroup>
+              <thead>
+                <tr className="bg-teal-900 text-white">
+                  <th className="border border-slate-500 px-2 py-1 text-center font-bold">Inicio</th>
+                  <th className="border border-slate-500 px-2 py-1 text-center font-bold">Ejercicio</th>
+                  <th className="border border-slate-500 px-2 py-1 text-center font-bold">Tags</th>
+                  <th className="border border-slate-500 px-2 py-1 text-center font-bold">Descripción</th>
+                  <th className="border border-slate-500 px-2 py-1 text-center font-bold">Esquema</th>
+                </tr>
+              </thead>
+              <tbody>
+                {plan.ejercicios.map((ejercicio, index) => {
+                  const inicioAcumulado = plan.ejercicios
+                    .slice(0, index)
+                    .reduce((total, item) => total + (item.duracion || 0), 0)
+                  const pizarras = getPizarrasEjercicio(ejercicio)
+                  const etiqueta = getEtiquetaEjercicio(ejercicio)
+                  const metaTexto = getMetaTexto(ejercicio)
+
+                  return (
+                    <tr key={ejercicio.id || `${plan.id}-${index}`} className="align-top print:break-inside-avoid">
+                      <td className="border border-slate-400 px-1.5 py-2">
+                        <div>{sumarMinutos(plan.turno.hora, inicioAcumulado)}</div>
+                        <div>{formatearDuracion(ejercicio.duracion)}</div>
+                      </td>
+                      <td className="border border-slate-400 px-1.5 py-2">
+                        <p className="font-medium">{ejercicio.titulo}</p>
+                        <div className={`mt-1 h-5 text-center text-[10px] font-semibold leading-5 ${getColorEtiqueta(etiqueta)}`}>
+                          {etiqueta}
+                        </div>
+                      </td>
+                      <td className="border border-slate-400 px-1.5 py-2 text-center text-[10px]">
+                        {ejercicio.tags?.length ? ejercicio.tags.join(', ') : 'Sin tags'}
+                      </td>
+                      <td className="border border-slate-400 px-2 py-2">
+                        <p className="whitespace-pre-wrap">{ejercicio.descripcion || 'Sin descripción.'}</p>
+                        {metaTexto && <p className="mt-1 font-medium">{metaTexto}</p>}
+                        {ejercicio.tipoRecurso === 'video' && ejercicio.videoUrl && (
+                          <p className="mt-1 text-blue-800">Video: {ejercicio.videoUrl}</p>
+                        )}
+                      </td>
+                      <td className="border border-slate-400 px-2 py-2">
+                        {pizarras.length > 0 ? (
+                          <div className="grid gap-1">
+                            {pizarras.slice(0, 2).map((pizarra, pizarraIndex) => (
+                              <img
+                                key={`${ejercicio.id}-pizarra-${pizarraIndex}`}
+                                src={pizarra.data}
+                                alt={`Pizarra ${pizarraIndex + 1}`}
+                                className="mx-auto h-[72px] w-full max-w-[190px] border border-slate-300 object-contain print:h-[62px] print:max-w-[180px]"
+                              />
+                            ))}
+                            {pizarras.length > 2 && (
+                              <p className="text-center text-[10px] text-slate-500">+{pizarras.length - 2} esquemas</p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex h-[72px] items-center justify-center border border-dashed border-slate-300 text-[10px] text-slate-400">
+                            Sin esquema
+                          </div>
+                        )}
+                      </td>
+                    </tr>
                   )
-                : null
-
-              return (
-                <div key={ejercicio.id || `${plan.id}-${index}`} className="rounded-3xl border border-slate-200 p-5 print:break-inside-avoid">
-                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                        Ejercicio {index + 1}
-                      </p>
-                      <h2 className="mt-1 text-xl font-bold text-slate-900">{ejercicio.titulo}</h2>
-                      {ejercicio.descripcion && (
-                        <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{ejercicio.descripcion}</p>
-                      )}
-                    </div>
-                    <div className="rounded-2xl bg-primary-50 px-4 py-3 text-sm text-primary-900">
-                      <p className="font-semibold">{ejercicio.duracion} min</p>
-                      {ejercicio.meta?.cantidad && (
-                        <p className="mt-1">
-                          Meta: {ejercicio.meta.cantidad} {ejercicio.meta.unidad}
-                        </p>
-                      )}
-                      {ejercicio.meta?.tipoTiro && (
-                        <p className="mt-1 text-xs font-semibold uppercase tracking-wide">
-                          {ejercicio.meta.tipoTiro === '2puntos' ? 'Tiro de 2 puntos' : 'Tiro de 3 puntos'}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {ejercicio.puntosTiro && ejercicio.puntosTiro.length > 0 && (
-                    <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-                      <p className="text-sm font-semibold text-emerald-900">Puntos de tiro configurados</p>
-                      <div className="mt-3 grid gap-2 md:grid-cols-2">
-                        {ejercicio.puntosTiro.map((punto, puntoIndex) => (
-                          <div key={`${ejercicio.id}-punto-${puntoIndex}`} className="rounded-xl bg-white px-3 py-2 text-sm text-emerald-950">
-                            <span className="font-semibold">{nombresPunto[punto.posicion] || punto.posicion}</span>
-                            <span className="ml-2">{punto.cantidad} tiros{punto.amboLados ? ' por lado' : ''}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {pizarras.length > 0 && (
-                    <div className="mt-4 space-y-4">
-                      <p className="text-sm font-semibold text-slate-900">Secuencia táctica</p>
-                      <div className="grid gap-4 md:grid-cols-2">
-                        {pizarras.map((pizarra, pizarraIndex) => (
-                          <div key={`${ejercicio.id}-pizarra-${pizarraIndex}`} className="rounded-2xl border border-slate-200 p-3">
-                            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                              Pizarra {pizarraIndex + 1} · {pizarra.tipo === 'media' ? 'Media cancha' : 'Cancha completa'}
-                            </p>
-                            <img
-                              src={pizarra.data}
-                              alt={`Pizarra ${pizarraIndex + 1}`}
-                              className="w-full rounded-xl border border-slate-200"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {ejercicio.tipoRecurso === 'video' && ejercicio.videoUrl && (
-                    <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950">
-                      Video de apoyo: {ejercicio.videoUrl}
-                    </div>
-                  )}
-
-                  {detalleEjercicio && (
-                    <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                        <p className="text-sm font-semibold text-slate-900">Observación del ejercicio</p>
-                        <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-                          detalleEjercicio.completado
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-amber-100 text-amber-700'
-                        }`}>
-                          {detalleEjercicio.completado ? 'Ejecutado' : 'Requiere ajuste'}
-                        </span>
-                      </div>
-                      <div className="mt-3 grid gap-4 md:grid-cols-2">
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Observaciones</p>
-                          <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
-                            {detalleEjercicio.observaciones || 'Sin observaciones registradas.'}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Mejora o cambio sugerido</p>
-                          <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
-                            {detalleEjercicio.ajuste || 'Sin cambios sugeridos.'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
+                })}
+              </tbody>
+            </table>
           </section>
         </article>
       </div>

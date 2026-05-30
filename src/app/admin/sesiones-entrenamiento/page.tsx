@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Calendar, ClipboardList, FileText, MessageSquare, User } from 'lucide-react'
 import { prisma } from '@/lib/prisma'
+import AdminFeedbackEditor from '@/components/reportes/AdminFeedbackEditor'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -82,6 +83,20 @@ async function getData(month: string) {
   })
 }
 
+async function getAdminContext() {
+  const admin = await prisma.admin.findFirst({
+    select: {
+      id: true,
+      nombre: true,
+    },
+    orderBy: {
+      createdAt: 'asc',
+    },
+  })
+
+  return admin
+}
+
 export default async function SesionesEntrenamientoAdminPage({
   searchParams,
 }: {
@@ -89,6 +104,7 @@ export default async function SesionesEntrenamientoAdminPage({
 }) {
   const month = searchParams?.month || getCurrentMonth()
   const planes = await getData(month)
+  const admin = await getAdminContext()
 
   const grouped = planes.reduce<Record<string, typeof planes>>((acc, plan) => {
     const key = getWeekKey(plan.fecha)
@@ -264,8 +280,23 @@ export default async function SesionesEntrenamientoAdminPage({
                                 {reporte?.requerimientos || 'Sin requerimientos registrados.'}
                               </p>
                             </div>
+                            <div className="rounded-2xl border border-gray-200 p-4">
+                              <p className="text-sm font-semibold text-gray-900">Feedback enviado</p>
+                              <p className="mt-2 whitespace-pre-wrap text-sm text-gray-700">
+                                {reporte?.feedbackAdmin || 'Aún no se ha enviado feedback al entrenador.'}
+                              </p>
+                            </div>
                           </div>
                         </div>
+
+                        {reporte && (
+                          <AdminFeedbackEditor
+                            reporteId={reporte.id}
+                            adminId={admin?.id}
+                            adminNombre={admin?.nombre || 'Administración Sharks'}
+                            initialFeedback={reporte.feedbackAdmin}
+                          />
+                        )}
                       </CardContent>
                     </Card>
                   )

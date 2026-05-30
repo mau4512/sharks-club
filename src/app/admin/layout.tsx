@@ -4,6 +4,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Users, Home, Clock, Calendar, UserCog, LogOut, User, BookOpen, Wallet, ClipboardList } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import NotificationsBell from '@/components/notificaciones/NotificationsBell'
 
 export default function AdminLayout({
   children,
@@ -11,6 +13,19 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const router = useRouter()
+  const [adminId, setAdminId] = useState<string | undefined>(undefined)
+
+  useEffect(() => {
+    const adminRaw = localStorage.getItem('admin')
+    if (!adminRaw) return
+
+    try {
+      const admin = JSON.parse(adminRaw)
+      setAdminId(admin.id)
+    } catch (error) {
+      console.error('Error al leer admin local:', error)
+    }
+  }, [])
 
   const cerrarSesion = () => {
     localStorage.removeItem('isAdmin')
@@ -92,6 +107,16 @@ export default function AdminLayout({
                   <BookOpen className="h-5 w-5 lg:mr-2" />
                   Ejercicios
                 </Link>
+                {adminId ? (
+                  <NotificationsBell recipientType="admin" recipientId={adminId} href="/admin/notificaciones" label="Notificaciones" />
+                ) : (
+                  <Link
+                    href="/admin/notificaciones"
+                    className="flex shrink-0 items-center px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition"
+                  >
+                    Notificaciones
+                  </Link>
+                )}
                 <Link
                   href="/admin/perfil"
                   className="flex shrink-0 items-center px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition"

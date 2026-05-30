@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import Link from 'next/link'
-import { Users, Calendar, ClipboardCheck, LogOut, Activity, ClipboardList } from 'lucide-react'
+import { Users, Calendar, ClipboardCheck, LogOut, Activity, ClipboardList, Trophy } from 'lucide-react'
+import NotificationsBell from '@/components/notificaciones/NotificationsBell'
 
 export default function EntrenadorDashboard() {
   const router = useRouter()
@@ -68,10 +69,19 @@ export default function EntrenadorDashboard() {
               <h1 className="text-2xl font-bold text-gray-900">Portal del Entrenador</h1>
               <p className="text-sm text-gray-600 mt-1">Bienvenido, {entrenador?.nombre} {entrenador?.apellidos}</p>
             </div>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Cerrar Sesión
-            </Button>
+            <div className="flex items-center gap-3">
+              {entrenador?.id ? (
+                <NotificationsBell
+                  recipientType="entrenador"
+                  recipientId={entrenador.id}
+                  href="/entrenador/notificaciones"
+                />
+              ) : null}
+              <Button variant="outline" onClick={handleLogout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Cerrar Sesión
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -113,7 +123,7 @@ export default function EntrenadorDashboard() {
             <h2 className="text-xl font-semibold text-gray-900">Acciones Rápidas</h2>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
               <Link
                 href="/entrenador/entrenamientos"
                 className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition text-center group"
@@ -148,6 +158,15 @@ export default function EntrenadorDashboard() {
                 <Users className="h-12 w-12 text-gray-400 group-hover:text-primary-600 mx-auto mb-3" />
                 <p className="font-medium text-gray-900 mb-2">Mis Deportistas</p>
                 <p className="text-sm text-gray-600">Ver tu listado completo y agregar nuevos deportistas</p>
+              </Link>
+
+              <Link
+                href="/entrenador/partidos"
+                className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition text-center group"
+              >
+                <Trophy className="h-12 w-12 text-gray-400 group-hover:text-primary-600 mx-auto mb-3" />
+                <p className="font-medium text-gray-900 mb-2">Partidos</p>
+                <p className="text-sm text-gray-600">Programar partidos y analizar correcciones para la semana</p>
               </Link>
 
               <Link

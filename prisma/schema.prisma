@@ -20,6 +20,7 @@ model Admin {
   rol           String        @default("admin") // admin, entrenador
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+  notificacionesRecibidas Notificacion[] @relation("AdminNotificaciones")
   
   @@map("admins")
 }
@@ -103,10 +104,38 @@ model Entrenador {
   // Relaciones
   turnos        Turno[]
   planes        PlanEntrenamiento[]
+  partidos      PartidoEntrenador[]
   ejerciciosCreados EjercicioBiblioteca[]
   reportes      ReporteEntrenador[]
+  notificacionesRecibidas Notificacion[] @relation("EntrenadorNotificaciones")
   
   @@map("entrenadores")
+}
+
+model PartidoEntrenador {
+  id                       String      @id @default(cuid())
+  entrenadorId             String
+  entrenador               Entrenador  @relation(fields: [entrenadorId], references: [id], onDelete: Cascade)
+  turnoId                  String?
+  titulo                   String
+  rival                    String
+  competencia              String?
+  categoria                String?
+  sede                     String?
+  fechaPartido             DateTime
+  horaPartido              String
+  estado                   String      @default("programado")
+  resultadoPropio          Int?
+  resultadoRival           Int?
+  analisisGeneral          String?     @db.Text
+  erroresDeficiencias      String?     @db.Text
+  correccionesProximaSemana String?    @db.Text
+  microcicloTrabajo        String?     @db.Text
+  createdAt                DateTime    @default(now())
+  updatedAt                DateTime    @updatedAt
+
+  @@index([entrenadorId, fechaPartido])
+  @@map("partidos_entrenador")
 }
 
 // BIBLIOTECA DE EJERCICIOS (compartida entre entrenadores)
@@ -376,11 +405,35 @@ model ReporteEntrenador {
   motivoIncompleta    String?            @db.Text
   requerimientos      String?            @db.Text
   detalleEjercicios   Json?
+  feedbackAdmin       String?            @db.Text
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
 
   @@unique([entrenadorId, turnoId, fechaSesion, planEntrenamientoId])
   @@map("reportes_entrenador")
+}
+
+model Notificacion {
+  id                String      @id @default(cuid())
+  tipo              String
+  titulo            String
+  mensaje           String      @db.Text
+  enlace            String?
+  remitenteTipo     String
+  remitenteId       String?
+  remitenteNombre   String?
+  destinatarioTipo  String
+  adminDestinatarioId String?
+  adminDestinatario Admin?      @relation("AdminNotificaciones", fields: [adminDestinatarioId], references: [id], onDelete: Cascade)
+  entrenadorDestinatarioId String?
+  entrenadorDestinatario Entrenador? @relation("EntrenadorNotificaciones", fields: [entrenadorDestinatarioId], references: [id], onDelete: Cascade)
+  leida             Boolean     @default(false)
+  metadata          Json?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@index([destinatarioTipo, adminDestinatarioId, entrenadorDestinatarioId, leida])
+  @@map("notificaciones")
 }
 
 // Sesión de Entrenamiento Ejecutada (deportistas que completaron un plan)

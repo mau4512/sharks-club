@@ -71,6 +71,7 @@ export async function POST(request: NextRequest) {
         estado: body.estado || 'programado',
         resultadoPropio: Number.isFinite(body.resultadoPropio) ? body.resultadoPropio : null,
         resultadoRival: Number.isFinite(body.resultadoRival) ? body.resultadoRival : null,
+        estadisticas: body.estadisticas || null,
         analisisGeneral: body.analisisGeneral?.trim() || null,
         erroresDeficiencias: body.erroresDeficiencias?.trim() || null,
         correccionesProximaSemana: body.correccionesProximaSemana?.trim() || null,

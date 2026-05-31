@@ -214,7 +214,9 @@ export default async function SesionesEntrenamientoAdminPage({
                             {Array.isArray(plan.ejercicios) && plan.ejercicios.map((ejercicio: any, index: number) => (
                               <div key={`${plan.id}-ej-${index}`} className="rounded-xl bg-white px-3 py-2 text-sm text-gray-800">
                                 <span className="font-semibold">{index + 1}. {ejercicio.titulo}</span>
-                                <span className="ml-2 text-gray-500">· {ejercicio.duracion} min</span>
+                                {ejercicio.duracion > 0 && (
+                                  <span className="ml-2 text-gray-500">· {ejercicio.duracion} min</span>
+                                )}
                               </div>
                             ))}
                           </div>

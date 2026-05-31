@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import Link from 'next/link'
-import { Users, Calendar, ClipboardCheck, LogOut, Activity, ClipboardList, Trophy } from 'lucide-react'
+import { Users, Calendar, ClipboardCheck, LogOut, Activity, ClipboardList, Trophy, User } from 'lucide-react'
 import NotificationsBell from '@/components/notificaciones/NotificationsBell'
 
 export default function EntrenadorDashboard() {
@@ -77,6 +77,12 @@ export default function EntrenadorDashboard() {
                   href="/entrenador/notificaciones"
                 />
               ) : null}
+              <Link href="/entrenador/perfil">
+                <Button variant="outline">
+                  <User className="h-4 w-4 mr-2" />
+                  Perfil
+                </Button>
+              </Link>
               <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
                 Cerrar Sesión

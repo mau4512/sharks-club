@@ -83,6 +83,7 @@ model Turno {
   ejerciciosTiro EjercicioTiro[]
   planes        PlanEntrenamiento[]
   reportesEntrenador ReporteEntrenador[]
+  partidosEntrenador PartidoEntrenador[]
   
   @@map("turnos")
 }
@@ -117,6 +118,7 @@ model PartidoEntrenador {
   entrenadorId             String
   entrenador               Entrenador  @relation(fields: [entrenadorId], references: [id], onDelete: Cascade)
   turnoId                  String?
+  turno                    Turno?      @relation(fields: [turnoId], references: [id], onDelete: SetNull)
   titulo                   String
   rival                    String
   competencia              String?
@@ -127,6 +129,7 @@ model PartidoEntrenador {
   estado                   String      @default("programado")
   resultadoPropio          Int?
   resultadoRival           Int?
+  estadisticas             Json?
   analisisGeneral          String?     @db.Text
   erroresDeficiencias      String?     @db.Text
   correccionesProximaSemana String?    @db.Text

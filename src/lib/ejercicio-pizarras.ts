@@ -1,6 +1,23 @@
+export interface PizarraEditableState {
+  strokes?: Array<{
+    points: Array<{ x: number; y: number }>
+    color: string
+    lineWidth: number
+  }>
+  shapes?: Array<{
+    type: string
+    x: number
+    y: number
+    endX?: number
+    endY?: number
+    label?: string
+  }>
+}
+
 export interface PizarraEjercicio {
   tipo: 'media' | 'completa'
   data: string
+  state?: PizarraEditableState
 }
 
 export interface EjercicioConPizarras {

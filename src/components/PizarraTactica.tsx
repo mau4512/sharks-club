@@ -14,11 +14,13 @@ import {
   Undo,
   Waves,
 } from 'lucide-react'
+import type { PizarraEditableState } from '@/lib/ejercicio-pizarras'
 
 interface PizarraTacticaProps {
   tipo: 'media' | 'completa'
-  onSave?: (imageData: string) => void
+  onSave?: (imageData: string, state: PizarraEditableState) => void
   initialData?: string
+  initialState?: PizarraEditableState
 }
 
 interface Point {
@@ -62,9 +64,13 @@ const ARROW_TYPES: ShapeType[] = ['cut-arrow', 'dribble-arrow', 'pass-arrow']
 const PLAYER_RADIUS = 18
 const HANDLE_RADIUS = 7
 
-export default function PizarraTactica({ tipo, onSave }: PizarraTacticaProps) {
+export default function PizarraTactica({ tipo, onSave, initialData, initialState }: PizarraTacticaProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const courtImageRef = useRef<HTMLImageElement | null>(null)
+  const initialImageRef = useRef<HTMLImageElement | null>(null)
+  const canvasReadyRef = useRef(false)
+  const lastSavedDataRef = useRef<string | null>(null)
+  const lastSavedStateRef = useRef<PizarraEditableState | null>(null)
 
   const [color, setColor] = useState('#EF4444')
   const [lineWidth, setLineWidth] = useState(3)
@@ -75,6 +81,7 @@ export default function PizarraTactica({ tipo, onSave }: PizarraTacticaProps) {
   const [shapes, setShapes] = useState<Shape[]>([])
   const [currentStroke, setCurrentStroke] = useState<Point[]>([])
   const [dragState, setDragState] = useState<DragState>(null)
+  const [courtLoaded, setCourtLoaded] = useState(0)
 
   const colors = [
     { name: 'Rojo', value: '#EF4444' },
@@ -89,14 +96,55 @@ export default function PizarraTactica({ tipo, onSave }: PizarraTacticaProps) {
     const img = new Image()
     img.onload = () => {
       courtImageRef.current = img
-      redrawCanvas()
+      if (!initialData || initialState) {
+        canvasReadyRef.current = true
+      }
+      setCourtLoaded((value) => value + 1)
     }
     img.src = tipo === 'media' ? '/images/middle_court.jpg' : '/images/full_court.jpg'
   }, [tipo])
 
   useEffect(() => {
+    if (initialState && initialState === lastSavedStateRef.current) return
+
+    if (initialState?.strokes || initialState?.shapes) {
+      initialImageRef.current = null
+      setStrokes((initialState.strokes || []) as Stroke[])
+      setShapes((initialState.shapes || []) as Shape[])
+      setCurrentStroke([])
+      setSelectedIndex(null)
+      canvasReadyRef.current = Boolean(courtImageRef.current)
+      redrawCanvas()
+      return
+    }
+
+    if (initialData && initialData === lastSavedDataRef.current) return
+
+    setStrokes([])
+    setShapes([])
+    setCurrentStroke([])
+    setSelectedIndex(null)
+    canvasReadyRef.current = false
+
+    if (!initialData) {
+      initialImageRef.current = null
+      canvasReadyRef.current = Boolean(courtImageRef.current)
+      redrawCanvas()
+      return
+    }
+
+    const img = new Image()
+    img.onload = () => {
+      initialImageRef.current = img
+      canvasReadyRef.current = true
+      redrawCanvas()
+    }
+    img.src = initialData
+  }, [initialData, initialState, tipo])
+
+  useEffect(() => {
     redrawCanvas()
-  }, [strokes, shapes, selectedIndex])
+  }, [strokes, shapes, selectedIndex, courtLoaded])
 
   useEffect(() => {
     saveSnapshot()
@@ -326,7 +374,9 @@ export default function PizarraTactica({ tipo, onSave }: PizarraTacticaProps) {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    if (courtImageRef.current) {
+    if (initialImageRef.current) {
+      ctx.drawImage(initialImageRef.current, 0, 0, canvas.width, canvas.height)
+    } else if (courtImageRef.current) {
       ctx.drawImage(courtImageRef.current, 0, 0, canvas.width, canvas.height)
     }
 
@@ -359,7 +409,20 @@ export default function PizarraTactica({ tipo, onSave }: PizarraTacticaProps) {
 
   const saveSnapshot = () => {
     const canvas = canvasRef.current
-    if (canvas && onSave) onSave(canvas.toDataURL())
+    if (!canvas || !onSave || !canvasReadyRef.current) return
+
+    const imageData = canvas.toDataURL()
+    const state: PizarraEditableState = {
+      strokes: strokes.map((stroke) => ({
+        ...stroke,
+        points: stroke.points.map((point) => ({ ...point })),
+      })),
+      shapes: shapes.map((shape) => ({ ...shape })),
+    }
+
+    lastSavedDataRef.current = imageData
+    lastSavedStateRef.current = state
+    onSave(imageData, state)
   }
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
@@ -503,6 +566,7 @@ export default function PizarraTactica({ tipo, onSave }: PizarraTacticaProps) {
   }
 
   const clearCanvas = () => {
+    initialImageRef.current = null
     setStrokes([])
     setShapes([])
     setCurrentStroke([])

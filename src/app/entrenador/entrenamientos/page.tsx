@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { ArrowLeft, Plus, Trash2, Save, Clipboard, Edit, Calendar, Clock, BookOpen, FileText } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowUp, Plus, Trash2, Save, Clipboard, Edit, Calendar, Clock, BookOpen, FileText } from 'lucide-react'
 import Link from 'next/link'
 import PizarraTactica from '@/components/PizarraTactica'
 import SelectorEjerciciosBiblioteca from '@/components/SelectorEjerciciosBiblioteca'
@@ -23,6 +23,9 @@ interface Ejercicio {
   id: string
   titulo: string
   descripcion: string
+  categoria?: string
+  etiqueta?: string
+  tags?: string[]
   duracion: number
   meta: {
     tipo: 'conversiones' | 'repeticiones' | 'tiempo'
@@ -68,7 +71,9 @@ export default function PrepararEntrenamientoPage() {
   const [nuevoEjercicio, setNuevoEjercicio] = useState({
     titulo: '',
     descripcion: '',
-    duracion: 15,
+    categoria: 'Tiro',
+    etiqueta: 'TIR',
+    duracion: 0,
     metaTipo: 'conversiones' as 'conversiones' | 'repeticiones' | 'tiempo',
     metaCantidad: 10,
     metaUnidad: 'tiros',
@@ -76,22 +81,26 @@ export default function PrepararEntrenamientoPage() {
     usarPuntosTiro: false,
     puntosTiro: [] as Array<{posicion: string, cantidad: number, amboLados: boolean}>,
     tipoRecurso: 'ninguno' as 'pizarra' | 'video' | 'ninguno',
-    pizarras: [] as Array<{ id: string; tipo: 'media' | 'completa'; data: string }>,
+    pizarras: [] as Array<{ id: string } & PizarraEjercicio>,
+    videoUrl: '',
     videoFile: null as File | null
   })
 
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [mostrarSelectorBiblioteca, setMostrarSelectorBiblioteca] = useState(false)
+  const [ejercicioEditandoIndex, setEjercicioEditandoIndex] = useState<number | null>(null)
 
-  const categorias = [
-    'Calentamiento',
-    'Técnica Individual',
-    'Tiro',
-    'Defensa',
-    'Ataque',
-    'Físico',
-    'Táctico',
-    'Enfriamiento'
+  const categoriasEjercicio = [
+    { etiqueta: 'CAL', categoria: 'Calentamiento' },
+    { etiqueta: 'TEC', categoria: 'Técnica Individual' },
+    { etiqueta: 'TIR', categoria: 'Tiro' },
+    { etiqueta: 'TAC', categoria: 'Táctico' },
+    { etiqueta: 'DEF', categoria: 'Defensa' },
+    { etiqueta: 'ATA', categoria: 'Ataque' },
+    { etiqueta: 'FIS', categoria: 'Físico' },
+    { etiqueta: 'COM', categoria: 'Competitivo' },
+    { etiqueta: 'ENF', categoria: 'Enfriamiento' },
+    { etiqueta: 'GEN', categoria: 'General' },
   ]
 
   useEffect(() => {
@@ -147,7 +156,7 @@ export default function PrepararEntrenamientoPage() {
 
   const actualizarPizarraEjercicio = (
     pizarraId: string,
-    changes: Partial<{ tipo: 'media' | 'completa'; data: string }>
+    changes: Partial<PizarraEjercicio>
   ) => {
     setNuevoEjercicio({
       ...nuevoEjercicio,
@@ -164,17 +173,45 @@ export default function PrepararEntrenamientoPage() {
     })
   }
 
-  const agregarEjercicio = async () => {
-    if (!nuevoEjercicio.titulo.trim()) {
-      toast.error('El título del ejercicio es obligatorio')
-      return
+  const getDuracionDesdeMeta = () => {
+    if (nuevoEjercicio.metaTipo !== 'tiempo') return 0
+    if (nuevoEjercicio.metaUnidad.toLowerCase().includes('seg')) {
+      return Math.ceil(nuevoEjercicio.metaCantidad / 60)
     }
+    return nuevoEjercicio.metaCantidad
+  }
 
+  const resetearFormularioEjercicio = () => {
+    setNuevoEjercicio({
+      titulo: '',
+      descripcion: '',
+      categoria: 'Tiro',
+      etiqueta: 'TIR',
+      duracion: 0,
+      metaTipo: 'conversiones',
+      metaCantidad: 10,
+      metaUnidad: 'tiros',
+      metaTipoTiro: '2puntos',
+      usarPuntosTiro: false,
+      puntosTiro: [],
+      tipoRecurso: 'ninguno',
+      pizarras: [],
+      videoUrl: '',
+      videoFile: null
+    })
+    setEjercicioEditandoIndex(null)
+  }
+
+  const construirEjercicioDesdeFormulario = (): Ejercicio => {
+    const ejercicioPrevio = ejercicioEditandoIndex !== null ? plan.ejercicios[ejercicioEditandoIndex] : null
     const ejercicio: Ejercicio = {
-      id: Date.now().toString(),
+      id: ejercicioPrevio?.id || Date.now().toString(),
       titulo: nuevoEjercicio.titulo,
       descripcion: nuevoEjercicio.descripcion,
-      duracion: nuevoEjercicio.duracion,
+      categoria: nuevoEjercicio.categoria,
+      etiqueta: nuevoEjercicio.etiqueta,
+      tags: [nuevoEjercicio.categoria],
+      duracion: getDuracionDesdeMeta(),
       meta: {
         tipo: nuevoEjercicio.metaTipo,
         cantidad: nuevoEjercicio.metaCantidad,
@@ -186,25 +223,45 @@ export default function PrepararEntrenamientoPage() {
       tipoRecurso: nuevoEjercicio.tipoRecurso
     }
 
-    // Agregar puntos de tiro si están configurados
     if (nuevoEjercicio.usarPuntosTiro && nuevoEjercicio.puntosTiro.length > 0) {
       ejercicio.puntosTiro = nuevoEjercicio.puntosTiro as PuntoTiro[]
     }
 
-    // Agregar datos según el tipo de recurso
     if (nuevoEjercicio.tipoRecurso === 'pizarra') {
       const pizarrasValidas = nuevoEjercicio.pizarras
         .filter((pizarra) => pizarra.data)
-        .map(({ tipo, data }) => ({ tipo, data }))
+        .map(({ tipo, data, state }) => ({ tipo, data, state }))
 
       if (pizarrasValidas.length > 0) {
         ejercicio.pizarras = pizarrasValidas
         ejercicio.pizarra = pizarrasValidas[0]
       }
-    } else if (nuevoEjercicio.tipoRecurso === 'video' && nuevoEjercicio.videoFile) {
-      // Aquí podrías subir el video a un servidor
-      // Por ahora guardamos el nombre del archivo
-      ejercicio.videoUrl = nuevoEjercicio.videoFile.name
+    } else if (nuevoEjercicio.tipoRecurso === 'video') {
+      ejercicio.videoUrl = nuevoEjercicio.videoFile?.name || nuevoEjercicio.videoUrl || ejercicioPrevio?.videoUrl
+    }
+
+    return ejercicio
+  }
+
+  const agregarEjercicio = async () => {
+    if (!nuevoEjercicio.titulo.trim()) {
+      toast.error('El título del ejercicio es obligatorio')
+      return
+    }
+
+    const ejercicio = construirEjercicioDesdeFormulario()
+
+    if (ejercicioEditandoIndex !== null) {
+      setPlan({
+        ...plan,
+        ejercicios: plan.ejercicios.map((item, index) =>
+          index === ejercicioEditandoIndex ? ejercicio : item
+        )
+      })
+      toast.success('Ejercicio actualizado')
+      resetearFormularioEjercicio()
+      setMostrarFormulario(false)
+      return
     }
 
     setPlan({
@@ -220,8 +277,8 @@ export default function PrepararEntrenamientoPage() {
           body: JSON.stringify({
             nombre: nuevoEjercicio.titulo,
             descripcion: nuevoEjercicio.descripcion,
-            categoria: 'Técnico',
-            duracion: nuevoEjercicio.duracion,
+            categoria: nuevoEjercicio.categoria,
+            duracion: getDuracionDesdeMeta() || null,
             series: nuevoEjercicio.metaTipo === 'repeticiones' ? nuevoEjercicio.metaCantidad : null,
             repeticiones: nuevoEjercicio.metaUnidad,
             instrucciones: nuevoEjercicio.descripcion,
@@ -235,29 +292,63 @@ export default function PrepararEntrenamientoPage() {
       }
     }
 
-    // Resetear formulario
-    setNuevoEjercicio({
-      titulo: '',
-      descripcion: '',
-      duracion: 15,
-      metaTipo: 'conversiones',
-      metaCantidad: 10,
-      metaUnidad: 'tiros',
-      metaTipoTiro: '2puntos',
-      usarPuntosTiro: false,
-      puntosTiro: [],
-      tipoRecurso: 'ninguno',
-      pizarras: [],
-      videoFile: null
-    })
+    resetearFormularioEjercicio()
     setMostrarFormulario(false)
   }
 
   const eliminarEjercicio = (id: string) => {
+    const indexEliminado = plan.ejercicios.findIndex(e => e.id === id)
     setPlan({
       ...plan,
       ejercicios: plan.ejercicios.filter(e => e.id !== id)
     })
+    if (ejercicioEditandoIndex === indexEliminado) {
+      resetearFormularioEjercicio()
+      setMostrarFormulario(false)
+    }
+  }
+
+  const editarEjercicio = (index: number) => {
+    const ejercicio = plan.ejercicios[index]
+    const etiqueta = ejercicio.etiqueta || String(ejercicio.categoria || 'General').slice(0, 3).toUpperCase()
+    setNuevoEjercicio({
+      titulo: ejercicio.titulo,
+      descripcion: ejercicio.descripcion || '',
+      categoria: ejercicio.categoria || 'General',
+      etiqueta,
+      duracion: ejercicio.duracion || 0,
+      metaTipo: ejercicio.meta?.tipo || 'conversiones',
+      metaCantidad: ejercicio.meta?.cantidad || 10,
+      metaUnidad: ejercicio.meta?.unidad || 'tiros',
+      metaTipoTiro: ejercicio.meta?.tipoTiro || '2puntos',
+      usarPuntosTiro: Boolean(ejercicio.puntosTiro?.length),
+      puntosTiro: ejercicio.puntosTiro || [],
+      tipoRecurso: ejercicio.tipoRecurso || 'ninguno',
+      pizarras: getPizarrasEjercicio(ejercicio).map((pizarra, pizarraIndex) => ({
+        id: `${ejercicio.id}-${pizarraIndex}`,
+        ...pizarra,
+      })),
+      videoUrl: ejercicio.videoUrl || '',
+      videoFile: null
+    })
+    setEjercicioEditandoIndex(index)
+    setMostrarFormulario(true)
+  }
+
+  const moverEjercicio = (index: number, direccion: -1 | 1) => {
+    const nuevoIndex = index + direccion
+    if (nuevoIndex < 0 || nuevoIndex >= plan.ejercicios.length) return
+
+    const ejercicios = [...plan.ejercicios]
+    const [ejercicio] = ejercicios.splice(index, 1)
+    ejercicios.splice(nuevoIndex, 0, ejercicio)
+    setPlan({ ...plan, ejercicios })
+
+    if (ejercicioEditandoIndex === index) {
+      setEjercicioEditandoIndex(nuevoIndex)
+    } else if (ejercicioEditandoIndex === nuevoIndex) {
+      setEjercicioEditandoIndex(index)
+    }
   }
 
   const seleccionarEjercicioBiblioteca = (ejercicioBiblioteca: any) => {
@@ -266,6 +357,9 @@ export default function PrepararEntrenamientoPage() {
       id: Date.now().toString(),
       titulo: ejercicioBiblioteca.nombre,
       descripcion: ejercicioBiblioteca.descripcion || ejercicioBiblioteca.instrucciones || '',
+      categoria: ejercicioBiblioteca.categoria || 'General',
+      etiqueta: ejercicioBiblioteca.etiqueta || String(ejercicioBiblioteca.categoria || 'General').slice(0, 3).toUpperCase(),
+      tags: [ejercicioBiblioteca.categoria || 'General'],
       duracion: ejercicioBiblioteca.duracion || 15,
       meta: {
         tipo: 'repeticiones',
@@ -518,7 +612,7 @@ export default function PrepararEntrenamientoPage() {
                     Ejercicios ({plan.ejercicios.length})
                   </h2>
                   <span className="text-sm text-gray-600">
-                    Duración total: {calcularDuracionTotal()} min
+                    Tiempo fijo total: {calcularDuracionTotal()} min
                   </span>
                 </div>
               </CardHeader>
@@ -539,6 +633,11 @@ export default function PrepararEntrenamientoPage() {
                             <div className="flex items-center gap-2 mb-2">
                               <span className="text-xs font-medium text-gray-500">#{index + 1}</span>
                               <h3 className="font-semibold text-gray-900">{ejercicio.titulo}</h3>
+                              {ejercicio.etiqueta && (
+                                <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700">
+                                  {ejercicio.etiqueta}
+                                </span>
+                              )}
                             </div>
                             
                             {/* Descripción */}
@@ -625,11 +724,12 @@ export default function PrepararEntrenamientoPage() {
                               </div>
                             )}
 
-                            {/* Duración */}
                             <div className="flex gap-2 mt-2">
-                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                                ⏱️ {ejercicio.duracion} min
-                              </span>
+                              {ejercicio.duracion > 0 && (
+                                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                  Tiempo fijo: {ejercicio.duracion} min
+                                </span>
+                              )}
                               {ejercicio.tipoRecurso !== 'ninguno' && (
                                 <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
                                   {ejercicio.tipoRecurso === 'pizarra'
@@ -639,12 +739,42 @@ export default function PrepararEntrenamientoPage() {
                               )}
                             </div>
                           </div>
-                          <button
-                            onClick={() => eliminarEjercicio(ejercicio.id)}
-                            className="text-red-600 hover:text-red-700 p-1 ml-2"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          <div className="ml-2 flex shrink-0 flex-col gap-1">
+                            <button
+                              type="button"
+                              onClick={() => moverEjercicio(index, -1)}
+                              disabled={index === 0}
+                              className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-30"
+                              title="Subir ejercicio"
+                            >
+                              <ArrowUp className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moverEjercicio(index, 1)}
+                              disabled={index === plan.ejercicios.length - 1}
+                              className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-30"
+                              title="Bajar ejercicio"
+                            >
+                              <ArrowDown className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => editarEjercicio(index)}
+                              className="rounded p-1 text-primary-700 hover:bg-primary-50 hover:text-primary-800"
+                              title="Editar ejercicio"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => eliminarEjercicio(ejercicio.id)}
+                              className="rounded p-1 text-red-600 hover:bg-red-50 hover:text-red-700"
+                              title="Eliminar ejercicio"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -658,13 +788,18 @@ export default function PrepararEntrenamientoPage() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <h2 className="text-lg font-semibold text-gray-900">Agregar Ejercicio</h2>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  {ejercicioEditandoIndex !== null ? 'Editar Ejercicio' : 'Agregar Ejercicio'}
+                </h2>
               </CardHeader>
               <CardContent className="space-y-4">
                 {!mostrarFormulario ? (
                   <div className="space-y-2">
                     <Button
-                      onClick={() => setMostrarFormulario(true)}
+                      onClick={() => {
+                        resetearFormularioEjercicio()
+                        setMostrarFormulario(true)
+                      }}
                       className="w-full"
                       variant="secondary"
                     >
@@ -693,6 +828,30 @@ export default function PrepararEntrenamientoPage() {
                         autoFocus
                         className="text-gray-900"
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Etiqueta del PDF *
+                      </label>
+                      <select
+                        value={nuevoEjercicio.etiqueta}
+                        onChange={(e) => {
+                          const opcion = categoriasEjercicio.find((categoria) => categoria.etiqueta === e.target.value)
+                          setNuevoEjercicio({
+                            ...nuevoEjercicio,
+                            etiqueta: e.target.value,
+                            categoria: opcion?.categoria || nuevoEjercicio.categoria,
+                          })
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-gray-900"
+                      >
+                        {categoriasEjercicio.map((categoria) => (
+                          <option key={categoria.etiqueta} value={categoria.etiqueta}>
+                            {categoria.etiqueta} - {categoria.categoria}
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
                     {/* Meta del Ejercicio */}
@@ -903,7 +1062,7 @@ export default function PrepararEntrenamientoPage() {
                       )}
                       
                       <p className="text-xs text-primary-700 mt-2">
-                        Ejemplo: &quot;10 tiros libres&quot;, &quot;20 repeticiones&quot;, &quot;5 minutos&quot;
+                        Ejemplo: &quot;10 tiros libres&quot;, &quot;20 repeticiones&quot;, &quot;5 minutos&quot;. Si eliges tiempo, se usa como duración del ejercicio.
                       </p>
                     </div>
 
@@ -1009,8 +1168,9 @@ export default function PrepararEntrenamientoPage() {
                               <div className="border-2 border-gray-200 rounded-lg p-2">
                                 <PizarraTactica
                                   tipo={pizarra.tipo}
-                                  onSave={(data) => actualizarPizarraEjercicio(pizarra.id, { data })}
+                                  onSave={(data, state) => actualizarPizarraEjercicio(pizarra.id, { data, state })}
                                   initialData={pizarra.data}
+                                  initialState={pizarra.state}
                                 />
                               </div>
                             </div>
@@ -1042,21 +1202,6 @@ export default function PrepararEntrenamientoPage() {
                       </div>
                     )}
 
-                    {/* Duración */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Duración (minutos)
-                      </label>
-                      <Input
-                        type="number"
-                        min="5"
-                        max="120"
-                        value={nuevoEjercicio.duracion}
-                        onChange={(e) => setNuevoEjercicio({ ...nuevoEjercicio, duracion: parseInt(e.target.value) })}
-                        className="text-gray-900"
-                      />
-                    </div>
-
                     {/* Descripción */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1078,29 +1223,16 @@ export default function PrepararEntrenamientoPage() {
                         className="flex-1"
                       >
                         <Save className="h-4 w-4 mr-2" />
-                        Guardar Ejercicio
+                        {ejercicioEditandoIndex !== null ? 'Actualizar Ejercicio' : 'Guardar Ejercicio'}
                       </Button>
                       <Button
                         onClick={() => {
                           setMostrarFormulario(false)
-                          setNuevoEjercicio({
-                            titulo: '',
-                            descripcion: '',
-                            duracion: 15,
-                            metaTipo: 'conversiones',
-                            metaCantidad: 0,
-                            metaUnidad: '',
-                            metaTipoTiro: '2puntos',
-                            usarPuntosTiro: false,
-                            puntosTiro: [],
-                            tipoRecurso: 'ninguno',
-                            pizarras: [],
-                            videoFile: null
-                          })
+                          resetearFormularioEjercicio()
                         }}
                         variant="outline"
                       >
-                        Cancelar
+                        {ejercicioEditandoIndex !== null ? 'Cancelar edición' : 'Cancelar'}
                       </Button>
                     </div>
                   </>

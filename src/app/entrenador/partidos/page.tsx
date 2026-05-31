@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Save, Trophy, Trash2 } from 'lucide-react'
+import { ArrowLeft, BarChart3, Play, Plus, Save, Trophy, Trash2 } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { toast } from 'sonner'
@@ -22,10 +22,485 @@ interface PartidoEntrenador {
   estado: string
   resultadoPropio?: number | null
   resultadoRival?: number | null
+  estadisticas?: EstadisticasPartido | null
   analisisGeneral?: string | null
   erroresDeficiencias?: string | null
   correccionesProximaSemana?: string | null
   microcicloTrabajo?: string | null
+}
+
+interface EstadisticaEquipo {
+  t2Convertidos: number
+  t2Intentados: number
+  t3Convertidos: number
+  t3Intentados: number
+  tlConvertidos: number
+  tlIntentados: number
+  rebotesOfensivos: number
+  rebotesDefensivos: number
+  asistencias: number
+  perdidas: number
+  robos: number
+  bloqueos: number
+  faltas: number
+}
+
+interface EstadisticasPartido {
+  propio: EstadisticaEquipo
+  rival: EstadisticaEquipo
+  periodos: PeriodoPartido[]
+  jugadores: EstadisticaJugador[]
+}
+
+interface PeriodoPartido {
+  periodo: string
+  propio: number
+  rival: number
+}
+
+interface EstadisticaJugador {
+  id: string
+  numero: string
+  nombre: string
+  minutos: number
+  t2Convertidos: number
+  t2Intentados: number
+  t3Convertidos: number
+  t3Intentados: number
+  tlConvertidos: number
+  tlIntentados: number
+  rebotesOfensivos: number
+  rebotesDefensivos: number
+  asistencias: number
+  perdidas: number
+  robos: number
+  bloqueos: number
+  faltas: number
+}
+
+const emptyStats: EstadisticaEquipo = {
+  t2Convertidos: 0,
+  t2Intentados: 0,
+  t3Convertidos: 0,
+  t3Intentados: 0,
+  tlConvertidos: 0,
+  tlIntentados: 0,
+  rebotesOfensivos: 0,
+  rebotesDefensivos: 0,
+  asistencias: 0,
+  perdidas: 0,
+  robos: 0,
+  bloqueos: 0,
+  faltas: 0,
+}
+
+const statFields: Array<{ key: keyof EstadisticaEquipo; label: string }> = [
+  { key: 't2Convertidos', label: '2P conv.' },
+  { key: 't2Intentados', label: '2P int.' },
+  { key: 't3Convertidos', label: '3P conv.' },
+  { key: 't3Intentados', label: '3P int.' },
+  { key: 'tlConvertidos', label: 'TL conv.' },
+  { key: 'tlIntentados', label: 'TL int.' },
+  { key: 'rebotesOfensivos', label: 'RO' },
+  { key: 'rebotesDefensivos', label: 'RD' },
+  { key: 'asistencias', label: 'AST' },
+  { key: 'perdidas', label: 'PER' },
+  { key: 'robos', label: 'ROB' },
+  { key: 'bloqueos', label: 'BLK' },
+  { key: 'faltas', label: 'Faltas' },
+]
+
+const playerFields: Array<{ key: keyof Omit<EstadisticaJugador, 'id' | 'numero' | 'nombre'>; label: string }> = [
+  { key: 'minutos', label: 'MIN' },
+  { key: 't2Convertidos', label: '2C' },
+  { key: 't2Intentados', label: '2I' },
+  { key: 't3Convertidos', label: '3C' },
+  { key: 't3Intentados', label: '3I' },
+  { key: 'tlConvertidos', label: 'TLC' },
+  { key: 'tlIntentados', label: 'TLI' },
+  { key: 'rebotesOfensivos', label: 'RO' },
+  { key: 'rebotesDefensivos', label: 'RD' },
+  { key: 'asistencias', label: 'AST' },
+  { key: 'perdidas', label: 'PER' },
+  { key: 'robos', label: 'ROB' },
+  { key: 'bloqueos', label: 'BLK' },
+  { key: 'faltas', label: 'F' },
+]
+
+const defaultPeriodos: PeriodoPartido[] = [
+  { periodo: '1C', propio: 0, rival: 0 },
+  { periodo: '2C', propio: 0, rival: 0 },
+  { periodo: '3C', propio: 0, rival: 0 },
+  { periodo: '4C', propio: 0, rival: 0 },
+]
+
+function normalizeStats(stats?: EstadisticasPartido | null): EstadisticasPartido {
+  return {
+    propio: { ...emptyStats, ...(stats?.propio || {}) },
+    rival: { ...emptyStats, ...(stats?.rival || {}) },
+    periodos: Array.isArray(stats?.periodos) && stats.periodos.length > 0
+      ? stats.periodos.map((periodo, index) => ({
+          periodo: periodo.periodo || defaultPeriodos[index]?.periodo || `P${index + 1}`,
+          propio: Number(periodo.propio) || 0,
+          rival: Number(periodo.rival) || 0,
+        }))
+      : defaultPeriodos,
+    jugadores: Array.isArray(stats?.jugadores)
+      ? stats.jugadores.map((jugador) => ({
+          id: jugador.id || crypto.randomUUID(),
+          numero: jugador.numero || '',
+          nombre: jugador.nombre || '',
+          minutos: Number(jugador.minutos) || 0,
+          t2Convertidos: Number(jugador.t2Convertidos) || 0,
+          t2Intentados: Number(jugador.t2Intentados) || 0,
+          t3Convertidos: Number(jugador.t3Convertidos) || 0,
+          t3Intentados: Number(jugador.t3Intentados) || 0,
+          tlConvertidos: Number(jugador.tlConvertidos) || 0,
+          tlIntentados: Number(jugador.tlIntentados) || 0,
+          rebotesOfensivos: Number(jugador.rebotesOfensivos) || 0,
+          rebotesDefensivos: Number(jugador.rebotesDefensivos) || 0,
+          asistencias: Number(jugador.asistencias) || 0,
+          perdidas: Number(jugador.perdidas) || 0,
+          robos: Number(jugador.robos) || 0,
+          bloqueos: Number(jugador.bloqueos) || 0,
+          faltas: Number(jugador.faltas) || 0,
+        }))
+      : [],
+  }
+}
+
+function pct(convertidos: number, intentados: number) {
+  if (!intentados) return '0%'
+  return `${Math.round((convertidos / intentados) * 100)}%`
+}
+
+function totalRebotes(stats: EstadisticaEquipo) {
+  return stats.rebotesOfensivos + stats.rebotesDefensivos
+}
+
+function puntosCalculados(stats: EstadisticaEquipo) {
+  return stats.t2Convertidos * 2 + stats.t3Convertidos * 3 + stats.tlConvertidos
+}
+
+function puntosJugador(stats: EstadisticaJugador) {
+  return stats.t2Convertidos * 2 + stats.t3Convertidos * 3 + stats.tlConvertidos
+}
+
+function marcadorDesdePeriodos(stats: EstadisticasPartido) {
+  return stats.periodos.reduce(
+    (total, periodo) => ({
+      propio: total.propio + periodo.propio,
+      rival: total.rival + periodo.rival,
+    }),
+    { propio: 0, rival: 0 }
+  )
+}
+
+function equipoDesdeJugadores(jugadores: EstadisticaJugador[]): EstadisticaEquipo {
+  return jugadores.reduce(
+    (total, jugador) => ({
+      t2Convertidos: total.t2Convertidos + jugador.t2Convertidos,
+      t2Intentados: total.t2Intentados + jugador.t2Intentados,
+      t3Convertidos: total.t3Convertidos + jugador.t3Convertidos,
+      t3Intentados: total.t3Intentados + jugador.t3Intentados,
+      tlConvertidos: total.tlConvertidos + jugador.tlConvertidos,
+      tlIntentados: total.tlIntentados + jugador.tlIntentados,
+      rebotesOfensivos: total.rebotesOfensivos + jugador.rebotesOfensivos,
+      rebotesDefensivos: total.rebotesDefensivos + jugador.rebotesDefensivos,
+      asistencias: total.asistencias + jugador.asistencias,
+      perdidas: total.perdidas + jugador.perdidas,
+      robos: total.robos + jugador.robos,
+      bloqueos: total.bloqueos + jugador.bloqueos,
+      faltas: total.faltas + jugador.faltas,
+    }),
+    { ...emptyStats }
+  )
+}
+
+function emptyPlayer(): EstadisticaJugador {
+  return {
+    id: crypto.randomUUID(),
+    numero: '',
+    nombre: '',
+    minutos: 0,
+    ...emptyStats,
+  }
+}
+
+function posesionesEstimadas(stats: EstadisticaEquipo) {
+  const tirosCampo = stats.t2Intentados + stats.t3Intentados
+  return Math.max(0, Math.round(tirosCampo + stats.perdidas + stats.tlIntentados * 0.44 - stats.rebotesOfensivos))
+}
+
+function StatsEditor({
+  title,
+  stats,
+  onChange,
+}: {
+  title: string
+  stats: EstadisticasPartido
+  onChange: (stats: EstadisticasPartido) => void
+}) {
+  const currentStats = normalizeStats(stats)
+  const resumen = [
+    { label: 'Puntos calc.', propio: puntosCalculados(currentStats.propio), rival: puntosCalculados(currentStats.rival) },
+    { label: '% 2P', propio: pct(currentStats.propio.t2Convertidos, currentStats.propio.t2Intentados), rival: pct(currentStats.rival.t2Convertidos, currentStats.rival.t2Intentados) },
+    { label: '% 3P', propio: pct(currentStats.propio.t3Convertidos, currentStats.propio.t3Intentados), rival: pct(currentStats.rival.t3Convertidos, currentStats.rival.t3Intentados) },
+    { label: '% TL', propio: pct(currentStats.propio.tlConvertidos, currentStats.propio.tlIntentados), rival: pct(currentStats.rival.tlConvertidos, currentStats.rival.tlIntentados) },
+    { label: 'REB', propio: totalRebotes(currentStats.propio), rival: totalRebotes(currentStats.rival) },
+    { label: 'Pos. est.', propio: posesionesEstimadas(currentStats.propio), rival: posesionesEstimadas(currentStats.rival) },
+  ]
+  const marcadorPeriodos = marcadorDesdePeriodos(currentStats)
+  const totalesJugadores = equipoDesdeJugadores(currentStats.jugadores)
+
+  const updateEquipoStat = (
+    equipo: 'propio' | 'rival',
+    field: keyof EstadisticaEquipo,
+    value: number
+  ) => {
+    onChange({
+      ...currentStats,
+      [equipo]: {
+        ...currentStats[equipo],
+        [field]: Math.max(0, value || 0),
+      },
+    })
+  }
+
+  const updatePeriodo = (index: number, equipo: 'propio' | 'rival', value: number) => {
+    onChange({
+      ...currentStats,
+      periodos: currentStats.periodos.map((periodo, periodoIndex) =>
+        periodoIndex === index ? { ...periodo, [equipo]: Math.max(0, value || 0) } : periodo
+      ),
+    })
+  }
+
+  const updateJugador = (
+    id: string,
+    field: keyof EstadisticaJugador,
+    value: string | number
+  ) => {
+    onChange({
+      ...currentStats,
+      jugadores: currentStats.jugadores.map((jugador) =>
+        jugador.id === id
+          ? {
+              ...jugador,
+              [field]: field === 'numero' || field === 'nombre' ? value : Math.max(0, Number(value) || 0),
+            }
+          : jugador
+      ),
+    })
+  }
+
+  const addJugador = () => {
+    onChange({
+      ...currentStats,
+      jugadores: [...currentStats.jugadores, emptyPlayer()],
+    })
+  }
+
+  const removeJugador = (id: string) => {
+    onChange({
+      ...currentStats,
+      jugadores: currentStats.jugadores.filter((jugador) => jugador.id !== id),
+    })
+  }
+
+  const aplicarTotalesJugadores = () => {
+    onChange({
+      ...currentStats,
+      propio: totalesJugadores,
+    })
+  }
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="h-4 w-4 text-primary-700" />
+          <p className="text-sm font-semibold text-slate-900">{title}</p>
+        </div>
+        <div className="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-900">
+          Marcador: {marcadorPeriodos.propio} - {marcadorPeriodos.rival}
+        </div>
+      </div>
+
+      <div className="mb-4 grid gap-2 md:grid-cols-3 xl:grid-cols-6">
+        {resumen.map((item) => (
+          <div key={item.label} className="rounded-lg bg-white px-3 py-2 text-xs">
+            <p className="font-semibold text-slate-500">{item.label}</p>
+            <p className="mt-1 text-slate-900">Nosotros: {item.propio}</p>
+            <p className="text-slate-700">Rival: {item.rival}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mb-4 overflow-x-auto">
+        <table className="w-full min-w-[560px] border-collapse text-xs">
+          <thead>
+            <tr className="bg-slate-900 text-white">
+              <th className="border border-slate-300 px-2 py-2 text-left">Periodo</th>
+              {currentStats.periodos.map((periodo) => (
+                <th key={periodo.periodo} className="border border-slate-300 px-2 py-2 text-center">{periodo.periodo}</th>
+              ))}
+              <th className="border border-slate-300 px-2 py-2 text-center">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(['propio', 'rival'] as const).map((equipo) => (
+              <tr key={equipo} className="bg-white">
+                <td className="border border-slate-200 px-2 py-2 font-semibold text-slate-900">
+                  {equipo === 'propio' ? 'Nosotros' : 'Rival'}
+                </td>
+                {currentStats.periodos.map((periodo, index) => (
+                  <td key={periodo.periodo} className="border border-slate-200 px-1 py-1">
+                    <input
+                      type="number"
+                      min="0"
+                      value={periodo[equipo]}
+                      onChange={(event) => updatePeriodo(index, equipo, Number(event.target.value))}
+                      className="w-full rounded border border-slate-200 px-2 py-1 text-center text-slate-900"
+                    />
+                  </td>
+                ))}
+                <td className="border border-slate-200 px-2 py-2 text-center font-semibold text-slate-900">
+                  {currentStats.periodos.reduce((total, periodo) => total + periodo[equipo], 0)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mb-4 overflow-x-auto">
+        <table className="w-full min-w-[760px] border-collapse text-xs">
+          <thead>
+            <tr className="bg-slate-900 text-white">
+              <th className="border border-slate-300 px-2 py-2 text-left">Totales equipo</th>
+              {statFields.map((field) => (
+                <th key={field.key} className="border border-slate-300 px-2 py-2 text-center">{field.label}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {(['propio', 'rival'] as const).map((equipo) => (
+              <tr key={equipo} className="bg-white">
+                <td className="border border-slate-200 px-2 py-2 font-semibold text-slate-900">
+                  {equipo === 'propio' ? 'Nosotros' : 'Rival'}
+                </td>
+                {statFields.map((field) => (
+                  <td key={field.key} className="border border-slate-200 px-1 py-1">
+                    <input
+                      type="number"
+                      min="0"
+                      value={currentStats[equipo][field.key]}
+                      onChange={(event) => updateEquipoStat(equipo, field.key, Number(event.target.value))}
+                      className="w-full rounded border border-slate-200 px-2 py-1 text-center text-slate-900"
+                    />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div>
+        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-slate-900">Planilla de jugadores</p>
+            <p className="mt-1 text-xs text-slate-600">
+              Total jugadores: {puntosCalculados(totalesJugadores)} pts, {totalRebotes(totalesJugadores)} reb, {totalesJugadores.asistencias} ast
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" onClick={aplicarTotalesJugadores}>
+              Actualizar totales
+            </Button>
+            <Button type="button" variant="outline" onClick={addJugador}>
+              <Plus className="h-4 w-4 mr-2" />
+              Agregar jugador
+            </Button>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1180px] border-collapse text-xs">
+            <thead>
+              <tr className="bg-slate-900 text-white">
+                <th className="border border-slate-300 px-2 py-2 text-center">#</th>
+                <th className="border border-slate-300 px-2 py-2 text-left">Jugador</th>
+                <th className="border border-slate-300 px-2 py-2 text-center">PTS</th>
+                {playerFields.map((field) => (
+                  <th key={field.key} className="border border-slate-300 px-2 py-2 text-center">{field.label}</th>
+                ))}
+                <th className="border border-slate-300 px-2 py-2 text-center">REB</th>
+                <th className="border border-slate-300 px-2 py-2 text-center">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentStats.jugadores.length === 0 ? (
+                <tr className="bg-white">
+                  <td colSpan={playerFields.length + 6} className="border border-slate-200 px-3 py-6 text-center text-slate-500">
+                    Agrega jugadores para llevar la planilla individual del partido.
+                  </td>
+                </tr>
+              ) : (
+                currentStats.jugadores.map((jugador) => (
+                  <tr key={jugador.id} className="bg-white">
+                    <td className="border border-slate-200 px-1 py-1">
+                      <input
+                        value={jugador.numero}
+                        onChange={(event) => updateJugador(jugador.id, 'numero', event.target.value)}
+                        className="w-14 rounded border border-slate-200 px-2 py-1 text-center text-slate-900"
+                      />
+                    </td>
+                    <td className="border border-slate-200 px-1 py-1">
+                      <input
+                        value={jugador.nombre}
+                        onChange={(event) => updateJugador(jugador.id, 'nombre', event.target.value)}
+                        className="w-44 rounded border border-slate-200 px-2 py-1 text-slate-900"
+                        placeholder="Nombre"
+                      />
+                    </td>
+                    <td className="border border-slate-200 px-2 py-2 text-center font-semibold text-slate-900">
+                      {puntosJugador(jugador)}
+                    </td>
+                    {playerFields.map((field) => (
+                      <td key={field.key} className="border border-slate-200 px-1 py-1">
+                        <input
+                          type="number"
+                          min="0"
+                          value={jugador[field.key]}
+                          onChange={(event) => updateJugador(jugador.id, field.key, Number(event.target.value))}
+                          className="w-full rounded border border-slate-200 px-2 py-1 text-center text-slate-900"
+                        />
+                      </td>
+                    ))}
+                    <td className="border border-slate-200 px-2 py-2 text-center font-semibold text-slate-900">
+                      {totalRebotes(jugador)}
+                    </td>
+                    <td className="border border-slate-200 px-1 py-1 text-center">
+                      <button
+                        type="button"
+                        onClick={() => removeJugador(jugador.id)}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded border border-red-200 text-red-700 hover:bg-red-50"
+                        aria-label="Eliminar jugador"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function getCurrentWeekValue() {
@@ -67,6 +542,7 @@ export default function EntrenadorPartidosPage() {
     estado: 'programado',
     resultadoPropio: '',
     resultadoRival: '',
+    estadisticas: normalizeStats(),
     analisisGeneral: '',
     erroresDeficiencias: '',
     correccionesProximaSemana: '',
@@ -125,6 +601,7 @@ export default function EntrenadorPartidosPage() {
           turnoId: nuevoPartido.turnoId || null,
           resultadoPropio: nuevoPartido.resultadoPropio === '' ? undefined : Number(nuevoPartido.resultadoPropio),
           resultadoRival: nuevoPartido.resultadoRival === '' ? undefined : Number(nuevoPartido.resultadoRival),
+          estadisticas: nuevoPartido.estadisticas,
         }),
       })
 
@@ -145,6 +622,7 @@ export default function EntrenadorPartidosPage() {
         estado: 'programado',
         resultadoPropio: '',
         resultadoRival: '',
+        estadisticas: normalizeStats(),
         analisisGeneral: '',
         erroresDeficiencias: '',
         correccionesProximaSemana: '',
@@ -163,6 +641,34 @@ export default function EntrenadorPartidosPage() {
     setPartidos((current) =>
       current.map((partido) => (partido.id === id ? { ...partido, [field]: value } : partido))
     )
+  }
+
+  const setPartidoStats = (id: string, estadisticas: EstadisticasPartido) => {
+    const normalizedStats = normalizeStats(estadisticas)
+    const marcador = marcadorDesdePeriodos(normalizedStats)
+    setPartidos((current) =>
+      current.map((partido) =>
+        partido.id === id
+          ? {
+              ...partido,
+              estadisticas: normalizedStats,
+              resultadoPropio: marcador.propio,
+              resultadoRival: marcador.rival,
+            }
+          : partido
+      )
+    )
+  }
+
+  const updateNuevoPartidoStats = (estadisticas: EstadisticasPartido) => {
+    const normalizedStats = normalizeStats(estadisticas)
+    const marcador = marcadorDesdePeriodos(normalizedStats)
+    setNuevoPartido((current) => ({
+      ...current,
+      resultadoPropio: String(marcador.propio),
+      resultadoRival: String(marcador.rival),
+      estadisticas: normalizedStats,
+    }))
   }
 
   const guardarPartido = async (partido: PartidoEntrenador) => {
@@ -282,6 +788,10 @@ export default function EntrenadorPartidosPage() {
                 </Button>
               </div>
             </div>
+
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+              Las estadísticas se registran desde la ventana en vivo después de crear el partido.
+            </div>
           </CardContent>
         </Card>
 
@@ -321,6 +831,24 @@ export default function EntrenadorPartidosPage() {
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                     <input type="number" className="rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder:text-gray-500" value={partido.resultadoPropio ?? ''} onChange={(e) => updatePartidoField(partido.id, 'resultadoPropio', e.target.value === '' ? null : Number(e.target.value))} placeholder="Resultado propio" />
                     <input type="number" className="rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder:text-gray-500" value={partido.resultadoRival ?? ''} onChange={(e) => updatePartidoField(partido.id, 'resultadoRival', e.target.value === '' ? null : Number(e.target.value))} placeholder="Resultado rival" />
+                  </div>
+
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">Estadísticas del partido</p>
+                        <p className="mt-1 text-sm text-slate-600">
+                          Marcador registrado: {partido.resultadoPropio ?? 0} - {partido.resultadoRival ?? 0}
+                        </p>
+                      </div>
+                      <Link
+                        href={`/entrenador/partidos/${partido.id}/estadisticas`}
+                        className="inline-flex items-center justify-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
+                      >
+                        <Play className="h-4 w-4 mr-2" />
+                        Tomar estadísticas
+                      </Link>
+                    </div>
                   </div>
 
                   <div className="grid gap-4 lg:grid-cols-2">

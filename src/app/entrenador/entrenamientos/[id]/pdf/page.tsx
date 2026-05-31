@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Calendar, Clock, Download, Loader2, Printer, User } from 'lucide-react'
@@ -13,6 +13,7 @@ interface EjercicioPlan {
   titulo: string
   descripcion?: string
   categoria?: string
+  etiqueta?: string
   tags?: string[]
   duracion: number
   meta?: {
@@ -92,10 +93,12 @@ function sumarMinutos(hora: string | undefined, minutos: number) {
 
 function formatearDuracion(minutos?: number) {
   const value = Number(minutos || 0)
+  if (value <= 0) return 'Meta'
   return `${String(value).padStart(2, '0')} min`
 }
 
 function getEtiquetaEjercicio(ejercicio: EjercicioPlan) {
+  if (ejercicio.etiqueta) return ejercicio.etiqueta
   const categoria = ejercicio.categoria || ejercicio.tags?.[0]
   if (categoria) return categoria.slice(0, 3).toUpperCase()
   if (ejercicio.meta?.tipoTiro) return 'TIR'
@@ -133,11 +136,32 @@ function getMetaTexto(ejercicio: EjercicioPlan) {
   return partes.join(' · ')
 }
 
+function getPizarraPreviewClasses(tipo: PizarraEjercicio['tipo']) {
+  if (tipo === 'completa') {
+    return {
+      wrapper: 'relative mx-auto h-[98px] w-full max-w-[190px] overflow-hidden border border-slate-300 bg-white print:h-[88px] print:max-w-[180px]',
+      image: 'absolute left-1/2 top-1/2 h-[150px] w-[98px] -translate-x-1/2 -translate-y-1/2 rotate-90 object-contain print:h-[134px] print:w-[88px]',
+    }
+  }
+
+  return {
+    wrapper: 'mx-auto h-[72px] w-full max-w-[190px] border border-slate-300 bg-white print:h-[62px] print:max-w-[180px]',
+    image: 'h-full w-full object-contain',
+  }
+}
+
+function getPizarraAlt(pizarra: PizarraEjercicio, index: number) {
+  const tipo = pizarra.tipo === 'completa' ? 'cancha completa' : 'media cancha'
+  return `Pizarra ${index + 1} - ${tipo}`
+}
+
 export default function PlanEntrenamientoPdfPage() {
   const params = useParams()
   const router = useRouter()
   const planId = params.id as string
+  const pdfRef = useRef<HTMLElement | null>(null)
   const [loading, setLoading] = useState(true)
+  const [generandoPdf, setGenerandoPdf] = useState(false)
   const [plan, setPlan] = useState<PlanEntrenamientoDetalle | null>(null)
   const [entrenadorNombre, setEntrenadorNombre] = useState('')
 
@@ -196,6 +220,70 @@ export default function PlanEntrenamientoPdfPage() {
 
   const reporte = plan?.reportesEntrenador?.[0] || null
 
+  const descargarPdf = async () => {
+    if (!pdfRef.current || !plan) return
+
+    try {
+      setGenerandoPdf(true)
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ])
+
+      const canvas = await html2canvas(pdfRef.current, {
+        backgroundColor: '#ffffff',
+        scale: Math.min(window.devicePixelRatio || 1, 2),
+        useCORS: true,
+        onclone: (documentClone) => {
+          const pdfElement = documentClone.querySelector('[data-pdf-document="true"]') as HTMLElement | null
+          if (!pdfElement) return
+
+          documentClone.body.style.background = '#ffffff'
+          pdfElement.style.background = '#ffffff'
+          pdfElement.style.boxShadow = 'none'
+          pdfElement.style.borderRadius = '0'
+          pdfElement.querySelectorAll<HTMLElement>('*').forEach((element) => {
+            element.style.boxShadow = 'none'
+          })
+        },
+      })
+
+      const imgData = canvas.toDataURL('image/png')
+      const pdf = new jsPDF('p', 'mm', 'a4')
+      const pageWidth = pdf.internal.pageSize.getWidth()
+      const pageHeight = pdf.internal.pageSize.getHeight()
+      const margin = 8
+      const imgWidth = pageWidth - margin * 2
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      let remainingHeight = imgHeight
+      let position = margin
+
+      pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight)
+      remainingHeight -= pageHeight - margin * 2
+
+      while (remainingHeight > 0) {
+        position = remainingHeight - imgHeight + margin
+        pdf.addPage()
+        pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight)
+        remainingHeight -= pageHeight - margin * 2
+      }
+
+      const nombreArchivo = `${plan.titulo || 'plan-entrenamiento'}`
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+
+      pdf.save(`${nombreArchivo || 'plan-entrenamiento'}.pdf`)
+    } catch (error) {
+      console.error('Error al generar PDF:', error)
+      window.print()
+    } finally {
+      setGenerandoPdf(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
@@ -239,14 +327,22 @@ export default function PlanEntrenamientoPdfPage() {
               <Printer className="mr-2 h-4 w-4" />
               Imprimir
             </Button>
-            <Button onClick={() => window.print()}>
-              <Download className="mr-2 h-4 w-4" />
-              Guardar como PDF
+            <Button onClick={descargarPdf} disabled={generandoPdf}>
+              {generandoPdf ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="mr-2 h-4 w-4" />
+              )}
+              {generandoPdf ? 'Generando PDF...' : 'Guardar como PDF'}
             </Button>
           </div>
         </div>
 
-        <article className="mx-auto max-w-5xl rounded-2xl bg-white p-5 shadow-lg print:rounded-none print:p-0 print:shadow-none">
+        <article
+          ref={pdfRef}
+          data-pdf-document="true"
+          className="mx-auto max-w-5xl rounded-2xl bg-white p-5 shadow-lg print:rounded-none print:p-0 print:shadow-none"
+        >
           <header className="border-b border-slate-200 pb-4 print:border-0 print:pb-2">
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div>
@@ -279,7 +375,7 @@ export default function PlanEntrenamientoPdfPage() {
             <p><span className="font-bold text-teal-900">Día:</span> {new Date(plan.fecha).toLocaleDateString('es-PE', { timeZone: 'America/Lima' })}</p>
             <p>
               <span className="font-bold text-teal-900">Hora:</span> {plan.turno.hora}
-              <span className="ml-4 font-bold text-teal-900">Duración:</span> {String(Math.floor(duracionTotal / 60)).padStart(2, '0')}:{String(duracionTotal % 60).padStart(2, '0')}
+              <span className="ml-4 font-bold text-teal-900">Tiempo fijo:</span> {String(Math.floor(duracionTotal / 60)).padStart(2, '0')}:{String(duracionTotal % 60).padStart(2, '0')}
             </p>
           </section>
 
@@ -378,7 +474,7 @@ export default function PlanEntrenamientoPdfPage() {
                         </div>
                       </td>
                       <td className="border border-slate-400 px-1.5 py-2 text-center text-[10px]">
-                        {ejercicio.tags?.length ? ejercicio.tags.join(', ') : 'Sin tags'}
+                        {ejercicio.tags?.length ? ejercicio.tags.join(', ') : ejercicio.categoria || 'Sin tags'}
                       </td>
                       <td className="border border-slate-400 px-2 py-2">
                         <p className="whitespace-pre-wrap">{ejercicio.descripcion || 'Sin descripción.'}</p>
@@ -390,14 +486,19 @@ export default function PlanEntrenamientoPdfPage() {
                       <td className="border border-slate-400 px-2 py-2">
                         {pizarras.length > 0 ? (
                           <div className="grid gap-1">
-                            {pizarras.slice(0, 2).map((pizarra, pizarraIndex) => (
-                              <img
-                                key={`${ejercicio.id}-pizarra-${pizarraIndex}`}
-                                src={pizarra.data}
-                                alt={`Pizarra ${pizarraIndex + 1}`}
-                                className="mx-auto h-[72px] w-full max-w-[190px] border border-slate-300 object-contain print:h-[62px] print:max-w-[180px]"
-                              />
-                            ))}
+                            {pizarras.slice(0, 2).map((pizarra, pizarraIndex) => {
+                              const previewClasses = getPizarraPreviewClasses(pizarra.tipo)
+
+                              return (
+                                <div key={`${ejercicio.id}-pizarra-${pizarraIndex}`} className={previewClasses.wrapper}>
+                                  <img
+                                    src={pizarra.data}
+                                    alt={getPizarraAlt(pizarra, pizarraIndex)}
+                                    className={previewClasses.image}
+                                  />
+                                </div>
+                              )
+                            })}
                             {pizarras.length > 2 && (
                               <p className="text-center text-[10px] text-slate-500">+{pizarras.length - 2} esquemas</p>
                             )}

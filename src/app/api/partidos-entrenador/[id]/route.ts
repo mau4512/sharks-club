@@ -16,6 +16,52 @@ function buildTituloPartido(body: Record<string, any>, rivalFallback: string) {
   return partes.join(' · ')
 }
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const partido = await prisma.partidoEntrenador.findUnique({
+      where: { id: params.id },
+      include: {
+        turno: {
+          include: {
+            deportistas: {
+              where: { activo: true },
+              select: {
+                id: true,
+                nombre: true,
+                apellidos: true,
+                numeroCamiseta: true,
+              },
+              orderBy: [
+                { numeroCamiseta: 'asc' },
+                { apellidos: 'asc' },
+                { nombre: 'asc' },
+              ],
+            },
+          },
+        },
+      },
+    })
+
+    if (!partido) {
+      return NextResponse.json(
+        { error: 'Partido no encontrado' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json(partido)
+  } catch (error) {
+    console.error('Error al obtener partido del entrenador:', error)
+    return NextResponse.json(
+      { error: 'Error al obtener partido del entrenador' },
+      { status: 500 }
+    )
+  }
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -55,6 +101,7 @@ export async function PUT(
         estado: body.estado !== undefined ? body.estado : partidoExistente.estado,
         resultadoPropio: body.resultadoPropio !== undefined ? (Number.isFinite(body.resultadoPropio) ? body.resultadoPropio : null) : partidoExistente.resultadoPropio,
         resultadoRival: body.resultadoRival !== undefined ? (Number.isFinite(body.resultadoRival) ? body.resultadoRival : null) : partidoExistente.resultadoRival,
+        estadisticas: body.estadisticas !== undefined ? body.estadisticas || null : partidoExistente.estadisticas as any,
         analisisGeneral: body.analisisGeneral !== undefined ? body.analisisGeneral?.trim() || null : partidoExistente.analisisGeneral,
         erroresDeficiencias: body.erroresDeficiencias !== undefined ? body.erroresDeficiencias?.trim() || null : partidoExistente.erroresDeficiencias,
         correccionesProximaSemana: body.correccionesProximaSemana !== undefined ? body.correccionesProximaSemana?.trim() || null : partidoExistente.correccionesProximaSemana,

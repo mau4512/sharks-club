@@ -12,6 +12,7 @@ import { toast } from 'sonner'
 export default function PerfilPage() {
   const router = useRouter()
   const [deportista, setDeportista] = useState<any>(null)
+  const [estadisticas, setEstadisticas] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState({
@@ -30,6 +31,10 @@ export default function PerfilPage() {
     
     const parsed = JSON.parse(deportistaData)
     setDeportista(parsed)
+    fetch(`/api/estadisticas/deportista/${parsed.id}`)
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => setEstadisticas(data))
+      .catch((error) => console.error('Error al cargar estadísticas:', error))
     setFormData({
       celular: parsed.celular || '',
       currentPassword: '',
@@ -174,6 +179,86 @@ export default function PerfilPage() {
                 <p className="text-gray-900 mt-1">{deportista?.posicion || 'No especificada'}</p>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mb-6">
+          <CardHeader>
+            <h2 className="text-lg font-semibold text-gray-900">Rendimiento en Partidos</h2>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <div className="rounded-lg bg-slate-50 p-3">
+                <p className="text-xs font-semibold uppercase text-gray-500">Partidos</p>
+                <p className="mt-1 text-2xl font-bold text-gray-900">{estadisticas?.partidos?.partidosJugados || 0}</p>
+              </div>
+              <div className="rounded-lg bg-slate-50 p-3">
+                <p className="text-xs font-semibold uppercase text-gray-500">PPP</p>
+                <p className="mt-1 text-2xl font-bold text-gray-900">{estadisticas?.partidos?.puntosPorPartido || 0}</p>
+              </div>
+              <div className="rounded-lg bg-slate-50 p-3">
+                <p className="text-xs font-semibold uppercase text-gray-500">APP</p>
+                <p className="mt-1 text-2xl font-bold text-gray-900">{estadisticas?.partidos?.asistenciasPorPartido || 0}</p>
+              </div>
+              <div className="rounded-lg bg-slate-50 p-3">
+                <p className="text-xs font-semibold uppercase text-gray-500">RPP</p>
+                <p className="mt-1 text-2xl font-bold text-gray-900">{estadisticas?.partidos?.rebotesPorPartido || 0}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+              <div className="rounded border border-gray-200 p-3 text-center">
+                <p className="text-xs text-gray-500">2P%</p>
+                <p className="font-bold text-gray-900">{estadisticas?.partidos?.pct2 || 0}%</p>
+              </div>
+              <div className="rounded border border-gray-200 p-3 text-center">
+                <p className="text-xs text-gray-500">3P%</p>
+                <p className="font-bold text-gray-900">{estadisticas?.partidos?.pct3 || 0}%</p>
+              </div>
+              <div className="rounded border border-gray-200 p-3 text-center">
+                <p className="text-xs text-gray-500">TL%</p>
+                <p className="font-bold text-gray-900">{estadisticas?.partidos?.pctTl || 0}%</p>
+              </div>
+              <div className="rounded border border-gray-200 p-3 text-center">
+                <p className="text-xs text-gray-500">CA</p>
+                <p className="font-bold text-gray-900">{estadisticas?.partidos?.puntosContraataque || 0}</p>
+              </div>
+              <div className="rounded border border-gray-200 p-3 text-center">
+                <p className="text-xs text-gray-500">2OP</p>
+                <p className="font-bold text-gray-900">{estadisticas?.partidos?.puntosSegundaOportunidad || 0}</p>
+              </div>
+            </div>
+
+            {estadisticas?.partidos?.historial?.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[680px] border-collapse text-xs text-slate-950">
+                  <thead className="text-slate-950">
+                    <tr className="border-2 border-slate-950 bg-white text-slate-950">
+                      <th className="border border-slate-300 px-2 py-2 text-left text-slate-950">Partido</th>
+                      <th className="border border-slate-300 px-2 py-2 text-slate-950">PTS</th>
+                      <th className="border border-slate-300 px-2 py-2 text-slate-950">2P</th>
+                      <th className="border border-slate-300 px-2 py-2 text-slate-950">3P</th>
+                      <th className="border border-slate-300 px-2 py-2 text-slate-950">REB</th>
+                      <th className="border border-slate-300 px-2 py-2 text-slate-950">AST</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-slate-950">
+                    {estadisticas.partidos.historial.map((partido: any) => (
+                      <tr key={partido.id}>
+                        <td className="border border-slate-200 px-2 py-2 font-semibold text-slate-950">{partido.rival}</td>
+                        <td className="border border-slate-200 px-2 py-2 text-center text-slate-950">{partido.puntos}</td>
+                        <td className="border border-slate-200 px-2 py-2 text-center text-slate-950">{partido.estadisticas.t2Convertidos}/{partido.estadisticas.t2Intentados}</td>
+                        <td className="border border-slate-200 px-2 py-2 text-center text-slate-950">{partido.estadisticas.t3Convertidos}/{partido.estadisticas.t3Intentados}</td>
+                        <td className="border border-slate-200 px-2 py-2 text-center text-slate-950">{partido.estadisticas.rebotesOfensivos + partido.estadisticas.rebotesDefensivos}</td>
+                        <td className="border border-slate-200 px-2 py-2 text-center text-slate-950">{partido.estadisticas.asistencias}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="py-6 text-center text-sm text-gray-500">Aún no hay partidos finalizados con estadísticas.</p>
+            )}
           </CardContent>
         </Card>
 

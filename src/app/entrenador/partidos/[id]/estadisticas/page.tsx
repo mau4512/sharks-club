@@ -46,6 +46,8 @@ interface EstadisticaEquipo {
   robos: number
   bloqueos: number
   faltas: number
+  puntosContraataque: number
+  puntosSegundaOportunidad: number
 }
 
 interface EstadisticaJugador extends EstadisticaEquipo {
@@ -74,6 +76,8 @@ interface EventoEstadistica {
   detalle?: string
   tirosLibresGenerados?: number
   relacionadoConId?: string
+  esContraataque?: boolean
+  esSegundaOportunidad?: boolean
   createdAt: string
 }
 
@@ -91,6 +95,7 @@ type PendingAction = {
   equipo: 'propio' | 'rival'
   accion: AccionCodigo
   label: string
+  relacionadoConId?: string
 }
 
 type ShotLocation = {
@@ -99,6 +104,7 @@ type ShotLocation = {
 }
 
 type FollowUp =
+  | { type: 'made-shot'; eventId: string; equipo: 'propio' | 'rival'; fastbreak?: boolean }
   | { type: 'missed-shot'; eventId: string; equipo: 'propio' | 'rival' }
   | { type: 'turnover'; eventId: string; equipo: 'propio' | 'rival' }
   | { type: 'foul'; eventId: string; equipo: 'propio' | 'rival' }
@@ -117,6 +123,8 @@ const emptyStats: EstadisticaEquipo = {
   robos: 0,
   bloqueos: 0,
   faltas: 0,
+  puntosContraataque: 0,
+  puntosSegundaOportunidad: 0,
 }
 
 const accionesTiro: Array<{ result: 'made' | 'missed'; label: string; tone: string }> = [
@@ -215,8 +223,24 @@ function shotLabel(action: AccionCodigo) {
   return action
 }
 
+function puntosAccion(action: AccionCodigo) {
+  if (action === '2PM') return 2
+  if (action === '3PM') return 3
+  if (action === 'FTM') return 1
+  return 0
+}
+
 function oppositeTeam(equipo: 'propio' | 'rival'): 'propio' | 'rival' {
   return equipo === 'propio' ? 'rival' : 'propio'
+}
+
+function hasRecentOffensiveRebound(events: EventoEstadistica[], equipo: 'propio' | 'rival') {
+  for (let index = events.length - 1; index >= 0; index -= 1) {
+    const event = events[index]
+    if (event.equipo === equipo && event.accion === 'RO') return true
+    if (puntosAccion(event.accion) > 0 || event.accion === 'TO' || event.accion === 'RD' || event.accion === 'OUT') return false
+  }
+  return false
 }
 
 function deriveStats(base: EstadisticasPartido): EstadisticasPartido {
@@ -230,6 +254,13 @@ function deriveStats(base: EstadisticasPartido): EstadisticasPartido {
 
   for (const evento of result.eventos || []) {
     result[evento.equipo] = applyAction(result[evento.equipo], evento.accion)
+    const puntosEvento = puntosAccion(evento.accion)
+    if (evento.esContraataque) {
+      result[evento.equipo].puntosContraataque += puntosEvento
+    }
+    if (evento.esSegundaOportunidad) {
+      result[evento.equipo].puntosSegundaOportunidad += puntosEvento
+    }
     const periodoIndex = Math.max(0, Math.min(3, evento.periodo - 1))
     if (evento.accion === '2PM') result.periodos[periodoIndex][evento.equipo] += 2
     if (evento.accion === '3PM') result.periodos[periodoIndex][evento.equipo] += 3
@@ -239,6 +270,12 @@ function deriveStats(base: EstadisticasPartido): EstadisticasPartido {
       const playerIndex = result.jugadores.findIndex((jugador) => jugador.id === evento.jugadorId)
       if (playerIndex >= 0) {
         result.jugadores[playerIndex] = applyAction(result.jugadores[playerIndex], evento.accion)
+        if (evento.esContraataque) {
+          result.jugadores[playerIndex].puntosContraataque += puntosEvento
+        }
+        if (evento.esSegundaOportunidad) {
+          result.jugadores[playerIndex].puntosSegundaOportunidad += puntosEvento
+        }
       }
     }
   }
@@ -300,10 +337,10 @@ export default function EstadisticasEnVivoPage() {
     }))
   }
 
-  const prepareLinkedAction = (equipo: 'propio' | 'rival', accion: AccionCodigo, label: string) => {
+  const prepareLinkedAction = (equipo: 'propio' | 'rival', accion: AccionCodigo, label: string, relacionadoConId?: string) => {
     setFollowUp(null)
     setShotLocation(null)
-    setAccionPendiente({ equipo, accion, label })
+    setAccionPendiente({ equipo, accion, label, relacionadoConId })
   }
 
   const registrarEventoSinJugador = (
@@ -344,6 +381,10 @@ export default function EstadisticasEnVivoPage() {
       label: accionPendiente.label,
       canchaX: shotLocation?.x,
       canchaY: shotLocation?.y,
+      relacionadoConId: accionPendiente.relacionadoConId,
+      esSegundaOportunidad: accionPendiente.accion === '2PM' || accionPendiente.accion === '3PM'
+        ? hasRecentOffensiveRebound(statsDraft.eventos || [], accionPendiente.equipo)
+        : undefined,
       createdAt: new Date().toISOString(),
     }
 
@@ -351,8 +392,12 @@ export default function EstadisticasEnVivoPage() {
     setAccionPendiente(null)
     setShotLocation(null)
 
-    if (evento.accion === '2PA' || evento.accion === '3PA') {
+    if (evento.accion === '2PM' || evento.accion === '3PM') {
+      setFollowUp({ type: 'made-shot', eventId: evento.id, equipo: evento.equipo })
+    } else if (evento.accion === '2PA' || evento.accion === '3PA') {
       setFollowUp({ type: 'missed-shot', eventId: evento.id, equipo: evento.equipo })
+    } else if (evento.accion === 'BLK' && accionPendiente.relacionadoConId) {
+      setFollowUp({ type: 'missed-shot', eventId: accionPendiente.relacionadoConId, equipo: oppositeTeam(evento.equipo) })
     } else if (evento.accion === 'TO') {
       setFollowUp({ type: 'turnover', eventId: evento.id, equipo: evento.equipo })
     } else if (evento.accion === 'PF') {
@@ -446,6 +491,21 @@ export default function EstadisticasEnVivoPage() {
     setFollowUp(null)
   }
 
+  const updateMadeShotContext = (eventId: string, equipo: 'propio' | 'rival', fastbreak: boolean) => {
+    setStatsDraft((current) => ({
+      ...current,
+      eventos: (current.eventos || []).map((evento) =>
+        evento.id === eventId
+          ? {
+              ...evento,
+              esContraataque: fastbreak,
+            }
+          : evento
+      ),
+    }))
+    setFollowUp({ type: 'made-shot', eventId, equipo, fastbreak })
+  }
+
   const rivalNumbers = Array.from({ length: 15 }, (_, index) => String(index + 1))
 
   const ownLocationEvents = eventos.filter((evento) => evento.equipo === 'propio' && evento.canchaX !== undefined && evento.canchaY !== undefined)
@@ -459,6 +519,8 @@ export default function EstadisticasEnVivoPage() {
     { label: 'PER', propio: stats.propio.perdidas, rival: stats.rival.perdidas },
     { label: 'ROB', propio: stats.propio.robos, rival: stats.rival.robos },
     { label: 'F', propio: stats.propio.faltas, rival: stats.rival.faltas },
+    { label: 'CA', propio: stats.propio.puntosContraataque, rival: stats.rival.puntosContraataque },
+    { label: '2OP', propio: stats.propio.puntosSegundaOportunidad, rival: stats.rival.puntosSegundaOportunidad },
   ]
 
   const guardar = async (estado?: string) => {
@@ -489,6 +551,9 @@ export default function EstadisticasEnVivoPage() {
       setPartido(updated)
       setStatsDraft(normalizeStats(updated.estadisticas))
       toast.success(estado === 'jugado' ? 'Partido finalizado' : 'Estadísticas guardadas')
+      if (estado === 'jugado') {
+        router.push(`/entrenador/partidos/${partido.id}/reporte`)
+      }
     } catch (error: any) {
       toast.error(error.message || 'No se pudo guardar')
     } finally {
@@ -852,6 +917,8 @@ export default function EstadisticasEnVivoPage() {
                     <th className="border border-slate-300 px-2 py-2">ROB</th>
                     <th className="border border-slate-300 px-2 py-2">BLK</th>
                     <th className="border border-slate-300 px-2 py-2">F</th>
+                    <th className="border border-slate-300 px-2 py-2">CA</th>
+                    <th className="border border-slate-300 px-2 py-2">2OP</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -869,6 +936,8 @@ export default function EstadisticasEnVivoPage() {
                       <td className="border border-slate-200 px-2 py-2 text-center">{jugador.robos}</td>
                       <td className="border border-slate-200 px-2 py-2 text-center">{jugador.bloqueos}</td>
                       <td className="border border-slate-200 px-2 py-2 text-center">{jugador.faltas}</td>
+                      <td className="border border-slate-200 px-2 py-2 text-center">{jugador.puntosContraataque}</td>
+                      <td className="border border-slate-200 px-2 py-2 text-center">{jugador.puntosSegundaOportunidad}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -916,8 +985,15 @@ export default function EstadisticasEnVivoPage() {
             {followUp.type === 'missed-shot' && (
               <>
                 <h2 className="text-lg font-bold text-gray-900">Después del tiro fallado</h2>
-                <p className="mt-1 text-sm text-gray-600">Registra cómo terminó la posesión.</p>
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <p className="mt-1 text-sm text-gray-600">Registra si hubo bloqueo y cómo terminó la posesión.</p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => prepareLinkedAction(oppositeTeam(followUp.equipo), 'BLK', 'Bloqueo', followUp.eventId)}
+                    className="rounded-lg bg-violet-700 px-3 py-3 text-sm font-bold text-white hover:bg-violet-800"
+                  >
+                    Bloqueo
+                  </button>
                   <button
                     type="button"
                     onClick={() => prepareLinkedAction(followUp.equipo, 'RO', 'Reb. ofensivo')}
@@ -940,6 +1016,53 @@ export default function EstadisticasEnVivoPage() {
                     Fuera
                   </button>
                 </div>
+              </>
+            )}
+
+            {followUp.type === 'made-shot' && (
+              <>
+                <h2 className="text-lg font-bold text-gray-900">Después de la canasta</h2>
+                {followUp.fastbreak === undefined ? (
+                  <>
+                    <p className="mt-1 text-sm text-gray-600">Indica si la canasta fue en salida rápida.</p>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={() => updateMadeShotContext(followUp.eventId, followUp.equipo, true)}
+                        className="rounded-lg bg-emerald-700 px-3 py-3 text-sm font-bold text-white hover:bg-emerald-800"
+                      >
+                        Salida rápida
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateMadeShotContext(followUp.eventId, followUp.equipo, false)}
+                        className="rounded-lg bg-slate-700 px-3 py-3 text-sm font-bold text-white hover:bg-slate-800"
+                      >
+                        Ataque normal
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="mt-1 text-sm text-gray-600">Indica si la canasta fue generada por una asistencia.</p>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={() => prepareLinkedAction(followUp.equipo, 'AST', 'Asistencia', followUp.eventId)}
+                        className="rounded-lg bg-cyan-700 px-3 py-3 text-sm font-bold text-white hover:bg-cyan-800"
+                      >
+                        Con asistencia
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFollowUp(null)}
+                        className="rounded-lg bg-slate-700 px-3 py-3 text-sm font-bold text-white hover:bg-slate-800"
+                      >
+                        Sin asistencia
+                      </button>
+                    </div>
+                  </>
+                )}
               </>
             )}
 

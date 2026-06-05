@@ -1,6 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+const emptyGameStats = {
+  t2Convertidos: 0,
+  t2Intentados: 0,
+  t3Convertidos: 0,
+  t3Intentados: 0,
+  tlConvertidos: 0,
+  tlIntentados: 0,
+  rebotesOfensivos: 0,
+  rebotesDefensivos: 0,
+  asistencias: 0,
+  perdidas: 0,
+  robos: 0,
+  bloqueos: 0,
+  faltas: 0,
+  puntosContraataque: 0,
+  puntosSegundaOportunidad: 0,
+}
+
+function puntos(stats: typeof emptyGameStats) {
+  return stats.t2Convertidos * 2 + stats.t3Convertidos * 3 + stats.tlConvertidos
+}
+
+function pct(convertidos: number, intentados: number) {
+  return intentados ? Math.round((convertidos / intentados) * 100) : 0
+}
+
+function sumGameStats(total: typeof emptyGameStats, stats: any) {
+  return Object.keys(emptyGameStats).reduce((acc, key) => ({
+    ...acc,
+    [key]: Number(acc[key as keyof typeof emptyGameStats]) + (Number(stats?.[key]) || 0),
+  }), total)
+}
+
 // GET /api/estadisticas/deportista/[id] - Obtener estadísticas y promedios de un deportista
 export async function GET(
   request: NextRequest,
@@ -8,6 +41,70 @@ export async function GET(
 ) {
   try {
     const deportistaId = params.id
+
+    const partidos = await prisma.partidoEntrenador.findMany({
+      where: {
+        estado: 'jugado',
+      },
+      select: {
+        id: true,
+        titulo: true,
+        rival: true,
+        competencia: true,
+        categoria: true,
+        fechaPartido: true,
+        resultadoPropio: true,
+        resultadoRival: true,
+        estadisticas: true,
+      },
+      orderBy: {
+        fechaPartido: 'desc',
+      },
+    })
+
+    const partidosJugador = partidos
+      .map((partido) => {
+        const estadisticas = partido.estadisticas as any
+        const jugador = estadisticas?.jugadores?.find((item: any) => item.id === deportistaId)
+        if (!jugador) return null
+
+        const stats = { ...emptyGameStats, ...jugador }
+        return {
+          id: partido.id,
+          titulo: partido.titulo,
+          rival: partido.rival,
+          competencia: partido.competencia,
+          categoria: partido.categoria,
+          fechaPartido: partido.fechaPartido,
+          resultadoPropio: partido.resultadoPropio,
+          resultadoRival: partido.resultadoRival,
+          puntos: puntos(stats),
+          estadisticas: stats,
+        }
+      })
+      .filter(Boolean)
+
+    const totalesPartidos = partidosJugador.reduce(
+      (total, partido: any) => sumGameStats(total, partido.estadisticas),
+      { ...emptyGameStats }
+    )
+
+    const resumenPartidos = {
+      partidosJugados: partidosJugador.length,
+      puntos: puntos(totalesPartidos),
+      puntosPorPartido: partidosJugador.length ? Number((puntos(totalesPartidos) / partidosJugador.length).toFixed(1)) : 0,
+      rebotesPorPartido: partidosJugador.length ? Number(((totalesPartidos.rebotesOfensivos + totalesPartidos.rebotesDefensivos) / partidosJugador.length).toFixed(1)) : 0,
+      asistenciasPorPartido: partidosJugador.length ? Number((totalesPartidos.asistencias / partidosJugador.length).toFixed(1)) : 0,
+      robosPorPartido: partidosJugador.length ? Number((totalesPartidos.robos / partidosJugador.length).toFixed(1)) : 0,
+      bloqueosPorPartido: partidosJugador.length ? Number((totalesPartidos.bloqueos / partidosJugador.length).toFixed(1)) : 0,
+      pct2: pct(totalesPartidos.t2Convertidos, totalesPartidos.t2Intentados),
+      pct3: pct(totalesPartidos.t3Convertidos, totalesPartidos.t3Intentados),
+      pctTl: pct(totalesPartidos.tlConvertidos, totalesPartidos.tlIntentados),
+      puntosContraataque: totalesPartidos.puntosContraataque,
+      puntosSegundaOportunidad: totalesPartidos.puntosSegundaOportunidad,
+      totales: totalesPartidos,
+      historial: partidosJugador,
+    }
 
     // Obtener todas las sesiones del deportista
     const sesiones = await prisma.sesionEntrenamiento.findMany({
@@ -32,7 +129,9 @@ export async function GET(
         totalSesiones: 0,
         ejerciciosUnicos: 0,
         promedioCompletitud: 0,
-        ejercicios: []
+        duracionTotal: 0,
+        ejercicios: [],
+        partidos: resumenPartidos,
       })
     }
 
@@ -125,7 +224,8 @@ export async function GET(
       ejerciciosUnicos: ejerciciosMap.size,
       promedioCompletitud: Math.round((totalEjerciciosCompletados / totalEjerciciosRealizados) * 100),
       duracionTotal: sesiones.reduce((sum, s) => sum + s.duracion, 0),
-      ejercicios
+      ejercicios,
+      partidos: resumenPartidos,
     })
   } catch (error) {
     console.error('Error al obtener estadísticas:', error)

@@ -265,12 +265,35 @@ export function attachDeudaStatus<T extends { id: string }>(
     pagosPorDeportista.set(pago.deportistaId, bucket)
   })
 
-  return deportistas.map((deportista) => ({
-    ...deportista,
-    deudaStatus: buildDeudaStatusDesdeAlta(
-      pagosPorDeportista.get(deportista.id) || [],
-      (deportista as T & { createdAt?: Date | string }).createdAt,
-      now
-    ),
-  }))
+  return deportistas.map((deportista) => {
+    if ((deportista as T & { becado?: boolean }).becado) {
+      return {
+        ...deportista,
+        deudaStatus: {
+          mensualidadPendiente: false,
+          uniformePendiente: false,
+          tieneDeuda: false,
+          etiquetas: ['Becado por el club'],
+          uniformesPendientes: 0,
+          porcentajeUniformeCubierto: 100,
+          cicloUniforme: {
+            inicio: getUniformCycleStart(now).getFullYear(),
+            fin: getUniformCycleEnd(now).getFullYear() - 1,
+          },
+          mesesDeudaMensualidad: 0,
+          mesesPendientes: [],
+          becado: true,
+        },
+      }
+    }
+
+    return {
+      ...deportista,
+      deudaStatus: buildDeudaStatusDesdeAlta(
+        pagosPorDeportista.get(deportista.id) || [],
+        (deportista as T & { createdAt?: Date | string }).createdAt,
+        now
+      ),
+    }
+  })
 }

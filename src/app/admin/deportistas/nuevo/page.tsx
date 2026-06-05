@@ -40,7 +40,8 @@ export default function NuevoDeportistaPage() {
     peso: '',
     posicion: '',
     planSesiones: '12',
-    turnoId: ''
+    turnoId: '',
+    becado: false,
   })
 
   useEffect(() => {
@@ -104,9 +105,11 @@ export default function NuevoDeportistaPage() {
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target
+    const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: type === 'checkbox' ? checked : value
     })
   }
 
@@ -287,6 +290,25 @@ export default function NuevoDeportistaPage() {
               <p className="text-sm text-gray-600 mt-2">
                 Selecciona el plan de entrenamiento y turno (opcional) para este deportista
               </p>
+            </div>
+
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Condición económica</h2>
+              <label className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+                <input
+                  type="checkbox"
+                  name="becado"
+                  checked={formData.becado}
+                  onChange={handleChange}
+                  className="mt-1 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                />
+                <span>
+                  <span className="block text-sm font-semibold text-emerald-900">Deportista becado</span>
+                  <span className="mt-1 block text-sm text-emerald-800">
+                    El club cubre mensualidad, uniforme y gastos asociados. No se marcará como deudor.
+                  </span>
+                </span>
+              </label>
             </div>
 
             {/* Botones */}

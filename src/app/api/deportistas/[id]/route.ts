@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/password'
-import { buildDeudaStatusDesdeAlta } from '@/lib/deportista-finanzas'
+import { attachDeudaStatus } from '@/lib/deportista-finanzas'
 
 // GET - Obtener un deportista por ID
 export async function GET(
@@ -45,10 +45,7 @@ export async function GET(
       },
     })
 
-    return NextResponse.json({
-      ...deportista,
-      deudaStatus: buildDeudaStatusDesdeAlta(pagos, deportista.createdAt),
-    })
+    return NextResponse.json(attachDeudaStatus([deportista], pagos)[0])
   } catch (error) {
     console.error('Error al obtener deportista:', error)
     return NextResponse.json(
@@ -118,6 +115,7 @@ export async function PUT(
     if ('tallaCamiseta' in body) updateData.tallaCamiseta = body.tallaCamiseta || null
     if ('numeroCamiseta' in body) updateData.numeroCamiseta = body.numeroCamiseta || null
     if (body.planSesiones !== undefined) updateData.planSesiones = parseInt(body.planSesiones)
+    if (body.becado !== undefined) updateData.becado = body.becado === true
     if (body.activo !== undefined) updateData.activo = body.activo
     
     const deportista = await prisma.deportista.update({

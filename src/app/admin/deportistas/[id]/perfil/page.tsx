@@ -40,6 +40,7 @@ interface Deportista {
   posicion?: string
   tallaCamiseta?: string
   numeroCamiseta?: string
+  becado?: boolean
   photoUrl?: string
   activo: boolean
   createdAt: string
@@ -309,7 +310,11 @@ export default function PerfilDeportistaPage() {
 
               {deportista.deudaStatus && (
                 <div className="mb-6 flex flex-wrap gap-2">
-                  {deportista.deudaStatus.tieneDeuda ? (
+                  {deportista.becado ? (
+                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                      Becado por el club
+                    </span>
+                  ) : deportista.deudaStatus.tieneDeuda ? (
                     deportista.deudaStatus.etiquetas.map((etiqueta) => (
                       <span
                         key={etiqueta}
@@ -604,9 +609,11 @@ export default function PerfilDeportistaPage() {
                 <div>
                   <p className="text-sm text-gray-600">Estado de pagos</p>
                   <p className="font-medium">
-                    {deportista.deudaStatus.tieneDeuda
-                      ? deportista.deudaStatus.etiquetas.join(' · ')
-                      : 'Al día'}
+                    {deportista.becado
+                      ? 'Becado por el club'
+                      : deportista.deudaStatus.tieneDeuda
+                        ? deportista.deudaStatus.etiquetas.join(' · ')
+                        : 'Al día'}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
                     Control de uniforme ciclo {deportista.deudaStatus.cicloUniforme.inicio}-

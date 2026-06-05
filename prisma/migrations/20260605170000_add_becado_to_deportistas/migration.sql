@@ -1,0 +1,1 @@
+ALTER TABLE "deportistas" ADD COLUMN "becado" BOOLEAN NOT NULL DEFAULT false;

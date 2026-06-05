@@ -18,6 +18,7 @@ interface Deportista {
   email: string
   celular?: string
   posicion?: string
+  becado?: boolean
   activo: boolean
   deudaStatus?: {
     mensualidadPendiente: boolean
@@ -178,7 +179,7 @@ export default function DeportistasPage() {
                     </div>
                     <div className="min-w-0">
                       <h3 className={`text-lg font-semibold safe-wrap ${
-                        deportista.deudaStatus?.tieneDeuda ? 'text-red-700' : 'text-green-700'
+                        deportista.deudaStatus?.tieneDeuda ? 'text-red-700' : deportista.becado ? 'text-emerald-700' : 'text-green-700'
                       }`}>
                         {deportista.nombre} {deportista.apellidos}
                       </h3>
@@ -192,7 +193,11 @@ export default function DeportistasPage() {
                         )}
                       </div>
                       <div className="mt-3 flex flex-wrap gap-2">
-                        {deportista.deudaStatus?.tieneDeuda ? (
+                        {deportista.becado ? (
+                          <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
+                            Becado por el club
+                          </span>
+                        ) : deportista.deudaStatus?.tieneDeuda ? (
                           deportista.deudaStatus.etiquetas.map((etiqueta) => (
                             <span
                               key={`${deportista.id}-${etiqueta}`}

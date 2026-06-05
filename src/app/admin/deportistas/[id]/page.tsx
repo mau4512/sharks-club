@@ -28,6 +28,7 @@ interface DeportistaData {
   numeroCamiseta: string
   planSesiones: string
   turnoId: string
+  becado: boolean
   activo: boolean
   password?: string
   confirmPassword?: string
@@ -65,6 +66,7 @@ export default function EditarDeportistaPage() {
     numeroCamiseta: '',
     planSesiones: '12',
     turnoId: '',
+    becado: false,
     activo: true
   })
 
@@ -119,6 +121,7 @@ export default function EditarDeportistaPage() {
         numeroCamiseta: data.numeroCamiseta || '',
         planSesiones: data.planSesiones?.toString() || '12',
         turnoId: data.turnoId || '',
+        becado: data.becado === true,
         activo: data.activo
       })
     } catch (err: any) {
@@ -411,17 +414,32 @@ export default function EditarDeportistaPage() {
             {/* Estado */}
             <div>
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Estado</h2>
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="activo"
-                  name="activo"
-                  checked={formData.activo}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                />
-                <label htmlFor="activo" className="ml-2 block text-sm text-gray-900">
-                  Deportista activo
+              <div className="space-y-3">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="activo"
+                    name="activo"
+                    checked={formData.activo}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  />
+                  <span className="ml-2 block text-sm text-gray-900">Deportista activo</span>
+                </label>
+                <label className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+                  <input
+                    type="checkbox"
+                    name="becado"
+                    checked={formData.becado}
+                    onChange={handleChange}
+                    className="mt-1 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <span>
+                    <span className="block text-sm font-semibold text-emerald-900">Deportista becado</span>
+                    <span className="mt-1 block text-sm text-emerald-800">
+                      El club cubre mensualidad, uniforme y gastos asociados. No se marcará como deudor.
+                    </span>
+                  </span>
                 </label>
               </div>
             </div>

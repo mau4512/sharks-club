@@ -89,6 +89,7 @@ export async function POST(request: Request) {
         numeroCamiseta: body.numeroCamiseta || null,
         planSesiones: body.planSesiones ? parseInt(body.planSesiones) : 12,
         turnoId: body.turnoId || null,
+        becado: body.becado === true,
         activo: body.activo !== false
       }
     })

@@ -66,6 +66,7 @@ export async function POST(request: NextRequest) {
         competencia: body.competencia?.trim() || null,
         categoria: body.categoria?.trim() || null,
         sede: body.sede?.trim() || null,
+        localia: body.localia === 'visitante' ? 'visitante' : 'local',
         fechaPartido: new Date(`${body.fechaPartido}T12:00:00`),
         horaPartido: body.horaPartido,
         estado: body.estado || 'programado',

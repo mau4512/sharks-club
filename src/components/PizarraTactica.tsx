@@ -294,10 +294,13 @@ export default function PizarraTactica({ tipo, onSave, initialData, initialState
         ctx.strokeStyle = offense ? '#1E40AF' : '#991B1B'
         ctx.lineWidth = 2
         ctx.stroke()
-        ctx.fillStyle = '#FFFFFF'
+        ctx.fillStyle = '#000000'
+        ctx.strokeStyle = '#FFFFFF'
+        ctx.lineWidth = 3
         ctx.font = 'bold 14px Arial'
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
+        ctx.strokeText(shape.label || '1', shape.x, shape.y)
         ctx.fillText(shape.label || '1', shape.x, shape.y)
         break
       }
@@ -462,8 +465,10 @@ export default function PizarraTactica({ tipo, onSave, initialData, initialState
 
       setShapes((prev) => [...prev, newShape])
       setSelectedIndex(shapes.length)
-      setTool('select')
-      setSelectedShape(null)
+      if (ARROW_TYPES.includes(selectedShape) || selectedShape === 'ball') {
+        setTool('select')
+        setSelectedShape(null)
+      }
       return
     }
 
@@ -601,7 +606,7 @@ export default function PizarraTactica({ tipo, onSave, initialData, initialState
     `p-2 rounded ${active ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`
 
   const shapeButtonClass = (active: boolean) =>
-    `px-3 py-2 text-sm rounded border-2 transition ${active ? 'border-primary-600 bg-primary-100 font-semibold' : 'border-gray-300 bg-white hover:border-primary-400'}`
+    `px-3 py-2 text-sm rounded border-2 text-gray-950 transition ${active ? 'border-primary-600 bg-primary-100 font-semibold' : 'border-gray-300 bg-white hover:border-primary-400'}`
 
   return (
     <div className="space-y-3">

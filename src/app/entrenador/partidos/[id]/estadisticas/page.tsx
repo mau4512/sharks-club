@@ -14,6 +14,7 @@ interface PartidoEntrenador {
   competencia?: string | null
   categoria?: string | null
   sede?: string | null
+  localia?: 'local' | 'visitante'
   fechaPartido: string
   horaPartido: string
   estado: string
@@ -86,6 +87,7 @@ interface EstadisticasPartido {
   rival: EstadisticaEquipo
   periodos: PeriodoPartido[]
   jugadores: EstadisticaJugador[]
+  jugadoresRival: EstadisticaJugador[]
   eventos?: EventoEstadistica[]
 }
 
@@ -161,12 +163,21 @@ function emptyPlayer(): EstadisticaJugador {
   }
 }
 
+function defaultRivalPlayers(): EstadisticaJugador[] {
+  return Array.from({ length: 12 }, (_, index) => ({
+    ...emptyPlayer(),
+    numero: String(index + 1),
+    nombre: '',
+  }))
+}
+
 function normalizeStats(stats?: EstadisticasPartido | null): EstadisticasPartido {
   return {
     propio: { ...emptyStats, ...(stats?.propio || {}) },
     rival: { ...emptyStats, ...(stats?.rival || {}) },
     periodos: Array.isArray(stats?.periodos) && stats.periodos.length > 0 ? stats.periodos : periodosBase,
     jugadores: Array.isArray(stats?.jugadores) ? stats.jugadores.map((jugador) => ({ ...emptyPlayer(), ...jugador })) : [],
+    jugadoresRival: Array.isArray(stats?.jugadoresRival) ? stats.jugadoresRival.map((jugador) => ({ ...emptyPlayer(), ...jugador })) : [],
     eventos: Array.isArray(stats?.eventos) ? stats.eventos : [],
   }
 }
@@ -200,8 +211,7 @@ function isShotAction(action: AccionCodigo) {
   return action === '2PM' || action === '2PA' || action === '3PM' || action === '3PA'
 }
 
-function inferShotAction(location: ShotLocation, result: 'made' | 'missed'): AccionCodigo {
-  const attackingLeft = location.x < 50
+function inferShotAction(location: ShotLocation, result: 'made' | 'missed', attackingLeft: boolean): AccionCodigo {
   const hoopX = attackingLeft ? 5.6 : 94.4
   const dx = location.x - hoopX
   const dy = location.y - 50
@@ -213,6 +223,17 @@ function inferShotAction(location: ShotLocation, result: 'made' | 'missed'): Acc
 
   if (isThree) return result === 'made' ? '3PM' : '3PA'
   return result === 'made' ? '2PM' : '2PA'
+}
+
+function ownAttacksLeft(localia: 'local' | 'visitante' | undefined, periodo: number) {
+  const secondHalf = periodo >= 3
+  const startsLeft = localia !== 'visitante'
+  return secondHalf ? !startsLeft : startsLeft
+}
+
+function teamAttacksLeft(equipo: 'propio' | 'rival', localia: 'local' | 'visitante' | undefined, periodo: number) {
+  const ownLeft = ownAttacksLeft(localia, periodo)
+  return equipo === 'propio' ? ownLeft : !ownLeft
 }
 
 function shotLabel(action: AccionCodigo) {
@@ -249,6 +270,7 @@ function deriveStats(base: EstadisticasPartido): EstadisticasPartido {
     rival: { ...emptyStats },
     periodos: periodosBase.map((periodo) => ({ ...periodo })),
     jugadores: base.jugadores.map((jugador) => ({ ...emptyPlayer(), id: jugador.id, numero: jugador.numero, nombre: jugador.nombre })),
+    jugadoresRival: base.jugadoresRival.map((jugador) => ({ ...emptyPlayer(), id: jugador.id, numero: jugador.numero, nombre: jugador.nombre })),
     eventos: base.eventos || [],
   }
 
@@ -275,6 +297,19 @@ function deriveStats(base: EstadisticasPartido): EstadisticasPartido {
         }
         if (evento.esSegundaOportunidad) {
           result.jugadores[playerIndex].puntosSegundaOportunidad += puntosEvento
+        }
+      }
+    }
+
+    if (evento.equipo === 'rival' && evento.jugadorId) {
+      const playerIndex = result.jugadoresRival.findIndex((jugador) => jugador.id === evento.jugadorId)
+      if (playerIndex >= 0) {
+        result.jugadoresRival[playerIndex] = applyAction(result.jugadoresRival[playerIndex], evento.accion)
+        if (evento.esContraataque) {
+          result.jugadoresRival[playerIndex].puntosContraataque += puntosEvento
+        }
+        if (evento.esSegundaOportunidad) {
+          result.jugadoresRival[playerIndex].puntosSegundaOportunidad += puntosEvento
         }
       }
     }
@@ -319,6 +354,9 @@ export default function EstadisticasEnVivoPage() {
           nombre: `${deportista.nombre} ${deportista.apellidos}`.trim(),
         }))
       }
+      if (normalized.jugadoresRival.length === 0) {
+        normalized.jugadoresRival = defaultRivalPlayers()
+      }
       setPartido(data)
       setStatsDraft(normalized)
       setLoading(false)
@@ -329,6 +367,8 @@ export default function EstadisticasEnVivoPage() {
 
   const stats = useMemo(() => deriveStats(statsDraft), [statsDraft])
   const eventos = statsDraft.eventos || []
+  const propioAtacaIzquierda = teamAttacksLeft('propio', partido?.localia, periodoActivo)
+  const rivalAtacaIzquierda = teamAttacksLeft('rival', partido?.localia, periodoActivo)
 
   const appendEvento = (evento: EventoEstadistica) => {
     setStatsDraft((current) => ({
@@ -363,7 +403,7 @@ export default function EstadisticasEnVivoPage() {
     setShotLocation(null)
   }
 
-  const registrarAccion = (jugador?: EstadisticaJugador, rivalNumero?: string) => {
+  const registrarAccion = (jugador?: EstadisticaJugador) => {
     if (!accionPendiente) {
       toast.error('Primero selecciona la acción')
       return
@@ -372,10 +412,10 @@ export default function EstadisticasEnVivoPage() {
     const evento: EventoEstadistica = {
       id: crypto.randomUUID(),
       equipo: accionPendiente.equipo,
-      jugadorId: accionPendiente.equipo === 'propio' ? jugador?.id : undefined,
+      jugadorId: jugador?.id,
       jugadorNombre: accionPendiente.equipo === 'propio'
-        ? `${jugador?.numero ? `#${jugador.numero} ` : ''}${jugador?.nombre || 'Jugador'}`
-        : `${partido?.rival || 'Rival'}${rivalNumero ? ` #${rivalNumero}` : ''}`,
+        ? `#${jugador?.numero || '-'}`
+        : `${partido?.rival || 'Rival'} #${jugador?.numero || '-'}`,
       periodo: periodoActivo,
       accion: accionPendiente.accion,
       label: accionPendiente.label,
@@ -413,6 +453,14 @@ export default function EstadisticasEnVivoPage() {
     }))
   }
 
+  const agregarJugadorRival = () => {
+    const jugador = emptyPlayer()
+    setStatsDraft((current) => ({
+      ...current,
+      jugadoresRival: [...current.jugadoresRival, jugador],
+    }))
+  }
+
   const updateJugador = (id: string, field: 'numero' | 'nombre', value: string) => {
     setStatsDraft((current) => ({
       ...current,
@@ -420,10 +468,28 @@ export default function EstadisticasEnVivoPage() {
     }))
   }
 
+  const updateJugadorRival = (id: string, field: 'numero' | 'nombre', value: string) => {
+    setStatsDraft((current) => ({
+      ...current,
+      jugadoresRival: current.jugadoresRival.map((jugador) => jugador.id === id ? { ...jugador, [field]: value } : jugador),
+    }))
+  }
+
   const eliminarJugador = (id: string) => {
     setStatsDraft((current) => ({
       ...current,
       jugadores: current.jugadores.filter((jugador) => jugador.id !== id),
+      eventos: (current.eventos || []).filter((evento) => evento.jugadorId !== id),
+    }))
+    setAccionPendiente(null)
+    setShotLocation(null)
+    setFollowUp(null)
+  }
+
+  const eliminarJugadorRival = (id: string) => {
+    setStatsDraft((current) => ({
+      ...current,
+      jugadoresRival: current.jugadoresRival.filter((jugador) => jugador.id !== id),
       eventos: (current.eventos || []).filter((evento) => evento.jugadorId !== id),
     }))
     setAccionPendiente(null)
@@ -454,7 +520,7 @@ export default function EstadisticasEnVivoPage() {
       toast.error('Primero marca en la cancha desde dónde se tomó el tiro')
       return
     }
-    const accion = inferShotAction(shotLocation, result)
+    const accion = inferShotAction(shotLocation, result, teamAttacksLeft(equipo, partido?.localia, periodoActivo))
     setAccionPendiente({
       equipo,
       accion,
@@ -505,8 +571,6 @@ export default function EstadisticasEnVivoPage() {
     }))
     setFollowUp({ type: 'made-shot', eventId, equipo, fastbreak })
   }
-
-  const rivalNumbers = Array.from({ length: 15 }, (_, index) => String(index + 1))
 
   const ownLocationEvents = eventos.filter((evento) => evento.equipo === 'propio' && evento.canchaX !== undefined && evento.canchaY !== undefined)
   const rivalLocationEvents = eventos.filter((evento) => evento.equipo === 'rival' && evento.canchaX !== undefined && evento.canchaY !== undefined)
@@ -598,6 +662,9 @@ export default function EstadisticasEnVivoPage() {
               <p className="mt-1 text-sm text-gray-600">
                 Marca la ubicación en cancha, elige la acción y luego selecciona jugador o número.
               </p>
+              <p className="mt-1 text-xs font-semibold text-gray-900">
+                {partido.localia === 'visitante' ? 'Somos visitantes' : 'Somos locales'} · Nosotros atacamos hacia {propioAtacaIzquierda ? 'la izquierda' : 'la derecha'} en este cuarto.
+              </p>
             </div>
             <div className="grid grid-cols-4 gap-2">
               {[1, 2, 3, 4].map((periodo) => (
@@ -632,7 +699,7 @@ export default function EstadisticasEnVivoPage() {
                   key={accion.result}
                   type="button"
                   onClick={() => seleccionarTiro('propio', accion.result, accion.label)}
-                  className={`min-h-[58px] rounded-lg px-3 py-2 text-sm font-bold text-white ${accion.tone} ${accionPendiente?.equipo === 'propio' && accionPendiente.accion === inferShotAction(shotLocation || { x: 50, y: 50 }, accion.result) && isShotAction(accionPendiente.accion) ? 'ring-4 ring-primary-200' : ''}`}
+                  className={`min-h-[58px] rounded-lg px-3 py-2 text-sm font-bold text-white ${accion.tone} ${accionPendiente?.equipo === 'propio' && accionPendiente.accion === inferShotAction(shotLocation || { x: 50, y: 50 }, accion.result, propioAtacaIzquierda) && isShotAction(accionPendiente.accion) ? 'ring-4 ring-primary-200' : ''}`}
                 >
                   {accion.label}
                 </button>
@@ -662,16 +729,14 @@ export default function EstadisticasEnVivoPage() {
                       type="button"
                       onClick={() => registrarAccion(jugador)}
                       disabled={accionPendiente?.equipo !== 'propio'}
-                      className="mb-2 flex min-h-[46px] w-full items-center gap-2 rounded bg-white px-2 py-2 text-left text-sm font-semibold text-gray-900 enabled:hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="mb-2 flex min-h-[46px] w-full items-center justify-center rounded bg-white px-2 py-2 text-center text-sm font-semibold text-gray-900 enabled:hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded bg-slate-900 text-base text-white">
                         {jugador.numero || '-'}
                       </span>
-                      <span className="min-w-0 truncate text-xs">{jugador.nombre || 'Jugador sin nombre'}</span>
                     </button>
-                    <div className="grid grid-cols-[52px_1fr_32px] gap-1">
-                      <input value={jugador.numero} onChange={(event) => updateJugador(jugador.id, 'numero', event.target.value)} className="rounded border border-gray-200 px-2 py-1 text-xs" placeholder="#" />
-                      <input value={jugador.nombre} onChange={(event) => updateJugador(jugador.id, 'nombre', event.target.value)} className="rounded border border-gray-200 px-2 py-1 text-xs" placeholder="Nombre" />
+                    <div className="grid grid-cols-[minmax(0,1fr)_32px] gap-1">
+                      <input value={jugador.numero} onChange={(event) => updateJugador(jugador.id, 'numero', event.target.value)} className="min-w-0 rounded border border-gray-300 px-1.5 py-1 text-center text-sm font-black text-slate-950 placeholder:text-slate-500" placeholder="#" maxLength={4} />
                       <button type="button" onClick={() => eliminarJugador(jugador.id)} className="inline-flex items-center justify-center rounded border border-red-200 text-red-700 hover:bg-red-50" aria-label="Eliminar jugador">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -723,6 +788,9 @@ export default function EstadisticasEnVivoPage() {
                       ? `Ubicación y acción listas. Ahora selecciona ${accionPendiente.equipo === 'propio' ? 'jugador' : 'número rival'}.`
                       : 'Ubicación marcada. Ahora selecciona la acción.'
                     : 'Marca primero dónde ocurrió la acción.'}
+                </p>
+                <p className="mt-1 text-xs font-semibold text-slate-900">
+                  Nosotros: {propioAtacaIzquierda ? '←' : '→'} · Rival: {rivalAtacaIzquierda ? '←' : '→'}
                 </p>
               </div>
               {shotLocation && (
@@ -807,19 +875,6 @@ export default function EstadisticasEnVivoPage() {
           </div>
 
           <div className="rounded-lg border border-gray-200 bg-white p-4">
-            <p className="mb-3 text-sm font-semibold text-gray-900">Estadísticas en vivo</p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {resumenVivo.map((item) => (
-                <div key={item.label} className="rounded-lg bg-slate-50 px-3 py-2 text-xs">
-                  <p className="font-semibold text-slate-500">{item.label}</p>
-                  <p className="mt-1 text-slate-900">Nosotros: {item.propio}</p>
-                  <p className="text-slate-700">Rival: {item.rival}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-gray-200 bg-white p-4">
             <p className="mb-3 text-sm font-semibold text-gray-900">Resumen de acciones</p>
             <div className="max-h-[260px] space-y-2 overflow-y-auto pr-1">
               {eventos.slice().reverse().map((evento) => (
@@ -831,13 +886,43 @@ export default function EstadisticasEnVivoPage() {
               {eventos.length === 0 && <p className="py-8 text-center text-sm text-gray-500">Sin acciones registradas.</p>}
             </div>
           </div>
+
+          <div className="space-y-3">
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="mb-3 text-sm font-semibold text-gray-900">Resumen estadístico - Nosotros</p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {resumenVivo.map((item) => (
+                  <div key={item.label} className="rounded-lg bg-slate-50 px-3 py-2 text-xs">
+                    <p className="font-semibold text-slate-500">{item.label}</p>
+                    <p className="mt-1 text-slate-900">{item.propio}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="mb-3 text-sm font-semibold text-gray-900">Resumen estadístico - {partido.rival}</p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {resumenVivo.map((item) => (
+                  <div key={item.label} className="rounded-lg bg-slate-50 px-3 py-2 text-xs">
+                    <p className="font-semibold text-slate-500">{item.label}</p>
+                    <p className="mt-1 text-slate-900">{item.rival}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </section>
 
         <section className="space-y-4">
           <div className="rounded-lg border border-gray-200 bg-white p-4">
-            <div className="mb-4">
-              <p className="text-lg font-bold text-gray-900">{partido.rival}</p>
-              <p className="text-sm text-gray-600">{puntosEquipo(stats.rival)} puntos</p>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="text-lg font-bold text-gray-900">{partido.rival}</p>
+                <p className="text-sm text-gray-600">{puntosEquipo(stats.rival)} puntos</p>
+              </div>
+              <button type="button" onClick={agregarJugadorRival} className="inline-flex h-9 w-9 items-center justify-center rounded border border-primary-200 text-primary-700 hover:bg-primary-50" aria-label="Agregar jugador rival">
+                <UserPlus className="h-4 w-4" />
+              </button>
             </div>
 
             <div className="mb-2 grid grid-cols-2 gap-2">
@@ -846,7 +931,7 @@ export default function EstadisticasEnVivoPage() {
                   key={accion.result}
                   type="button"
                   onClick={() => seleccionarTiro('rival', accion.result, accion.label)}
-                  className={`min-h-[58px] rounded-lg px-3 py-2 text-sm font-bold text-white ${accion.tone} ${accionPendiente?.equipo === 'rival' && accionPendiente.accion === inferShotAction(shotLocation || { x: 50, y: 50 }, accion.result) && isShotAction(accionPendiente.accion) ? 'ring-4 ring-primary-200' : ''}`}
+                  className={`min-h-[58px] rounded-lg px-3 py-2 text-sm font-bold text-white ${accion.tone} ${accionPendiente?.equipo === 'rival' && accionPendiente.accion === inferShotAction(shotLocation || { x: 50, y: 50 }, accion.result, rivalAtacaIzquierda) && isShotAction(accionPendiente.accion) ? 'ring-4 ring-primary-200' : ''}`}
                 >
                   {accion.label}
                 </button>
@@ -867,35 +952,30 @@ export default function EstadisticasEnVivoPage() {
 
             <div>
               <p className="mb-2 text-sm font-semibold text-gray-900">
-                {accionPendiente?.equipo === 'rival' ? `Selecciona número para ${accionPendiente.label}` : 'Números rival'}
+                {accionPendiente?.equipo === 'rival' ? `Selecciona jugador rival para ${accionPendiente.label}` : 'Jugadores rivales'}
               </p>
-              <div className="grid grid-cols-5 gap-2">
-                {rivalNumbers.map((numero) => (
-                  <button
-                    key={numero}
-                    type="button"
-                    onClick={() => registrarAccion(undefined, numero)}
-                    disabled={accionPendiente?.equipo !== 'rival'}
-                    className="min-h-[48px] rounded-lg border border-gray-200 bg-white text-sm font-bold text-gray-900 enabled:hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    #{numero}
-                  </button>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {statsDraft.jugadoresRival.map((jugador) => (
+                  <div key={jugador.id} className="rounded-lg border border-gray-200 bg-slate-50 p-2">
+                    <button
+                      type="button"
+                      onClick={() => registrarAccion(jugador)}
+                      disabled={accionPendiente?.equipo !== 'rival'}
+                      className="mb-2 flex min-h-[46px] w-full items-center justify-center rounded bg-white px-2 py-2 text-center text-sm font-semibold text-gray-900 enabled:hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded bg-red-700 text-base text-white">
+                        {jugador.numero || '-'}
+                      </span>
+                    </button>
+                    <div className="grid grid-cols-[minmax(0,1fr)_32px] gap-1">
+                      <input value={jugador.numero} onChange={(event) => updateJugadorRival(jugador.id, 'numero', event.target.value)} className="min-w-0 rounded border border-gray-300 px-1.5 py-1 text-center text-sm font-black text-slate-950 placeholder:text-slate-500" placeholder="#" maxLength={4} />
+                      <button type="button" onClick={() => eliminarJugadorRival(jugador.id)} className="inline-flex items-center justify-center rounded border border-red-200 text-red-700 hover:bg-red-50" aria-label="Eliminar jugador rival">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
-              <form
-                className="mt-3 flex gap-2"
-                onSubmit={(event) => {
-                  event.preventDefault()
-                  const form = event.currentTarget
-                  const input = form.elements.namedItem('rivalNumero') as HTMLInputElement
-                  if (!input.value.trim()) return
-                  registrarAccion(undefined, input.value.trim())
-                  input.value = ''
-                }}
-              >
-                <input name="rivalNumero" className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm" placeholder="Otro número" />
-                <Button type="submit" size="sm" disabled={accionPendiente?.equipo !== 'rival'}>Aplicar</Button>
-              </form>
             </div>
           </div>
 
@@ -905,7 +985,7 @@ export default function EstadisticasEnVivoPage() {
               <table className="w-full min-w-[860px] border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-900 text-white">
-                    <th className="border border-slate-300 px-2 py-2 text-left">Jugador</th>
+                    <th className="border border-slate-300 px-2 py-2">N°</th>
                     <th className="border border-slate-300 px-2 py-2">PTS</th>
                     <th className="border border-slate-300 px-2 py-2">2P</th>
                     <th className="border border-slate-300 px-2 py-2">3P</th>
@@ -924,7 +1004,53 @@ export default function EstadisticasEnVivoPage() {
                 <tbody>
                   {stats.jugadores.map((jugador) => (
                     <tr key={jugador.id}>
-                      <td className="border border-slate-200 px-2 py-2 font-semibold">#{jugador.numero} {jugador.nombre}</td>
+                      <td className="border border-slate-200 px-2 py-2 text-center font-semibold">#{jugador.numero || '-'}</td>
+                      <td className="border border-slate-200 px-2 py-2 text-center font-semibold">{puntosEquipo(jugador)}</td>
+                      <td className="border border-slate-200 px-2 py-2 text-center">{jugador.t2Convertidos}/{jugador.t2Intentados}</td>
+                      <td className="border border-slate-200 px-2 py-2 text-center">{jugador.t3Convertidos}/{jugador.t3Intentados}</td>
+                      <td className="border border-slate-200 px-2 py-2 text-center">{jugador.tlConvertidos}/{jugador.tlIntentados}</td>
+                      <td className="border border-slate-200 px-2 py-2 text-center">{jugador.rebotesOfensivos}</td>
+                      <td className="border border-slate-200 px-2 py-2 text-center">{jugador.rebotesDefensivos}</td>
+                      <td className="border border-slate-200 px-2 py-2 text-center">{jugador.asistencias}</td>
+                      <td className="border border-slate-200 px-2 py-2 text-center">{jugador.perdidas}</td>
+                      <td className="border border-slate-200 px-2 py-2 text-center">{jugador.robos}</td>
+                      <td className="border border-slate-200 px-2 py-2 text-center">{jugador.bloqueos}</td>
+                      <td className="border border-slate-200 px-2 py-2 text-center">{jugador.faltas}</td>
+                      <td className="border border-slate-200 px-2 py-2 text-center">{jugador.puntosContraataque}</td>
+                      <td className="border border-slate-200 px-2 py-2 text-center">{jugador.puntosSegundaOportunidad}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-gray-200 bg-white p-4">
+            <p className="mb-3 text-sm font-semibold text-gray-900">Planilla del rival</p>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[860px] border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-900 text-white">
+                    <th className="border border-slate-300 px-2 py-2">N°</th>
+                    <th className="border border-slate-300 px-2 py-2">PTS</th>
+                    <th className="border border-slate-300 px-2 py-2">2P</th>
+                    <th className="border border-slate-300 px-2 py-2">3P</th>
+                    <th className="border border-slate-300 px-2 py-2">TL</th>
+                    <th className="border border-slate-300 px-2 py-2">RO</th>
+                    <th className="border border-slate-300 px-2 py-2">RD</th>
+                    <th className="border border-slate-300 px-2 py-2">AST</th>
+                    <th className="border border-slate-300 px-2 py-2">PER</th>
+                    <th className="border border-slate-300 px-2 py-2">ROB</th>
+                    <th className="border border-slate-300 px-2 py-2">BLK</th>
+                    <th className="border border-slate-300 px-2 py-2">F</th>
+                    <th className="border border-slate-300 px-2 py-2">CA</th>
+                    <th className="border border-slate-300 px-2 py-2">2OP</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.jugadoresRival.map((jugador) => (
+                    <tr key={jugador.id}>
+                      <td className="border border-slate-200 px-2 py-2 text-center font-semibold">#{jugador.numero || '-'}</td>
                       <td className="border border-slate-200 px-2 py-2 text-center font-semibold">{puntosEquipo(jugador)}</td>
                       <td className="border border-slate-200 px-2 py-2 text-center">{jugador.t2Convertidos}/{jugador.t2Intentados}</td>
                       <td className="border border-slate-200 px-2 py-2 text-center">{jugador.t3Convertidos}/{jugador.t3Intentados}</td>

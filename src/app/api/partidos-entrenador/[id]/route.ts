@@ -96,6 +96,7 @@ export async function PUT(
           partidoExistente.rival
         ),
         sede: body.sede !== undefined ? body.sede?.trim() || null : partidoExistente.sede,
+        localia: body.localia !== undefined ? (body.localia === 'visitante' ? 'visitante' : 'local') : partidoExistente.localia,
         fechaPartido: body.fechaPartido ? new Date(`${body.fechaPartido}T12:00:00`) : partidoExistente.fechaPartido,
         horaPartido: body.horaPartido !== undefined ? body.horaPartido : partidoExistente.horaPartido,
         estado: body.estado !== undefined ? body.estado : partidoExistente.estado,

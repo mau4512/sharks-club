@@ -125,6 +125,7 @@ model PartidoEntrenador {
   competencia              String?
   categoria                String?
   sede                     String?
+  localia                  String      @default("local")
   fechaPartido             DateTime
   horaPartido              String
   estado                   String      @default("programado")

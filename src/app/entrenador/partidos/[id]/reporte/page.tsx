@@ -62,6 +62,7 @@ interface EstadisticasPartido {
   rival: EstadisticaEquipo
   periodos: PeriodoPartido[]
   jugadores: EstadisticaJugador[]
+  jugadoresRival: EstadisticaJugador[]
 }
 
 const emptyStats: EstadisticaEquipo = {
@@ -96,6 +97,16 @@ function normalizeStats(stats?: EstadisticasPartido | null): EstadisticasPartido
     periodos: Array.isArray(stats?.periodos) && stats.periodos.length > 0 ? stats.periodos : periodosBase,
     jugadores: Array.isArray(stats?.jugadores)
       ? stats.jugadores.map((jugador) => ({
+          ...emptyStats,
+          ...jugador,
+          id: jugador.id || crypto.randomUUID(),
+          numero: jugador.numero || '',
+          nombre: jugador.nombre || '',
+          minutos: Number(jugador.minutos) || 0,
+        }))
+      : [],
+    jugadoresRival: Array.isArray(stats?.jugadoresRival)
+      ? stats.jugadoresRival.map((jugador) => ({
           ...emptyStats,
           ...jugador,
           id: jugador.id || crypto.randomUUID(),
@@ -268,11 +279,6 @@ export default function ReportePartidoPage() {
     )
   }
 
-  const totalRows = [
-    { label: 'Nosotros', stats: stats.propio },
-    { label: partido.rival, stats: stats.rival },
-  ]
-
   return (
     <div className="min-h-screen bg-slate-100 print:bg-white">
       <div className="mx-auto max-w-4xl px-4 py-5 print:max-w-none print:px-0 print:py-0">
@@ -350,36 +356,42 @@ export default function ReportePartidoPage() {
                 </tbody>
               </table>
 
-              <table className="w-full border-collapse text-xs">
-                <thead>
-                  <tr className="border-2 border-slate-950 bg-white text-slate-950">
-                    <th className="border border-slate-500 px-2 py-2 text-left">Equipo</th>
-                    <th className="border border-slate-500 px-2 py-2">2P%</th>
-                    <th className="border border-slate-500 px-2 py-2">3P%</th>
-                    <th className="border border-slate-500 px-2 py-2">TL%</th>
-                    <th className="border border-slate-500 px-2 py-2">REB</th>
-                    <th className="border border-slate-500 px-2 py-2">AST</th>
-                    <th className="border border-slate-500 px-2 py-2">PER</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {totalRows.map((row) => (
-                    <tr key={row.label}>
-                      <td className="border border-slate-300 px-2 py-2 font-bold">{row.label}</td>
-                      <td className="border border-slate-300 px-2 py-2 text-center">{pct(row.stats.t2Convertidos, row.stats.t2Intentados)}</td>
-                      <td className="border border-slate-300 px-2 py-2 text-center">{pct(row.stats.t3Convertidos, row.stats.t3Intentados)}</td>
-                      <td className="border border-slate-300 px-2 py-2 text-center">{pct(row.stats.tlConvertidos, row.stats.tlIntentados)}</td>
-                      <td className="border border-slate-300 px-2 py-2 text-center">{totalRebotes(row.stats)}</td>
-                      <td className="border border-slate-300 px-2 py-2 text-center">{row.stats.asistencias}</td>
-                      <td className="border border-slate-300 px-2 py-2 text-center">{row.stats.perdidas}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="grid gap-3">
+                {[
+                  { label: 'Resumen - Nosotros', stats: stats.propio },
+                  { label: `Resumen - ${partido.rival}`, stats: stats.rival },
+                ].map((row) => (
+                  <table key={row.label} className="w-full border-collapse text-xs">
+                    <thead>
+                      <tr className="border-2 border-slate-950 bg-white text-slate-950">
+                        <th className="border border-slate-500 px-2 py-2 text-left" colSpan={6}>{row.label}</th>
+                      </tr>
+                      <tr className="border-2 border-slate-950 bg-white text-slate-950">
+                        <th className="border border-slate-500 px-2 py-2">2P%</th>
+                        <th className="border border-slate-500 px-2 py-2">3P%</th>
+                        <th className="border border-slate-500 px-2 py-2">TL%</th>
+                        <th className="border border-slate-500 px-2 py-2">REB</th>
+                        <th className="border border-slate-500 px-2 py-2">AST</th>
+                        <th className="border border-slate-500 px-2 py-2">PER</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td className="border border-slate-300 px-2 py-2 text-center">{pct(row.stats.t2Convertidos, row.stats.t2Intentados)}</td>
+                        <td className="border border-slate-300 px-2 py-2 text-center">{pct(row.stats.t3Convertidos, row.stats.t3Intentados)}</td>
+                        <td className="border border-slate-300 px-2 py-2 text-center">{pct(row.stats.tlConvertidos, row.stats.tlIntentados)}</td>
+                        <td className="border border-slate-300 px-2 py-2 text-center">{totalRebotes(row.stats)}</td>
+                        <td className="border border-slate-300 px-2 py-2 text-center">{row.stats.asistencias}</td>
+                        <td className="border border-slate-300 px-2 py-2 text-center">{row.stats.perdidas}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                ))}
+              </div>
             </div>
           </section>
 
-          <section className="mt-5">
+          <section className="mt-5 space-y-4">
             <div className="mb-2 flex items-center justify-between">
               <h2 className="text-sm font-black uppercase text-slate-900">Planilla estadística</h2>
               <p className="text-[10px] font-semibold uppercase text-slate-950">CA: contraataque · 2OP: segunda oportunidad</p>
@@ -388,7 +400,7 @@ export default function ReportePartidoPage() {
               <table className="w-full min-w-[820px] border-collapse text-[9px] text-slate-900 print:min-w-0 print:text-[7px]">
                 <thead>
                   <tr className="border-2 border-slate-950 bg-white text-slate-950">
-                    <th className="border border-slate-500 px-1.5 py-1.5 text-left">Jugador</th>
+                    <th className="border border-slate-500 px-1.5 py-1.5">N°</th>
                     <th className="border border-slate-500 px-1 py-1.5">PTS</th>
                     <th className="border border-slate-500 px-1 py-1.5">2P</th>
                     <th className="border border-slate-500 px-1 py-1.5">3P</th>
@@ -409,7 +421,7 @@ export default function ReportePartidoPage() {
                 <tbody>
                   {stats.jugadores.map((jugador) => (
                     <tr key={jugador.id} className="odd:bg-slate-50">
-                      <td className="border border-slate-300 px-1.5 py-1.5 font-bold">#{jugador.numero || '-'} {jugador.nombre || 'Jugador'}</td>
+                      <td className="border border-slate-300 px-1.5 py-1.5 text-center font-bold">#{jugador.numero || '-'}</td>
                       <td className="border border-slate-300 px-1 py-1.5 text-center font-bold">{puntos(jugador)}</td>
                       <td className="border border-slate-300 px-1 py-1.5 text-center">{jugador.t2Convertidos}/{jugador.t2Intentados}</td>
                       <td className="border border-slate-300 px-1 py-1.5 text-center">{jugador.t3Convertidos}/{jugador.t3Intentados}</td>
@@ -447,6 +459,74 @@ export default function ReportePartidoPage() {
                   </tr>
                 </tbody>
               </table>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-xs font-black uppercase text-slate-900">Planilla estadística rival</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[820px] border-collapse text-[9px] text-slate-900 print:min-w-0 print:text-[7px]">
+                  <thead>
+                    <tr className="border-2 border-slate-950 bg-white text-slate-950">
+                      <th className="border border-slate-500 px-1.5 py-1.5">N°</th>
+                      <th className="border border-slate-500 px-1 py-1.5">PTS</th>
+                      <th className="border border-slate-500 px-1 py-1.5">2P</th>
+                      <th className="border border-slate-500 px-1 py-1.5">3P</th>
+                      <th className="border border-slate-500 px-1 py-1.5">TC</th>
+                      <th className="border border-slate-500 px-1 py-1.5">TL</th>
+                      <th className="border border-slate-500 px-1 py-1.5">RO</th>
+                      <th className="border border-slate-500 px-1 py-1.5">RD</th>
+                      <th className="border border-slate-500 px-1 py-1.5">REB</th>
+                      <th className="border border-slate-500 px-1 py-1.5">AST</th>
+                      <th className="border border-slate-500 px-1 py-1.5">PER</th>
+                      <th className="border border-slate-500 px-1 py-1.5">ROB</th>
+                      <th className="border border-slate-500 px-1 py-1.5">BLK</th>
+                      <th className="border border-slate-500 px-1 py-1.5">F</th>
+                      <th className="border border-slate-500 px-1 py-1.5">CA</th>
+                      <th className="border border-slate-500 px-1 py-1.5">2OP</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stats.jugadoresRival.map((jugador) => (
+                      <tr key={jugador.id} className="odd:bg-slate-50">
+                        <td className="border border-slate-300 px-1.5 py-1.5 text-center font-bold">#{jugador.numero || '-'}</td>
+                        <td className="border border-slate-300 px-1 py-1.5 text-center font-bold">{puntos(jugador)}</td>
+                        <td className="border border-slate-300 px-1 py-1.5 text-center">{jugador.t2Convertidos}/{jugador.t2Intentados}</td>
+                        <td className="border border-slate-300 px-1 py-1.5 text-center">{jugador.t3Convertidos}/{jugador.t3Intentados}</td>
+                        <td className="border border-slate-300 px-1 py-1.5 text-center">{jugador.t2Convertidos + jugador.t3Convertidos}/{jugador.t2Intentados + jugador.t3Intentados}</td>
+                        <td className="border border-slate-300 px-1 py-1.5 text-center">{jugador.tlConvertidos}/{jugador.tlIntentados}</td>
+                        <td className="border border-slate-300 px-1 py-1.5 text-center">{jugador.rebotesOfensivos}</td>
+                        <td className="border border-slate-300 px-1 py-1.5 text-center">{jugador.rebotesDefensivos}</td>
+                        <td className="border border-slate-300 px-1 py-1.5 text-center font-bold">{totalRebotes(jugador)}</td>
+                        <td className="border border-slate-300 px-1 py-1.5 text-center">{jugador.asistencias}</td>
+                        <td className="border border-slate-300 px-1 py-1.5 text-center">{jugador.perdidas}</td>
+                        <td className="border border-slate-300 px-1 py-1.5 text-center">{jugador.robos}</td>
+                        <td className="border border-slate-300 px-1 py-1.5 text-center">{jugador.bloqueos}</td>
+                        <td className="border border-slate-300 px-1 py-1.5 text-center">{jugador.faltas}</td>
+                        <td className="border border-slate-300 px-1 py-1.5 text-center font-semibold">{jugador.puntosContraataque}</td>
+                        <td className="border border-slate-300 px-1 py-1.5 text-center font-semibold">{jugador.puntosSegundaOportunidad}</td>
+                      </tr>
+                    ))}
+                    <tr className="bg-white font-black text-slate-950">
+                      <td className="border border-slate-400 px-1.5 py-1.5">TOTAL RIVAL</td>
+                      <td className="border border-slate-400 px-1 py-1.5 text-center">{puntos(stats.rival)}</td>
+                      <td className="border border-slate-400 px-1 py-1.5 text-center">{stats.rival.t2Convertidos}/{stats.rival.t2Intentados}</td>
+                      <td className="border border-slate-400 px-1 py-1.5 text-center">{stats.rival.t3Convertidos}/{stats.rival.t3Intentados}</td>
+                      <td className="border border-slate-400 px-1 py-1.5 text-center">{stats.rival.t2Convertidos + stats.rival.t3Convertidos}/{stats.rival.t2Intentados + stats.rival.t3Intentados}</td>
+                      <td className="border border-slate-400 px-1 py-1.5 text-center">{stats.rival.tlConvertidos}/{stats.rival.tlIntentados}</td>
+                      <td className="border border-slate-400 px-1 py-1.5 text-center">{stats.rival.rebotesOfensivos}</td>
+                      <td className="border border-slate-400 px-1 py-1.5 text-center">{stats.rival.rebotesDefensivos}</td>
+                      <td className="border border-slate-400 px-1 py-1.5 text-center">{totalRebotes(stats.rival)}</td>
+                      <td className="border border-slate-400 px-1 py-1.5 text-center">{stats.rival.asistencias}</td>
+                      <td className="border border-slate-400 px-1 py-1.5 text-center">{stats.rival.perdidas}</td>
+                      <td className="border border-slate-400 px-1 py-1.5 text-center">{stats.rival.robos}</td>
+                      <td className="border border-slate-400 px-1 py-1.5 text-center">{stats.rival.bloqueos}</td>
+                      <td className="border border-slate-400 px-1 py-1.5 text-center">{stats.rival.faltas}</td>
+                      <td className="border border-slate-400 px-1 py-1.5 text-center">{stats.rival.puntosContraataque}</td>
+                      <td className="border border-slate-400 px-1 py-1.5 text-center">{stats.rival.puntosSegundaOportunidad}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </section>
 

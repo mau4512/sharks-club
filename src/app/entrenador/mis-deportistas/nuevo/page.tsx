@@ -37,6 +37,7 @@ export default function NuevoDeportistaEntrenadorPage() {
     nombreApoderado: '',
     telefonoApoderado: '',
     posicion: '',
+    numeroCamiseta: '',
     turnoId: '',
     planSesiones: '12',
   })
@@ -270,6 +271,13 @@ export default function NuevoDeportistaEntrenadorPage() {
                       { value: '', label: 'Sin definir todavía' },
                       ...POSICIONES.map((posicion) => ({ value: posicion, label: posicion })),
                     ]}
+                  />
+                  <Input
+                    label="Número de camiseta"
+                    name="numeroCamiseta"
+                    value={formData.numeroCamiseta}
+                    onChange={handleChange}
+                    placeholder="Opcional"
                   />
                 </div>
               </div>

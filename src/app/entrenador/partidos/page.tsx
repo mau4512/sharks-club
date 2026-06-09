@@ -17,6 +17,7 @@ interface PartidoEntrenador {
   competencia?: string | null
   categoria?: string | null
   sede?: string | null
+  localia?: 'local' | 'visitante'
   fechaPartido: string
   horaPartido: string
   estado: string
@@ -536,6 +537,7 @@ export default function EntrenadorPartidosPage() {
     competencia: '',
     categoria: '',
     sede: '',
+    localia: 'local',
     fechaPartido: new Date().toISOString().split('T')[0],
     horaPartido: '18:00',
     turnoId: '',
@@ -616,6 +618,7 @@ export default function EntrenadorPartidosPage() {
         competencia: '',
         categoria: '',
         sede: '',
+        localia: 'local',
         fechaPartido: new Date().toISOString().split('T')[0],
         horaPartido: '18:00',
         turnoId: '',
@@ -765,6 +768,10 @@ export default function EntrenadorPartidosPage() {
               <input type="date" className="rounded-lg border border-gray-300 px-3 py-2 text-gray-900" value={nuevoPartido.fechaPartido} onChange={(e) => setNuevoPartido((c) => ({ ...c, fechaPartido: e.target.value }))} />
               <input type="time" className="rounded-lg border border-gray-300 px-3 py-2 text-gray-900" value={nuevoPartido.horaPartido} onChange={(e) => setNuevoPartido((c) => ({ ...c, horaPartido: e.target.value }))} />
               <input className="rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder:text-gray-500" placeholder="Sede" value={nuevoPartido.sede} onChange={(e) => setNuevoPartido((c) => ({ ...c, sede: e.target.value }))} />
+              <select className="rounded-lg border border-gray-300 px-3 py-2 text-gray-900" value={nuevoPartido.localia} onChange={(e) => setNuevoPartido((c) => ({ ...c, localia: e.target.value as 'local' | 'visitante' }))}>
+                <option value="local">Somos locales</option>
+                <option value="visitante">Somos visitantes</option>
+              </select>
               <select className="rounded-lg border border-gray-300 px-3 py-2 text-gray-900" value={nuevoPartido.turnoId} onChange={(e) => setNuevoPartido((c) => ({ ...c, turnoId: e.target.value }))}>
                 <option value="">Sin turno asociado</option>
                 {turnos.map((turno) => (
@@ -821,6 +828,10 @@ export default function EntrenadorPartidosPage() {
                     <input type="date" className="rounded-lg border border-gray-300 px-3 py-2 text-gray-900" value={partido.fechaPartido.split('T')[0]} onChange={(e) => updatePartidoField(partido.id, 'fechaPartido', e.target.value)} />
                     <input type="time" className="rounded-lg border border-gray-300 px-3 py-2 text-gray-900" value={partido.horaPartido} onChange={(e) => updatePartidoField(partido.id, 'horaPartido', e.target.value)} />
                     <input className="rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder:text-gray-500" value={partido.sede || ''} onChange={(e) => updatePartidoField(partido.id, 'sede', e.target.value)} placeholder="Sede" />
+                    <select className="rounded-lg border border-gray-300 px-3 py-2 text-gray-900" value={partido.localia || 'local'} onChange={(e) => updatePartidoField(partido.id, 'localia', e.target.value)}>
+                      <option value="local">Somos locales</option>
+                      <option value="visitante">Somos visitantes</option>
+                    </select>
                     <select className="rounded-lg border border-gray-300 px-3 py-2 text-gray-900" value={partido.estado} onChange={(e) => updatePartidoField(partido.id, 'estado', e.target.value)}>
                       <option value="programado">Programado</option>
                       <option value="jugado">Jugado</option>

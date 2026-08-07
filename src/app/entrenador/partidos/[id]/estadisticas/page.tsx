@@ -182,6 +182,47 @@ function normalizeStats(stats?: EstadisticasPartido | null): EstadisticasPartido
   }
 }
 
+const MATCH_STATS_DRAFTS_PREFIX = 'faraday:partidos:estadisticas:drafts'
+
+function getMatchStatsDraftKey(partidoId: string) {
+  return `${MATCH_STATS_DRAFTS_PREFIX}:${partidoId}`
+}
+
+function readMatchStatsDraft(partidoId: string): EstadisticasPartido | null {
+  if (typeof window === 'undefined') return null
+
+  try {
+    const stored = localStorage.getItem(getMatchStatsDraftKey(partidoId))
+    if (!stored) return null
+
+    const parsed = JSON.parse(stored)
+    return parsed && typeof parsed === 'object' ? normalizeStats(parsed) : null
+  } catch (error) {
+    console.error('Error al leer borrador de estadísticas del partido:', error)
+    return null
+  }
+}
+
+function writeMatchStatsDraft(partidoId: string, stats: EstadisticasPartido) {
+  if (typeof window === 'undefined') return
+
+  try {
+    localStorage.setItem(getMatchStatsDraftKey(partidoId), JSON.stringify(stats))
+  } catch (error) {
+    console.error('Error al guardar borrador de estadísticas del partido:', error)
+  }
+}
+
+function removeMatchStatsDraft(partidoId: string) {
+  if (typeof window === 'undefined') return
+
+  try {
+    localStorage.removeItem(getMatchStatsDraftKey(partidoId))
+  } catch (error) {
+    console.error('Error al limpiar borrador de estadísticas del partido:', error)
+  }
+}
+
 function applyAction<T extends EstadisticaEquipo>(stats: T, accion: AccionCodigo): T {
   if (accion === '2PM') return { ...stats, t2Convertidos: stats.t2Convertidos + 1, t2Intentados: stats.t2Intentados + 1 }
   if (accion === '2PA') return { ...stats, t2Intentados: stats.t2Intentados + 1 }
@@ -345,7 +386,8 @@ export default function EstadisticasEnVivoPage() {
         return
       }
       const data = await response.json()
-      const normalized = normalizeStats(data.estadisticas)
+      const localDraft = readMatchStatsDraft(params.id)
+      const normalized = localDraft || normalizeStats(data.estadisticas)
       if (normalized.jugadores.length === 0 && data.turno?.deportistas?.length) {
         normalized.jugadores = data.turno.deportistas.map((deportista: any) => ({
           ...emptyPlayer(),
@@ -359,6 +401,9 @@ export default function EstadisticasEnVivoPage() {
       }
       setPartido(data)
       setStatsDraft(normalized)
+      if (localDraft) {
+        toast.info('Se restauró un borrador local de estadísticas')
+      }
       setLoading(false)
     }
 
@@ -370,8 +415,16 @@ export default function EstadisticasEnVivoPage() {
   const propioAtacaIzquierda = teamAttacksLeft('propio', partido?.localia, periodoActivo)
   const rivalAtacaIzquierda = teamAttacksLeft('rival', partido?.localia, periodoActivo)
 
+  const updateStatsDraft = (updater: (current: EstadisticasPartido) => EstadisticasPartido) => {
+    setStatsDraft((current) => {
+      const next = updater(current)
+      writeMatchStatsDraft(params.id, next)
+      return next
+    })
+  }
+
   const appendEvento = (evento: EventoEstadistica) => {
-    setStatsDraft((current) => ({
+    updateStatsDraft((current) => ({
       ...current,
       eventos: [...(current.eventos || []), evento],
     }))
@@ -447,7 +500,7 @@ export default function EstadisticasEnVivoPage() {
 
   const agregarJugador = () => {
     const jugador = emptyPlayer()
-    setStatsDraft((current) => ({
+    updateStatsDraft((current) => ({
       ...current,
       jugadores: [...current.jugadores, jugador],
     }))
@@ -455,28 +508,28 @@ export default function EstadisticasEnVivoPage() {
 
   const agregarJugadorRival = () => {
     const jugador = emptyPlayer()
-    setStatsDraft((current) => ({
+    updateStatsDraft((current) => ({
       ...current,
       jugadoresRival: [...current.jugadoresRival, jugador],
     }))
   }
 
   const updateJugador = (id: string, field: 'numero' | 'nombre', value: string) => {
-    setStatsDraft((current) => ({
+    updateStatsDraft((current) => ({
       ...current,
       jugadores: current.jugadores.map((jugador) => jugador.id === id ? { ...jugador, [field]: value } : jugador),
     }))
   }
 
   const updateJugadorRival = (id: string, field: 'numero' | 'nombre', value: string) => {
-    setStatsDraft((current) => ({
+    updateStatsDraft((current) => ({
       ...current,
       jugadoresRival: current.jugadoresRival.map((jugador) => jugador.id === id ? { ...jugador, [field]: value } : jugador),
     }))
   }
 
   const eliminarJugador = (id: string) => {
-    setStatsDraft((current) => ({
+    updateStatsDraft((current) => ({
       ...current,
       jugadores: current.jugadores.filter((jugador) => jugador.id !== id),
       eventos: (current.eventos || []).filter((evento) => evento.jugadorId !== id),
@@ -487,7 +540,7 @@ export default function EstadisticasEnVivoPage() {
   }
 
   const eliminarJugadorRival = (id: string) => {
-    setStatsDraft((current) => ({
+    updateStatsDraft((current) => ({
       ...current,
       jugadoresRival: current.jugadoresRival.filter((jugador) => jugador.id !== id),
       eventos: (current.eventos || []).filter((evento) => evento.jugadorId !== id),
@@ -498,7 +551,7 @@ export default function EstadisticasEnVivoPage() {
   }
 
   const deshacerUltima = () => {
-    setStatsDraft((current) => ({
+    updateStatsDraft((current) => ({
       ...current,
       eventos: (current.eventos || []).slice(0, -1),
     }))
@@ -541,7 +594,7 @@ export default function EstadisticasEnVivoPage() {
   }
 
   const updateFoulType = (eventId: string, detalle: string, tirosLibresGenerados = 0) => {
-    setStatsDraft((current) => ({
+    updateStatsDraft((current) => ({
       ...current,
       eventos: (current.eventos || []).map((evento) =>
         evento.id === eventId
@@ -558,7 +611,7 @@ export default function EstadisticasEnVivoPage() {
   }
 
   const updateMadeShotContext = (eventId: string, equipo: 'propio' | 'rival', fastbreak: boolean) => {
-    setStatsDraft((current) => ({
+    updateStatsDraft((current) => ({
       ...current,
       eventos: (current.eventos || []).map((evento) =>
         evento.id === eventId
@@ -612,6 +665,7 @@ export default function EstadisticasEnVivoPage() {
       }
 
       const updated = await response.json()
+      removeMatchStatsDraft(partido.id)
       setPartido(updated)
       setStatsDraft(normalizeStats(updated.estadisticas))
       toast.success(estado === 'jugado' ? 'Partido finalizado' : 'Estadísticas guardadas')

@@ -7,6 +7,7 @@ import { ArrowLeft, Calendar, Clock, Download, Loader2, Printer, User } from 'lu
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { getPizarrasEjercicio, type PizarraEjercicio } from '@/lib/ejercicio-pizarras'
+import { calculatePdfPageSlices } from '@/lib/pdf-pagination'
 
 interface EjercicioPlan {
   id: string
@@ -225,12 +226,16 @@ export default function PlanEntrenamientoPdfPage() {
 
     try {
       setGenerandoPdf(true)
+      const pdfElement = pdfRef.current
+      const pdfElementRect = pdfElement.getBoundingClientRect()
+      const rowOffsets = Array.from(pdfElement.querySelectorAll<HTMLElement>('[data-pdf-row="true"]'))
+        .map((row) => row.getBoundingClientRect().top - pdfElementRect.top)
       const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
         import('html2canvas'),
         import('jspdf'),
       ])
 
-      const canvas = await html2canvas(pdfRef.current, {
+      const canvas = await html2canvas(pdfElement, {
         backgroundColor: '#ffffff',
         scale: Math.min(window.devicePixelRatio || 1, 2),
         useCORS: true,
@@ -248,25 +253,46 @@ export default function PlanEntrenamientoPdfPage() {
         },
       })
 
-      const imgData = canvas.toDataURL('image/png')
       const pdf = new jsPDF('p', 'mm', 'a4')
       const pageWidth = pdf.internal.pageSize.getWidth()
       const pageHeight = pdf.internal.pageSize.getHeight()
       const margin = 8
       const imgWidth = pageWidth - margin * 2
-      const imgHeight = (canvas.height * imgWidth) / canvas.width
-      let remainingHeight = imgHeight
-      let position = margin
+      const contentHeight = pageHeight - margin * 2
+      const maxPageHeightPx = Math.floor((contentHeight * canvas.width) / imgWidth)
+      const canvasScale = canvas.height / pdfElement.scrollHeight
+      const breakpoints = rowOffsets.map((offset) => Math.round(offset * canvasScale))
+      const pageSlices = calculatePdfPageSlices({
+        contentHeight: canvas.height,
+        maxPageHeight: maxPageHeightPx,
+        breakpoints,
+      })
 
-      pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight)
-      remainingHeight -= pageHeight - margin * 2
+      pageSlices.forEach((slice, index) => {
+        const sliceCanvas = document.createElement('canvas')
+        sliceCanvas.width = canvas.width
+        sliceCanvas.height = Math.ceil(slice.height)
+        const context = sliceCanvas.getContext('2d')
+        if (!context) throw new Error('No se pudo preparar una página del PDF')
 
-      while (remainingHeight > 0) {
-        position = remainingHeight - imgHeight + margin
-        pdf.addPage()
-        pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight)
-        remainingHeight -= pageHeight - margin * 2
-      }
+        context.fillStyle = '#ffffff'
+        context.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height)
+        context.drawImage(
+          canvas,
+          0,
+          Math.floor(slice.start),
+          canvas.width,
+          Math.ceil(slice.height),
+          0,
+          0,
+          canvas.width,
+          Math.ceil(slice.height)
+        )
+
+        if (index > 0) pdf.addPage()
+        const sliceHeightMm = (sliceCanvas.height * imgWidth) / sliceCanvas.width
+        pdf.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', margin, margin, imgWidth, sliceHeightMm)
+      })
 
       const nombreArchivo = `${plan.titulo || 'plan-entrenamiento'}`
         .toLowerCase()
@@ -462,7 +488,11 @@ export default function PlanEntrenamientoPdfPage() {
                   const metaTexto = getMetaTexto(ejercicio)
 
                   return (
-                    <tr key={ejercicio.id || `${plan.id}-${index}`} className="align-top print:break-inside-avoid">
+                    <tr
+                      key={ejercicio.id || `${plan.id}-${index}`}
+                      data-pdf-row="true"
+                      className="align-top print:break-inside-avoid"
+                    >
                       <td className="border border-slate-400 px-1.5 py-2">
                         <div>{sumarMinutos(plan.turno.hora, inicioAcumulado)}</div>
                         <div>{formatearDuracion(ejercicio.duracion)}</div>

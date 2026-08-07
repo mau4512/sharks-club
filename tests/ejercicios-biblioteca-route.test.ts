@@ -6,6 +6,7 @@ const { prismaMock } = vi.hoisted(() => ({
     ejercicioBiblioteca: {
       findMany: vi.fn(),
       findFirst: vi.fn(),
+      update: vi.fn(),
       create: vi.fn(),
     },
     entrenador: {
@@ -27,6 +28,7 @@ describe('/api/ejercicios-biblioteca', () => {
   beforeEach(() => {
     prismaMock.ejercicioBiblioteca.findMany.mockReset()
     prismaMock.ejercicioBiblioteca.findFirst.mockReset()
+    prismaMock.ejercicioBiblioteca.update.mockReset()
     prismaMock.ejercicioBiblioteca.create.mockReset()
     prismaMock.entrenador.findUnique.mockReset()
     prismaMock.planEntrenamiento.findMany.mockReset()
@@ -50,7 +52,14 @@ describe('/api/ejercicios-biblioteca', () => {
         entrenador: { id: 'ent-1', nombre: 'Martina', apellidos: 'Lopez' },
         ejercicios: [
           { titulo: 'Close Out', categoria: 'Defensa', descripcion: 'Duplicado del mismo entrenador' },
-          { titulo: 'Tiro esquina', categoria: 'Tiro', descripcion: 'Serie de lanzamientos' },
+          {
+            titulo: 'Tiro esquina',
+            categoria: 'Tiro',
+            descripcion: 'Serie de lanzamientos',
+            tipoRecurso: 'pizarra',
+            pizarras: [{ tipo: 'media', data: 'data:image/png;base64,pizarra' }],
+            meta: { tipo: 'repeticiones', cantidad: 4, unidad: 'tiros' },
+          },
         ],
       },
     ])
@@ -66,15 +75,48 @@ describe('/api/ejercicios-biblioteca', () => {
       nombre: 'Tiro esquina',
       categoria: 'Tiro',
       source: 'plan',
+      tipoRecurso: 'pizarra',
+      pizarras: [{ tipo: 'media', data: 'data:image/png;base64,pizarra' }],
+      meta: { tipo: 'repeticiones', cantidad: 4, unidad: 'tiros' },
     })
     expect(json.find((item: any) => item.nombre === 'Close Out' && item.source === 'plan')).toBeUndefined()
   })
 
-  it('devuelve un ejercicio existente si el entrenador ya registró el mismo nombre', async () => {
+  it('actualiza un ejercicio existente si el entrenador ya registró el mismo nombre', async () => {
     prismaMock.entrenador.findUnique.mockResolvedValue({ id: 'ent-1' })
     prismaMock.ejercicioBiblioteca.findFirst.mockResolvedValue({
       id: 'bib-9',
       nombre: 'Tiro libre',
+      descripcion: null,
+      categoria: 'Tiro',
+      etiqueta: null,
+      tags: [],
+      subcategoria: null,
+      objetivos: null,
+      materiales: [],
+      duracion: null,
+      intensidad: null,
+      nivel: null,
+      series: null,
+      repeticiones: null,
+      descanso: null,
+      instrucciones: null,
+      videoUrl: null,
+      imagenUrl: null,
+      meta: null,
+      puntosTiro: null,
+      tipoRecurso: null,
+      pizarra: null,
+      pizarras: null,
+      consejos: [],
+      variantes: [],
+      esPublico: true,
+      creadoPor: { id: 'ent-1', nombre: 'Martina', apellidos: 'Lopez' },
+    })
+    prismaMock.ejercicioBiblioteca.update.mockResolvedValue({
+      id: 'bib-9',
+      nombre: 'Tiro libre',
+      tipoRecurso: 'pizarra',
       creadoPor: { id: 'ent-1', nombre: 'Martina', apellidos: 'Lopez' },
     })
 
@@ -83,6 +125,8 @@ describe('/api/ejercicios-biblioteca', () => {
       body: JSON.stringify({
         nombre: '  tiro libre  ',
         categoria: 'Tiro',
+        tipoRecurso: 'pizarra',
+        pizarras: [{ tipo: 'media', data: 'data:image/png;base64,pizarra' }],
         creadoPorId: 'ent-1',
       }),
     })
@@ -92,6 +136,16 @@ describe('/api/ejercicios-biblioteca', () => {
 
     expect(response.status).toBe(200)
     expect(json.id).toBe('bib-9')
+    expect(json.tipoRecurso).toBe('pizarra')
+    expect(prismaMock.ejercicioBiblioteca.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'bib-9' },
+        data: expect.objectContaining({
+          tipoRecurso: 'pizarra',
+          pizarras: [{ tipo: 'media', data: 'data:image/png;base64,pizarra' }],
+        }),
+      })
+    )
     expect(prismaMock.ejercicioBiblioteca.create).not.toHaveBeenCalled()
   })
 
@@ -111,6 +165,8 @@ describe('/api/ejercicios-biblioteca', () => {
         materiales: ['Balon', 'Conos'],
         duracion: '15',
         series: '3',
+        tipoRecurso: 'pizarra',
+        pizarras: [{ tipo: 'media', data: 'data:image/png;base64,pizarra' }],
         consejos: ['Base firme'],
         variantes: ['Con defensor'],
         esPublico: true,
@@ -130,6 +186,8 @@ describe('/api/ejercicios-biblioteca', () => {
           materiales: ['Balon', 'Conos'],
           duracion: 15,
           series: 3,
+          tipoRecurso: 'pizarra',
+          pizarras: [{ tipo: 'media', data: 'data:image/png;base64,pizarra' }],
           consejos: ['Base firme'],
           variantes: ['Con defensor'],
           esPublico: true,

@@ -8,6 +8,8 @@ interface EjercicioBiblioteca {
   nombre: string;
   descripcion: string | null;
   categoria: string;
+  etiqueta?: string | null;
+  tags?: string[];
   subcategoria: string | null;
   objetivos: string | null;
   materiales: string[];
@@ -20,6 +22,16 @@ interface EjercicioBiblioteca {
   instrucciones: string | null;
   videoUrl: string | null;
   imagenUrl: string | null;
+  meta?: {
+    tipo: 'conversiones' | 'repeticiones' | 'tiempo';
+    cantidad: number;
+    unidad: string;
+    tipoTiro?: '2puntos' | '3puntos';
+  } | null;
+  puntosTiro?: Array<{ posicion: string; cantidad: number; amboLados: boolean }> | null;
+  tipoRecurso?: 'pizarra' | 'video' | 'ninguno' | null;
+  pizarra?: { tipo: 'media' | 'completa'; data: string; state?: unknown } | null;
+  pizarras?: Array<{ tipo: 'media' | 'completa'; data: string; state?: unknown }> | null;
   consejos: string[];
   variantes: string[];
   esPublico: boolean;
@@ -205,6 +217,12 @@ export default function SelectorEjerciciosBiblioteca({
                       </p>
                     )}
 
+                    {ejercicio.objetivos && (
+                      <p className="text-xs font-medium text-primary-700 line-clamp-2">
+                        Objetivo: {ejercicio.objetivos}
+                      </p>
+                    )}
+
                     <div className="space-y-1 text-xs text-gray-500">
                       {ejercicio.duracion && (
                         <p>⏱️ {ejercicio.duracion} minutos</p>
@@ -219,6 +237,14 @@ export default function SelectorEjerciciosBiblioteca({
 
                       {ejercicio.materiales.length > 0 && (
                         <p>🎯 {ejercicio.materiales.slice(0, 3).join(', ')}</p>
+                      )}
+
+                      {(ejercicio.tipoRecurso === 'pizarra' || (Array.isArray(ejercicio.pizarras) && ejercicio.pizarras.length > 0) || ejercicio.pizarra) && (
+                        <p>🏀 Incluye pizarra táctica</p>
+                      )}
+
+                      {ejercicio.videoUrl && (
+                        <p>🎬 Incluye video</p>
                       )}
                     </div>
 

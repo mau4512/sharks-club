@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { ArrowDown, ArrowLeft, ArrowUp, Plus, Trash2, Save, Clipboard, Edit, Calendar, Clock, BookOpen, FileText } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowUp, Plus, Trash2, Save, Clipboard, Edit, Calendar, Clock, BookOpen, FileText, Search, ListFilter } from 'lucide-react'
 import Link from 'next/link'
 import PizarraTactica from '@/components/PizarraTactica'
 import SelectorEjerciciosBiblioteca from '@/components/SelectorEjerciciosBiblioteca'
@@ -59,6 +59,10 @@ export default function PrepararEntrenamientoPage() {
   const [turnos, setTurnos] = useState<any[]>([])
   const [planesGuardados, setPlanesGuardados] = useState<any[]>([])
   const [planEditando, setPlanEditando] = useState<string | null>(null)
+  const [busquedaPlanes, setBusquedaPlanes] = useState('')
+  const [categoriaPlanFiltro, setCategoriaPlanFiltro] = useState('todas')
+  const [turnoPlanFiltro, setTurnoPlanFiltro] = useState('todos')
+  const [ordenPlanes, setOrdenPlanes] = useState<'fechaDesc' | 'fechaAsc' | 'tituloAsc' | 'recientes'>('fechaDesc')
   
   const [plan, setPlan] = useState<PlanEntrenamiento>({
     titulo: '',
@@ -102,6 +106,83 @@ export default function PrepararEntrenamientoPage() {
     { etiqueta: 'ENF', categoria: 'Enfriamiento' },
     { etiqueta: 'GEN', categoria: 'General' },
   ]
+
+  const getCategoriasPlan = (planGuardado: any) => {
+    const categorias = new Set<string>()
+
+    if (Array.isArray(planGuardado.ejercicios)) {
+      planGuardado.ejercicios.forEach((ejercicio: any) => {
+        if (ejercicio?.categoria) categorias.add(ejercicio.categoria)
+        if (Array.isArray(ejercicio?.tags)) {
+          ejercicio.tags.forEach((tag: string) => {
+            if (tag) categorias.add(tag)
+          })
+        }
+      })
+    }
+
+    return Array.from(categorias)
+  }
+
+  const getTextoBusquedaPlan = (planGuardado: any) => {
+    const ejercicios = Array.isArray(planGuardado.ejercicios) ? planGuardado.ejercicios : []
+    const textoEjercicios = ejercicios.flatMap((ejercicio: any) => [
+      ejercicio?.titulo,
+      ejercicio?.descripcion,
+      ejercicio?.categoria,
+      ejercicio?.etiqueta,
+      ejercicio?.meta?.unidad,
+      ejercicio?.meta?.tipo,
+      ejercicio?.meta?.tipoTiro,
+      ...(Array.isArray(ejercicio?.tags) ? ejercicio.tags : []),
+    ])
+
+    return [
+      planGuardado.titulo,
+      planGuardado.notas,
+      planGuardado.turno?.nombre,
+      planGuardado.turno?.hora,
+      ...textoEjercicios,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+  }
+
+  const categoriasPlanes = useMemo(() => {
+    const categorias = new Set<string>()
+    planesGuardados.forEach((planGuardado) => {
+      getCategoriasPlan(planGuardado).forEach((categoria) => categorias.add(categoria))
+    })
+    return Array.from(categorias).sort((a, b) => a.localeCompare(b, 'es'))
+  }, [planesGuardados])
+
+  const planesFiltrados = useMemo(() => {
+    const termino = busquedaPlanes.trim().toLowerCase()
+
+    return [...planesGuardados]
+      .filter((planGuardado) => {
+        const categorias = getCategoriasPlan(planGuardado)
+        const coincideBusqueda = !termino || getTextoBusquedaPlan(planGuardado).includes(termino)
+        const coincideCategoria = categoriaPlanFiltro === 'todas' || categorias.includes(categoriaPlanFiltro)
+        const coincideTurno = turnoPlanFiltro === 'todos' || planGuardado.turnoId === turnoPlanFiltro
+
+        return coincideBusqueda && coincideCategoria && coincideTurno
+      })
+      .sort((a, b) => {
+        if (ordenPlanes === 'tituloAsc') {
+          return String(a.titulo || '').localeCompare(String(b.titulo || ''), 'es')
+        }
+
+        if (ordenPlanes === 'recientes') {
+          return new Date(b.createdAt || b.fecha).getTime() - new Date(a.createdAt || a.fecha).getTime()
+        }
+
+        const fechaA = new Date(a.fecha).getTime()
+        const fechaB = new Date(b.fecha).getTime()
+        return ordenPlanes === 'fechaAsc' ? fechaA - fechaB : fechaB - fechaA
+      })
+  }, [planesGuardados, busquedaPlanes, categoriaPlanFiltro, turnoPlanFiltro, ordenPlanes])
 
   useEffect(() => {
     const entrenadorData = localStorage.getItem('entrenador')
@@ -278,11 +359,19 @@ export default function PrepararEntrenamientoPage() {
             nombre: nuevoEjercicio.titulo,
             descripcion: nuevoEjercicio.descripcion,
             categoria: nuevoEjercicio.categoria,
+            etiqueta: nuevoEjercicio.etiqueta,
+            tags: [nuevoEjercicio.categoria],
+            objetivos: nuevoEjercicio.descripcion,
             duracion: getDuracionDesdeMeta() || null,
             series: nuevoEjercicio.metaTipo === 'repeticiones' ? nuevoEjercicio.metaCantidad : null,
             repeticiones: nuevoEjercicio.metaUnidad,
             instrucciones: nuevoEjercicio.descripcion,
             videoUrl: ejercicio.videoUrl || null,
+            meta: ejercicio.meta,
+            puntosTiro: ejercicio.puntosTiro || null,
+            tipoRecurso: ejercicio.tipoRecurso,
+            pizarra: ejercicio.pizarra || null,
+            pizarras: ejercicio.pizarras || null,
             esPublico: true,
             creadoPorId: entrenador.id,
           }),
@@ -352,21 +441,38 @@ export default function PrepararEntrenamientoPage() {
   }
 
   const seleccionarEjercicioBiblioteca = (ejercicioBiblioteca: any) => {
+    const pizarras = getPizarrasEjercicio(ejercicioBiblioteca)
+    const descripcion = [
+      ejercicioBiblioteca.descripcion || ejercicioBiblioteca.instrucciones || '',
+      ejercicioBiblioteca.objetivos && ejercicioBiblioteca.objetivos !== ejercicioBiblioteca.descripcion
+        ? `Objetivo: ${ejercicioBiblioteca.objetivos}`
+        : '',
+    ].filter(Boolean).join('\n\n')
+
     // Convertir ejercicio de biblioteca a ejercicio del plan
     const nuevoEjercicioDelPlan: Ejercicio = {
       id: Date.now().toString(),
       titulo: ejercicioBiblioteca.nombre,
-      descripcion: ejercicioBiblioteca.descripcion || ejercicioBiblioteca.instrucciones || '',
+      descripcion,
       categoria: ejercicioBiblioteca.categoria || 'General',
       etiqueta: ejercicioBiblioteca.etiqueta || String(ejercicioBiblioteca.categoria || 'General').slice(0, 3).toUpperCase(),
-      tags: [ejercicioBiblioteca.categoria || 'General'],
+      tags: Array.isArray(ejercicioBiblioteca.tags) && ejercicioBiblioteca.tags.length > 0
+        ? ejercicioBiblioteca.tags
+        : [ejercicioBiblioteca.categoria || 'General'],
       duracion: ejercicioBiblioteca.duracion || 15,
-      meta: {
+      meta: ejercicioBiblioteca.meta || {
         tipo: 'repeticiones',
         cantidad: ejercicioBiblioteca.series || 1,
         unidad: ejercicioBiblioteca.repeticiones || 'repeticiones',
       },
-      tipoRecurso: ejercicioBiblioteca.videoUrl ? 'video' : 'ninguno',
+      puntosTiro: Array.isArray(ejercicioBiblioteca.puntosTiro) ? ejercicioBiblioteca.puntosTiro : undefined,
+      tipoRecurso: pizarras.length > 0
+        ? 'pizarra'
+        : ejercicioBiblioteca.tipoRecurso === 'video' || ejercicioBiblioteca.videoUrl
+          ? 'video'
+          : 'ninguno',
+      pizarra: pizarras[0],
+      pizarras: pizarras.length > 0 ? pizarras : undefined,
       videoUrl: ejercicioBiblioteca.videoUrl || undefined,
     };
 
@@ -1267,101 +1373,183 @@ export default function PrepararEntrenamientoPage() {
         {/* Planes Guardados */}
         {planesGuardados.length > 0 && (
           <div className="mt-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-gray-900">
-                Planes Guardados
-              </h2>
-              <span className="px-3 py-1 bg-primary-100 text-primary-800 rounded-full text-sm font-semibold">
-                {planesGuardados.length} plan{planesGuardados.length !== 1 ? 'es' : ''}
+            <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Planes Guardados</h2>
+                <p className="mt-1 text-sm text-gray-600">
+                  Busca por título, objetivo, nota, turno o ejercicio y ordena la planificación por fecha.
+                </p>
+              </div>
+              <span className="w-fit rounded-full bg-primary-100 px-3 py-1 text-sm font-semibold text-primary-800">
+                {planesFiltrados.length} de {planesGuardados.length} plan{planesGuardados.length !== 1 ? 'es' : ''}
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {planesGuardados.map((plan: any) => (
-                <Card key={plan.id} className="hover:shadow-lg transition">
-                  <CardHeader>
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold text-lg text-gray-900">{plan.titulo}</h3>
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => editarPlan(plan.id)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded transition"
-                          title="Editar plan"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <Link
-                          href={`/entrenador/entrenamientos/${plan.id}/pdf`}
-                          target="_blank"
-                          className="p-2 text-primary-700 hover:bg-primary-50 rounded transition"
-                          title="Exportar PDF"
-                        >
-                          <FileText className="h-4 w-4" />
-                        </Link>
-                        <button
-                          onClick={() => eliminarPlan(plan.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded transition"
-                          title="Eliminar plan"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
+            <Card>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(220px,1fr)_180px_180px_170px]">
+                  <label className="relative block">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input
+                      value={busquedaPlanes}
+                      onChange={(e) => setBusquedaPlanes(e.target.value)}
+                      placeholder="Buscar por objetivo, ejercicio, nota..."
+                      className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-500 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
+                    />
+                  </label>
+
+                  <label className="relative block">
+                    <ListFilter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <select
+                      value={categoriaPlanFiltro}
+                      onChange={(e) => setCategoriaPlanFiltro(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
+                    >
+                      <option value="todas">Todas las categorías</option>
+                      {categoriasPlanes.map((categoria) => (
+                        <option key={categoria} value={categoria}>
+                          {categoria}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <select
+                    value={turnoPlanFiltro}
+                    onChange={(e) => setTurnoPlanFiltro(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
+                  >
+                    <option value="todos">Todos los turnos</option>
+                    {turnos.map((turno) => (
+                      <option key={turno.id} value={turno.id}>
+                        {turno.nombre}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={ordenPlanes}
+                    onChange={(e) => setOrdenPlanes(e.target.value as typeof ordenPlanes)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
+                  >
+                    <option value="fechaDesc">Fecha más reciente</option>
+                    <option value="fechaAsc">Fecha más antigua</option>
+                    <option value="recientes">Últimos creados</option>
+                    <option value="tituloAsc">Título A-Z</option>
+                  </select>
+                </div>
+
+                {planesFiltrados.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center">
+                    <p className="font-medium text-gray-800">No hay planes con esos filtros.</p>
+                    <p className="mt-1 text-sm text-gray-500">Ajusta la búsqueda, categoría, turno u orden seleccionado.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-hidden rounded-lg border border-gray-200">
+                    <div className="hidden grid-cols-[1.4fr_170px_150px_120px_120px] gap-4 bg-gray-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 lg:grid">
+                      <span>Plan</span>
+                      <span>Fecha</span>
+                      <span>Turno</span>
+                      <span>Ejercicios</span>
+                      <span className="text-right">Acciones</span>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center text-gray-600">
-                        <Calendar className="h-4 w-4 mr-2" />
-                        <span>{new Date(plan.fecha).toLocaleDateString('es-ES', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}</span>
-                      </div>
-                      <div className="flex items-center text-gray-600">
-                        <Clock className="h-4 w-4 mr-2" />
-                        <span>{plan.turno.nombre} - {plan.turno.hora}</span>
-                      </div>
-                      <div className="flex items-center text-gray-600">
-                        <Clipboard className="h-4 w-4 mr-2" />
-                        <span>{Array.isArray(plan.ejercicios) ? plan.ejercicios.length : 0} ejercicio{Array.isArray(plan.ejercicios) && plan.ejercicios.length !== 1 ? 's' : ''}</span>
-                      </div>
-                      {plan.notas && (
-                        <div className="mt-3 p-2 bg-gray-50 rounded text-xs text-gray-700">
-                          <strong>Notas:</strong> {plan.notas.substring(0, 100)}{plan.notas.length > 100 ? '...' : ''}
-                        </div>
-                      )}
-                      
-                      {/* Mostrar ejercicios con tipo de tiro */}
-                      {Array.isArray(plan.ejercicios) && plan.ejercicios.length > 0 && (
-                        <div className="mt-3 space-y-1">
-                          {plan.ejercicios.slice(0, 3).map((ejercicio: any, idx: number) => (
-                            <div key={idx} className="flex items-center justify-between p-2 bg-primary-50 rounded text-xs">
-                              <span className="font-medium text-gray-800">{ejercicio.titulo}</span>
-                              {ejercicio.meta?.tipoTiro && (
-                                <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
-                                  ejercicio.meta.tipoTiro === '2puntos' 
-                                    ? 'bg-blue-100 text-blue-800' 
-                                    : 'bg-purple-100 text-purple-800'
-                                }`}>
-                                  {ejercicio.meta.tipoTiro === '2puntos' ? '2pts' : '3pts'}
-                                </span>
+
+                    <div className="divide-y divide-gray-200">
+                      {planesFiltrados.map((planGuardado: any) => {
+                        const ejercicios = Array.isArray(planGuardado.ejercicios) ? planGuardado.ejercicios : []
+                        const categorias = getCategoriasPlan(planGuardado)
+                        const duracionTotal = ejercicios.reduce((total: number, ejercicio: any) => total + Number(ejercicio?.duracion || 0), 0)
+
+                        return (
+                          <div
+                            key={planGuardado.id}
+                            className="grid gap-3 px-4 py-4 transition hover:bg-gray-50 lg:grid-cols-[1.4fr_170px_150px_120px_120px] lg:items-center"
+                          >
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h3 className="truncate text-base font-semibold text-gray-900">{planGuardado.titulo}</h3>
+                                {categorias.slice(0, 3).map((categoria) => (
+                                  <span key={categoria} className="rounded bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+                                    {categoria}
+                                  </span>
+                                ))}
+                                {categorias.length > 3 && (
+                                  <span className="text-xs text-gray-500">+{categorias.length - 3}</span>
+                                )}
+                              </div>
+
+                              {planGuardado.notas && (
+                                <p className="mt-1 line-clamp-2 text-sm text-gray-600">
+                                  {planGuardado.notas}
+                                </p>
+                              )}
+
+                              {ejercicios.length > 0 && (
+                                <p className="mt-2 text-xs text-gray-500">
+                                  {ejercicios.slice(0, 3).map((ejercicio: any) => ejercicio.titulo).filter(Boolean).join(' · ')}
+                                  {ejercicios.length > 3 ? ` · +${ejercicios.length - 3} más` : ''}
+                                </p>
                               )}
                             </div>
-                          ))}
-                          {plan.ejercicios.length > 3 && (
-                            <p className="text-xs text-gray-500 text-center">
-                              +{plan.ejercicios.length - 3} ejercicio{plan.ejercicios.length - 3 !== 1 ? 's' : ''} más
-                            </p>
-                          )}
-                        </div>
-                      )}
+
+                            <div className="flex items-center text-sm text-gray-700 lg:block">
+                              <Calendar className="mr-2 h-4 w-4 text-gray-400 lg:hidden" />
+                              {new Date(planGuardado.fecha).toLocaleDateString('es-PE', {
+                                weekday: 'short',
+                                year: 'numeric',
+                                month: 'short',
+                                day: '2-digit',
+                              })}
+                            </div>
+
+                            <div className="flex items-center text-sm text-gray-700 lg:block">
+                              <Clock className="mr-2 h-4 w-4 text-gray-400 lg:hidden" />
+                              <span className="font-medium">{planGuardado.turno?.nombre || 'Sin turno'}</span>
+                              {planGuardado.turno?.hora && (
+                                <span className="text-gray-500"> · {planGuardado.turno.hora}</span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center text-sm text-gray-700 lg:block">
+                              <Clipboard className="mr-2 h-4 w-4 text-gray-400 lg:hidden" />
+                              <span>{ejercicios.length} ejercicio{ejercicios.length !== 1 ? 's' : ''}</span>
+                              {duracionTotal > 0 && (
+                                <span className="text-gray-500"> · {duracionTotal} min</span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                onClick={() => editarPlan(planGuardado.id)}
+                                className="rounded p-2 text-blue-600 transition hover:bg-blue-50"
+                                title="Editar plan"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </button>
+                              <Link
+                                href={`/entrenador/entrenamientos/${planGuardado.id}/pdf`}
+                                target="_blank"
+                                className="rounded p-2 text-primary-700 transition hover:bg-primary-50"
+                                title="Exportar PDF"
+                              >
+                                <FileText className="h-4 w-4" />
+                              </Link>
+                              <button
+                                onClick={() => eliminarPlan(planGuardado.id)}
+                                className="rounded p-2 text-red-600 transition hover:bg-red-50"
+                                title="Eliminar plan"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      })}
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>

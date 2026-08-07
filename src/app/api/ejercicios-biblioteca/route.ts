@@ -72,8 +72,10 @@ export async function GET(request: NextRequest) {
         nombre: ejercicio.titulo || `Ejercicio ${index + 1}`,
         descripcion: ejercicio.descripcion || null,
         categoria: ejercicio.categoria || 'Técnico',
+        etiqueta: ejercicio.etiqueta || null,
+        tags: Array.isArray(ejercicio.tags) ? ejercicio.tags : [],
         subcategoria: null,
-        objetivos: null,
+        objetivos: ejercicio.objetivos || null,
         materiales: [],
         duracion: ejercicio.duracion || null,
         intensidad: null,
@@ -84,6 +86,11 @@ export async function GET(request: NextRequest) {
         instrucciones: ejercicio.descripcion || null,
         videoUrl: ejercicio.videoUrl || null,
         imagenUrl: null,
+        meta: ejercicio.meta || null,
+        puntosTiro: ejercicio.puntosTiro || null,
+        tipoRecurso: ejercicio.tipoRecurso || null,
+        pizarra: ejercicio.pizarra || null,
+        pizarras: ejercicio.pizarras || null,
         consejos: [],
         variantes: [],
         esPublico: true,
@@ -106,13 +113,48 @@ export async function GET(request: NextRequest) {
       )
     )
 
+    const ejerciciosDesdePlanesPorClave = new Map(
+      ejerciciosFiltradosDesdePlanes.map((ejercicio) => [
+        `${ejercicio.creadoPor.id}:${normalizarTexto(ejercicio.nombre)}`,
+        ejercicio,
+      ])
+    )
+
+    const ejerciciosBibliotecaEnriquecidos = ejerciciosBiblioteca.map((ejercicio) => {
+      const clave = `${ejercicio.creadoPor.id}:${normalizarTexto(ejercicio.nombre)}`
+      const ejercicioPlan = ejerciciosDesdePlanesPorClave.get(clave)
+
+      if (!ejercicioPlan) {
+        return { ...ejercicio, source: 'biblioteca' }
+      }
+
+      return {
+        ...ejercicio,
+        descripcion: ejercicio.descripcion || ejercicioPlan.descripcion,
+        etiqueta: ejercicio.etiqueta || ejercicioPlan.etiqueta,
+        tags: ejercicio.tags?.length ? ejercicio.tags : ejercicioPlan.tags,
+        objetivos: ejercicio.objetivos || ejercicioPlan.objetivos,
+        duracion: ejercicio.duracion || ejercicioPlan.duracion,
+        series: ejercicio.series || ejercicioPlan.series,
+        repeticiones: ejercicio.repeticiones || ejercicioPlan.repeticiones,
+        instrucciones: ejercicio.instrucciones || ejercicioPlan.instrucciones,
+        videoUrl: ejercicio.videoUrl || ejercicioPlan.videoUrl,
+        meta: ejercicio.meta || ejercicioPlan.meta,
+        puntosTiro: ejercicio.puntosTiro || ejercicioPlan.puntosTiro,
+        tipoRecurso: ejercicio.tipoRecurso || ejercicioPlan.tipoRecurso,
+        pizarra: ejercicio.pizarra || ejercicioPlan.pizarra,
+        pizarras: ejercicio.pizarras || ejercicioPlan.pizarras,
+        source: 'biblioteca',
+      }
+    })
+
     const ejerciciosAlternos = ejerciciosFiltradosDesdePlanes.filter((ejercicio) => {
       const clave = `${ejercicio.creadoPor.id}:${normalizarTexto(ejercicio.nombre)}`
       return !clavesBiblioteca.has(clave)
     })
 
     return NextResponse.json([
-      ...ejerciciosBiblioteca.map((ejercicio) => ({ ...ejercicio, source: 'biblioteca' })),
+      ...ejerciciosBibliotecaEnriquecidos,
       ...ejerciciosAlternos,
     ]);
   } catch (error) {
@@ -132,6 +174,8 @@ export async function POST(request: NextRequest) {
       nombre,
       descripcion,
       categoria,
+      etiqueta,
+      tags,
       subcategoria,
       objetivos,
       materiales,
@@ -144,6 +188,11 @@ export async function POST(request: NextRequest) {
       instrucciones,
       videoUrl,
       imagenUrl,
+      meta,
+      puntosTiro,
+      tipoRecurso,
+      pizarra,
+      pizarras,
       consejos,
       variantes,
       esPublico,
@@ -192,7 +241,46 @@ export async function POST(request: NextRequest) {
     })
 
     if (ejercicioExistente) {
-      return NextResponse.json(ejercicioExistente, { status: 200 })
+      const ejercicioActualizado = await prisma.ejercicioBiblioteca.update({
+        where: { id: ejercicioExistente.id },
+        data: {
+          descripcion: descripcion || ejercicioExistente.descripcion || null,
+          categoria,
+          etiqueta: etiqueta || ejercicioExistente.etiqueta || null,
+          tags: Array.isArray(tags) ? tags : ejercicioExistente.tags,
+          subcategoria: subcategoria || ejercicioExistente.subcategoria || null,
+          objetivos: objetivos || ejercicioExistente.objetivos || null,
+          materiales: Array.isArray(materiales) ? materiales : ejercicioExistente.materiales,
+          duracion: duracion ? parseInt(duracion) : ejercicioExistente.duracion,
+          intensidad: intensidad || ejercicioExistente.intensidad || null,
+          nivel: nivel || ejercicioExistente.nivel || null,
+          series: series ? parseInt(series) : ejercicioExistente.series,
+          repeticiones: repeticiones || ejercicioExistente.repeticiones || null,
+          descanso: descanso || ejercicioExistente.descanso || null,
+          instrucciones: instrucciones || ejercicioExistente.instrucciones || null,
+          videoUrl: videoUrl || ejercicioExistente.videoUrl || null,
+          imagenUrl: imagenUrl || ejercicioExistente.imagenUrl || null,
+          meta: meta || ejercicioExistente.meta || null,
+          puntosTiro: puntosTiro || ejercicioExistente.puntosTiro || null,
+          tipoRecurso: tipoRecurso || ejercicioExistente.tipoRecurso || null,
+          pizarra: pizarra || ejercicioExistente.pizarra || null,
+          pizarras: pizarras || ejercicioExistente.pizarras || null,
+          consejos: Array.isArray(consejos) ? consejos : ejercicioExistente.consejos,
+          variantes: Array.isArray(variantes) ? variantes : ejercicioExistente.variantes,
+          esPublico: esPublico !== undefined ? esPublico : ejercicioExistente.esPublico,
+        },
+        include: {
+          creadoPor: {
+            select: {
+              id: true,
+              nombre: true,
+              apellidos: true,
+            },
+          },
+        },
+      })
+
+      return NextResponse.json(ejercicioActualizado, { status: 200 })
     }
 
     const nuevoEjercicio = await prisma.ejercicioBiblioteca.create({
@@ -200,6 +288,8 @@ export async function POST(request: NextRequest) {
         nombre: nombreNormalizado,
         descripcion: descripcion || null,
         categoria,
+        etiqueta: etiqueta || null,
+        tags: Array.isArray(tags) ? tags : [],
         subcategoria: subcategoria || null,
         objetivos: objetivos || null,
         materiales: materiales || [],
@@ -212,6 +302,11 @@ export async function POST(request: NextRequest) {
         instrucciones: instrucciones || null,
         videoUrl: videoUrl || null,
         imagenUrl: imagenUrl || null,
+        meta: meta || null,
+        puntosTiro: puntosTiro || null,
+        tipoRecurso: tipoRecurso || null,
+        pizarra: pizarra || null,
+        pizarras: pizarras || null,
         consejos: consejos || [],
         variantes: variantes || [],
         esPublico: esPublico !== undefined ? esPublico : true,

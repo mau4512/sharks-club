@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Calendar, CheckCircle2, ClipboardList, Loader2, Save, XCircle } from 'lucide-react'
+import { ArrowLeft, Calendar, CheckCircle2, ClipboardList, Loader2, PencilLine, Save, XCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { toast } from 'sonner'
@@ -64,6 +64,81 @@ interface FormReporte {
 }
 
 const currentMonth = new Date().toISOString().slice(0, 7)
+const REPORT_DRAFTS_PREFIX = 'faraday:reportes-entrenador:drafts'
+
+function getDraftsKey(entrenadorId: string, month: string) {
+  return `${REPORT_DRAFTS_PREFIX}:${entrenadorId}:${month}`
+}
+
+function readReportDrafts(entrenadorId: string, month: string): Record<string, FormReporte> {
+  if (typeof window === 'undefined') return {}
+
+  try {
+    const stored = localStorage.getItem(getDraftsKey(entrenadorId, month))
+    if (!stored) return {}
+
+    const parsed = JSON.parse(stored)
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch (error) {
+    console.error('Error al leer borradores de reportes:', error)
+    return {}
+  }
+}
+
+function writeReportDrafts(
+  entrenadorId: string,
+  month: string,
+  updater: (drafts: Record<string, FormReporte>) => Record<string, FormReporte>
+) {
+  if (typeof window === 'undefined') return
+
+  try {
+    const nextDrafts = updater(readReportDrafts(entrenadorId, month))
+    const key = getDraftsKey(entrenadorId, month)
+
+    if (Object.keys(nextDrafts).length === 0) {
+      localStorage.removeItem(key)
+      return
+    }
+
+    localStorage.setItem(key, JSON.stringify(nextDrafts))
+  } catch (error) {
+    console.error('Error al guardar borradores de reportes:', error)
+  }
+}
+
+function mergeDetalleDraft(
+  savedDetalle: DetalleEjercicioReporte[],
+  draftDetalle: DetalleEjercicioReporte[]
+) {
+  const draftById = new Map(draftDetalle.map((item) => [item.ejercicioId, item]))
+
+  return savedDetalle.map((saved) => {
+    const draft = draftById.get(saved.ejercicioId)
+    return draft
+      ? {
+          ...saved,
+          completado: draft.completado,
+          observaciones: draft.observaciones,
+          ajuste: draft.ajuste,
+        }
+      : saved
+  })
+}
+
+function mergeFormDraft(savedForm: FormReporte, draftForm?: FormReporte): FormReporte {
+  if (!draftForm) return savedForm
+
+  return {
+    ...savedForm,
+    ...draftForm,
+    id: draftForm.id ?? savedForm.id,
+    detalleEjercicios: mergeDetalleDraft(
+      savedForm.detalleEjercicios,
+      Array.isArray(draftForm.detalleEjercicios) ? draftForm.detalleEjercicios : []
+    ),
+  }
+}
 
 function buildDetalleEjercicios(
   plan: PlanMes,
@@ -101,6 +176,7 @@ export default function ReportesEntrenadorPage() {
   const [savingPlanId, setSavingPlanId] = useState<string | null>(null)
   const [savingExerciseKey, setSavingExerciseKey] = useState<string | null>(null)
   const [editingExerciseKey, setEditingExerciseKey] = useState<string | null>(null)
+  const [reportesExpandidos, setReportesExpandidos] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const entrenadorData = localStorage.getItem('entrenador')
@@ -118,7 +194,7 @@ export default function ReportesEntrenadorPage() {
     void fetchData(entrenador.id, mesSeleccionado)
   }, [entrenador?.id, mesSeleccionado])
 
-  const fetchData = async (entrenadorId: string, month: string) => {
+  const fetchData = async (entrenadorId: string, month: string, preserveDrafts = false) => {
     try {
       setLoading(true)
 
@@ -156,22 +232,27 @@ export default function ReportesEntrenadorPage() {
       setPlanes(planesDelMes)
       setReportes(reportesData)
 
-      const forms: Record<string, FormReporte> = {}
-      planesDelMes.forEach((plan: PlanMes) => {
-        const reporte = reportesData.find(
-          (item: ReporteEntrenador) => item.planEntrenamientoId === plan.id
-        )
+      setFormularios((current) => {
+        const storedDrafts = readReportDrafts(entrenadorId, month)
+        const forms: Record<string, FormReporte> = {}
+        planesDelMes.forEach((plan: PlanMes) => {
+          const reporte = reportesData.find(
+            (item: ReporteEntrenador) => item.planEntrenamientoId === plan.id
+          )
+          const savedForm = {
+            id: reporte?.id,
+            completada: reporte?.completada ?? true,
+            observaciones: reporte?.observaciones ?? '',
+            motivoIncompleta: reporte?.motivoIncompleta ?? '',
+            requerimientos: reporte?.requerimientos ?? '',
+            detalleEjercicios: buildDetalleEjercicios(plan, reporte),
+          }
+          const draftForm = preserveDrafts ? current[plan.id] : storedDrafts[plan.id]
 
-        forms[plan.id] = {
-          id: reporte?.id,
-          completada: reporte?.completada ?? true,
-          observaciones: reporte?.observaciones ?? '',
-          motivoIncompleta: reporte?.motivoIncompleta ?? '',
-          requerimientos: reporte?.requerimientos ?? '',
-          detalleEjercicios: buildDetalleEjercicios(plan, reporte),
-        }
+          forms[plan.id] = mergeFormDraft(savedForm, draftForm)
+        })
+        return forms
       })
-      setFormularios(forms)
     } catch (error) {
       console.error('Error al cargar reportes del entrenador:', error)
       toast.error('No se pudieron cargar los reportes del mes')
@@ -191,14 +272,38 @@ export default function ReportesEntrenadorPage() {
     return { total, reportados, completadas, pendientes: Math.max(total - reportados, 0) }
   }, [formularios, planes.length])
 
+  const toggleReporteExpandido = (planId: string) => {
+    setReportesExpandidos((current) => {
+      const next = new Set(current)
+      if (next.has(planId)) {
+        next.delete(planId)
+      } else {
+        next.add(planId)
+      }
+      return next
+    })
+  }
+
   const updateForm = (planId: string, changes: Partial<FormReporte>) => {
-    setFormularios((current) => ({
-      ...current,
-      [planId]: {
+    setFormularios((current) => {
+      const nextForm = {
         ...current[planId],
         ...changes,
-      },
-    }))
+      }
+      const next = {
+        ...current,
+        [planId]: nextForm,
+      }
+
+      if (entrenador?.id) {
+        writeReportDrafts(entrenador.id, mesSeleccionado, (drafts) => ({
+          ...drafts,
+          [planId]: nextForm,
+        }))
+      }
+
+      return next
+    })
   }
 
   const updateDetalleEjercicio = (
@@ -210,17 +315,27 @@ export default function ReportesEntrenadorPage() {
       const form = current[planId]
       if (!form) return current
 
-      return {
-        ...current,
-        [planId]: {
-          ...form,
-          detalleEjercicios: form.detalleEjercicios.map((ejercicio) =>
-            ejercicio.ejercicioId === ejercicioId
-              ? { ...ejercicio, ...changes }
-              : ejercicio
-          ),
-        },
+      const nextForm = {
+        ...form,
+        detalleEjercicios: form.detalleEjercicios.map((ejercicio) =>
+          ejercicio.ejercicioId === ejercicioId
+            ? { ...ejercicio, ...changes }
+            : ejercicio
+        ),
       }
+      const next = {
+        ...current,
+        [planId]: nextForm,
+      }
+
+      if (entrenador?.id) {
+        writeReportDrafts(entrenador.id, mesSeleccionado, (drafts) => ({
+          ...drafts,
+          [planId]: nextForm,
+        }))
+      }
+
+      return next
     })
   }
 
@@ -269,6 +384,15 @@ export default function ReportesEntrenadorPage() {
 
       const saved = await response.json()
       updateForm(plan.id, { id: saved.id })
+      setReportesExpandidos((current) => {
+        const next = new Set(current)
+        next.delete(plan.id)
+        return next
+      })
+      writeReportDrafts(entrenador.id, mesSeleccionado, (drafts) => {
+        const { [plan.id]: _submittedDraft, ...remainingDrafts } = drafts
+        return remainingDrafts
+      })
       toast.success('Reporte enviado correctamente')
       void fetchData(entrenador.id, mesSeleccionado)
     } catch (error: any) {
@@ -337,7 +461,7 @@ export default function ReportesEntrenadorPage() {
 
       setEditingExerciseKey(null)
       toast.success('Ejercicio actualizado correctamente')
-      void fetchData(entrenador.id, mesSeleccionado)
+      void fetchData(entrenador.id, mesSeleccionado, true)
     } catch (error: any) {
       console.error('Error al actualizar ejercicio desde reporte:', error)
       toast.error(error.message || 'No se pudo actualizar el ejercicio')
@@ -406,6 +530,10 @@ export default function ReportesEntrenadorPage() {
               const form = formularios[plan.id]
               const saved = Boolean(form?.id)
               const reporteActual = reportes.find((item) => item.planEntrenamientoId === plan.id)
+              const expanded = !saved || reportesExpandidos.has(plan.id)
+              const detalleEjercicios = form?.detalleEjercicios || []
+              const ejerciciosEjecutados = detalleEjercicios.filter((ejercicio) => ejercicio.completado).length
+              const ejerciciosConAjuste = Math.max(detalleEjercicios.length - ejerciciosEjecutados, 0)
 
               return (
                 <Card key={plan.id}>
@@ -431,7 +559,102 @@ export default function ReportesEntrenadorPage() {
                       </span>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-5">
+                  {!expanded ? (
+                    <CardContent>
+                      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                          <div className="min-w-0 flex-1 space-y-3">
+                            <div className="flex flex-wrap gap-2">
+                              <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
+                                form?.completada ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                              }`}>
+                                {form?.completada ? (
+                                  <>
+                                    <CheckCircle2 className="h-3.5 w-3.5" />
+                                    Práctica terminada
+                                  </>
+                                ) : (
+                                  <>
+                                    <XCircle className="h-3.5 w-3.5" />
+                                    No terminada
+                                  </>
+                                )}
+                              </span>
+                              <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+                                {ejerciciosEjecutados}/{detalleEjercicios.length} ejercicios ejecutados
+                              </span>
+                              {ejerciciosConAjuste > 0 && (
+                                <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                                  {ejerciciosConAjuste} con ajuste
+                                </span>
+                              )}
+                              {form?.requerimientos && (
+                                <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+                                  Con requerimientos
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="grid gap-3 md:grid-cols-2">
+                              <div>
+                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Observaciones</p>
+                                <p className="mt-1 line-clamp-2 text-sm text-slate-800">
+                                  {form?.observaciones || 'Sin observaciones registradas.'}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                  {form?.completada ? 'Necesidades' : 'Motivo'}
+                                </p>
+                                <p className="mt-1 line-clamp-2 text-sm text-slate-800">
+                                  {form?.completada
+                                    ? form?.requerimientos || 'Sin requerimientos registrados.'
+                                    : form?.motivoIncompleta || 'Sin motivo registrado.'}
+                                </p>
+                              </div>
+                            </div>
+
+                            {reporteActual?.feedbackAdmin && (
+                              <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
+                                <p className="text-xs font-semibold text-blue-900">Feedback de administración</p>
+                                <p className="mt-1 line-clamp-2 text-sm text-blue-950">{reporteActual.feedbackAdmin}</p>
+                              </div>
+                            )}
+                          </div>
+
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => toggleReporteExpandido(plan.id)}
+                            className="shrink-0"
+                          >
+                            <PencilLine className="h-4 w-4" />
+                            Modificar reporte
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  ) : (
+                  <CardContent className="space-y-4">
+                    {saved && (
+                      <div className="flex flex-col gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 md:flex-row md:items-center md:justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-green-900">Reporte guardado</p>
+                          <p className="text-xs text-green-800">Estás modificando el reporte enviado. Al guardar volverá a mostrarse resumido.</p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleReporteExpandido(plan.id)}
+                          className="border-green-600 text-green-700 hover:bg-green-100"
+                        >
+                          Ver resumido
+                        </Button>
+                      </div>
+                    )}
+
                     <div className="flex flex-col gap-3 md:flex-row">
                       <button
                         type="button"
@@ -563,7 +786,7 @@ export default function ReportesEntrenadorPage() {
                                       type="button"
                                       onClick={() => {
                                         setEditingExerciseKey(null)
-                                        void fetchData(entrenador.id, mesSeleccionado)
+                                        void fetchData(entrenador.id, mesSeleccionado, true)
                                       }}
                                       className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-gray-400"
                                     >
@@ -662,6 +885,7 @@ export default function ReportesEntrenadorPage() {
                       </Button>
                     </div>
                   </CardContent>
+                  )}
                 </Card>
               )
             })}

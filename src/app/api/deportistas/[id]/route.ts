@@ -45,7 +45,17 @@ export async function GET(
       },
     })
 
-    return NextResponse.json(attachDeudaStatus([deportista], pagos)[0])
+    const exoneraciones = await prisma.exoneracionMensualidad.findMany({
+      where: { deportistaId: deportista.id },
+      select: {
+        deportistaId: true,
+        mes: true,
+        motivo: true,
+        observacion: true,
+      },
+    })
+
+    return NextResponse.json(attachDeudaStatus([deportista], pagos, new Date(), exoneraciones)[0])
   } catch (error) {
     console.error('Error al obtener deportista:', error)
     return NextResponse.json(

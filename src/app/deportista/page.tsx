@@ -4,11 +4,12 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { Users, Calendar, TrendingUp, LogOut, User, Trophy, Camera, CheckCircle, ChevronDown, ChevronUp, Clock } from 'lucide-react'
+import { Users, Calendar, TrendingUp, User, Trophy, Camera, CheckCircle, ChevronDown, ChevronUp, Clock } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { toast } from 'sonner'
 import { getPizarrasEjercicio, type PizarraEjercicio } from '@/lib/ejercicio-pizarras'
+import { LogoutButton } from '@/components/auth/LogoutButton'
 
 interface EjercicioPlan {
   id: string
@@ -126,11 +127,6 @@ export default function DeportistaDashboard() {
     }
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('deportista')
-    router.push('/')
-  }
-
   const calcularAsistencia = () => {
     if (asistencias.length === 0) return 0
     const presentes = asistencias.filter(a => a.presente).length
@@ -170,10 +166,7 @@ export default function DeportistaDashboard() {
               <h1 className="text-2xl font-bold text-gray-900">Mi Perfil Deportivo</h1>
               <p className="text-sm text-gray-600 mt-1">Bienvenido, {deportista?.nombre} {deportista?.apellidos}</p>
             </div>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Cerrar Sesión
-            </Button>
+            <LogoutButton />
           </div>
         </div>
       </header>

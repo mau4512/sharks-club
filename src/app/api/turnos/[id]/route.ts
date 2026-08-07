@@ -18,6 +18,7 @@ export async function GET(
             apellidos: true,
             email: true,
             createdAt: true,
+            becado: true,
             photoUrl: true,
             tallaCamiseta: true,
             numeroCamiseta: true,
@@ -52,9 +53,25 @@ export async function GET(
         })
       : []
 
+    const exoneraciones = turno.deportistas.length
+      ? await prisma.exoneracionMensualidad.findMany({
+          where: {
+            deportistaId: {
+              in: turno.deportistas.map((deportista) => deportista.id),
+            },
+          },
+          select: {
+            deportistaId: true,
+            mes: true,
+            motivo: true,
+            observacion: true,
+          },
+        })
+      : []
+
     return NextResponse.json({
       ...turno,
-      deportistas: attachDeudaStatus(turno.deportistas, pagos),
+      deportistas: attachDeudaStatus(turno.deportistas, pagos, new Date(), exoneraciones),
     })
   } catch (error) {
     console.error('Error al obtener turno:', error)

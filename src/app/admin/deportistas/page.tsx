@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import Link from 'next/link'
-import { Plus, Search, Edit, Trash2, UserCircle, Loader2, Eye, Wallet } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, UserCircle, Loader2, Eye, Wallet, MessageCircle } from 'lucide-react'
 import { formatOptionalDate, formatOptionalText } from '@/lib/utils'
 import { toast } from 'sonner'
 import { confirmDialog } from '@/components/ui/confirm-dialog'
@@ -17,6 +17,7 @@ interface Deportista {
   fechaNacimiento?: string | null
   email: string
   celular?: string
+  telefonoApoderado?: string | null
   posicion?: string
   becado?: boolean
   activo: boolean
@@ -28,6 +29,29 @@ interface Deportista {
     mesesDeudaMensualidad?: number
     mesesPendientes?: string[]
   }
+}
+
+function numeroWhatsApp(deportista: Deportista) {
+  const telefono = deportista.telefonoApoderado || deportista.celular
+  if (!telefono) return null
+
+  const digitos = telefono.replace(/\D/g, '').replace(/^00/, '')
+  if (!digitos) return null
+
+  // Los celulares locales se guardan normalmente con 9 dígitos.
+  return digitos.length === 9 ? `51${digitos}` : digitos
+}
+
+function enlaceCobroWhatsApp(deportista: Deportista) {
+  const numero = numeroWhatsApp(deportista)
+  if (!numero || !deportista.deudaStatus?.tieneDeuda) return null
+
+  const deuda = deportista.deudaStatus.etiquetas.length > 0
+    ? deportista.deudaStatus.etiquetas.join(', ')
+    : 'pagos pendientes'
+  const mensaje = `Hola, te escribimos de Sharks Basketball por ${deportista.nombre} ${deportista.apellidos}. Registramos los siguientes pagos pendientes: ${deuda}. Te solicitamos por favor regularizar el pago a la brevedad. Si ya realizaste el pago, envíanos el comprobante. Gracias.`
+
+  return `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`
 }
 
 export default function DeportistasPage() {
@@ -169,7 +193,10 @@ export default function DeportistasPage() {
       {/* Lista de deportistas */}
       {deportistasFiltrados.length > 0 ? (
         <div className="space-y-4">
-          {deportistasFiltrados.map((deportista) => (
+          {deportistasFiltrados.map((deportista) => {
+            const whatsappUrl = enlaceCobroWhatsApp(deportista)
+
+            return (
             <Card key={deportista.id} className="hover:shadow-lg transition-shadow">
               <CardContent className="py-6">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -236,12 +263,37 @@ export default function DeportistasPage() {
                       </Button>
                     </Link>
                     {deportista.deudaStatus?.tieneDeuda && (
-                      <Link href={`/admin/caja?deportistaId=${deportista.id}`} className="w-full sm:w-auto">
-                        <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                          <Wallet className="h-4 w-4 mr-1" />
-                          Pagar
-                        </Button>
-                      </Link>
+                      <>
+                        {whatsappUrl ? (
+                          <a
+                            href={whatsappUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-3 py-1.5 text-sm font-semibold leading-tight text-white transition hover:bg-green-700 sm:w-auto"
+                            aria-label={`Enviar notificación de deuda por WhatsApp a ${deportista.nombre} ${deportista.apellidos}`}
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                            WhatsApp
+                          </a>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full sm:w-auto"
+                            disabled
+                            title="Registra el celular del deportista o del apoderado para enviar el mensaje"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                            Sin teléfono
+                          </Button>
+                        )}
+                        <Link href={`/admin/caja?deportistaId=${deportista.id}`} className="w-full sm:w-auto">
+                          <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                            <Wallet className="h-4 w-4 mr-1" />
+                            Pagar
+                          </Button>
+                        </Link>
+                      </>
                     )}
                     <Button 
                       variant="danger" 
@@ -255,7 +307,8 @@ export default function DeportistasPage() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            )
+          })}
         </div>
       ) : (
         <Card>

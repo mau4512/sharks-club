@@ -13,6 +13,11 @@ interface Deportista {
   apellidos: string
   email: string
   photoUrl: string | null
+  becado?: boolean
+  deudaStatus?: {
+    tieneDeuda: boolean
+    etiquetas: string[]
+  }
 }
 
 interface Turno {
@@ -34,6 +39,12 @@ interface AsistenciaStats {
   deportistaId: string
   nombre: string
   apellidos: string
+  email: string
+  becado?: boolean
+  deudaStatus?: {
+    tieneDeuda: boolean
+    etiquetas: string[]
+  }
   totalAsistencias: number
   presentes: number
   ausentes: number
@@ -93,6 +104,9 @@ export default function AsistenciasTurnoPage() {
         deportistaId: deportista.id,
         nombre: deportista.nombre,
         apellidos: deportista.apellidos,
+        email: deportista.email,
+        becado: deportista.becado,
+        deudaStatus: deportista.deudaStatus,
         totalAsistencias: total,
         presentes,
         ausentes,
@@ -163,24 +177,55 @@ export default function AsistenciasTurnoPage() {
                 {stats.map((stat) => (
                   <div
                     key={stat.deportistaId}
-                    className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    className={`rounded-lg p-4 transition-colors ${
+                      stat.deudaStatus?.tieneDeuda
+                        ? 'bg-red-50 hover:bg-red-100'
+                        : 'bg-gray-50 hover:bg-gray-100'
+                    }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                          <User className="h-5 w-5 text-primary-600" />
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+                      <div className="flex min-w-0 items-start gap-3">
+                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                          stat.deudaStatus?.tieneDeuda ? 'bg-red-100' : 'bg-primary-100'
+                        }`}>
+                          <User className={`h-5 w-5 ${
+                            stat.deudaStatus?.tieneDeuda ? 'text-red-600' : 'text-primary-600'
+                          }`} />
                         </div>
-                        <div>
-                          <h3 className="font-semibold text-gray-900">
+                        <div className="min-w-0">
+                          <h3 className={`font-semibold ${
+                            stat.deudaStatus?.tieneDeuda ? 'text-red-700' : 'text-gray-900'
+                          }`}>
                             {stat.nombre} {stat.apellidos}
                           </h3>
                           <p className="text-sm text-gray-600">
                             Total: {stat.totalAsistencias} registros
                           </p>
+                          <p className="text-sm text-gray-600">{stat.email || 'Email pendiente'}</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {stat.becado ? (
+                              <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                                Becado por el club
+                              </span>
+                            ) : stat.deudaStatus?.tieneDeuda ? (
+                              stat.deudaStatus.etiquetas.map((etiqueta) => (
+                                <span
+                                  key={`${stat.deportistaId}-${etiqueta}`}
+                                  className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700"
+                                >
+                                  {etiqueta}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
+                                Al día
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-6">
+                      <div className="grid grid-cols-3 gap-3 justify-self-stretch rounded-lg bg-white/70 p-3 shadow-sm sm:flex sm:items-center sm:justify-end sm:gap-6 lg:justify-self-end lg:bg-transparent lg:p-0 lg:shadow-none">
                         <div className="text-center">
                           <div className="flex items-center gap-1 text-green-600">
                             <CheckCircle className="h-4 w-4" />

@@ -10,6 +10,13 @@ type PagoLite = {
   mesCoberturaFin?: Date | string | null
 }
 
+type ExoneracionLite = {
+  deportistaId: string
+  mes: Date | string
+  motivo?: string | null
+  observacion?: string | null
+}
+
 function isRecurringConcept(concepto: string) {
   return concepto === 'mensualidad' || concepto === 'anualidad'
 }
@@ -141,9 +148,18 @@ export function buildDeudaStatus(pagos: PagoLite[], now = new Date()) {
 export function buildDeudaStatusDesdeAlta(
   pagos: PagoLite[],
   fechaAlta: Date | string | null | undefined,
-  now = new Date()
+  now = new Date(),
+  exoneraciones: ExoneracionLite[] = []
 ) {
   const baseStatus = buildDeudaStatus(pagos, now)
+  const exoneracionesPorMes = new Map(
+    exoneraciones
+      .map((exoneracion) => {
+        const mes = parseCoverageMonthStart(exoneracion.mes)
+        return mes ? [getMonthKey(mes), exoneracion] as const : null
+      })
+      .filter(Boolean) as Array<readonly [string, ExoneracionLite]>
+  )
 
   if (!fechaAlta) {
     return {
@@ -206,8 +222,16 @@ export function buildDeudaStatusDesdeAlta(
   let cursor = altaMonthStart
   let mesesDeudaMensualidad = 0
   const mesesPendientes: Array<{ date: Date; porcentajePagado: number }> = []
+  const mesesExonerados: Array<{ date: Date; motivo?: string | null }> = []
 
   while (cursor <= currentMonthStart) {
+    const exoneracion = exoneracionesPorMes.get(getMonthKey(cursor))
+    if (exoneracion) {
+      mesesExonerados.push({ date: cursor, motivo: exoneracion.motivo })
+      cursor = getNextMonthStart(cursor)
+      continue
+    }
+
     const bucket = mensualidadesPorMes.get(getMonthKey(cursor))
     const expected = bucket?.expected ?? DEFAULT_MONTHLY_EXPECTED
     const paid = bucket?.paid ?? 0
@@ -249,20 +273,29 @@ export function buildDeudaStatusDesdeAlta(
     etiquetas,
     mesesDeudaMensualidad,
     mesesPendientes: mesesPendientes.map((mes) => getMonthKey(mes.date)),
+    mesesExonerados: mesesExonerados.map((mes) => getMonthKey(mes.date)),
   }
 }
 
 export function attachDeudaStatus<T extends { id: string }>(
   deportistas: T[],
   pagos: PagoLite[],
-  now = new Date()
+  now = new Date(),
+  exoneraciones: ExoneracionLite[] = []
 ) {
   const pagosPorDeportista = new Map<string, PagoLite[]>()
+  const exoneracionesPorDeportista = new Map<string, ExoneracionLite[]>()
 
   pagos.forEach((pago) => {
     const bucket = pagosPorDeportista.get(pago.deportistaId) || []
     bucket.push(pago)
     pagosPorDeportista.set(pago.deportistaId, bucket)
+  })
+
+  exoneraciones.forEach((exoneracion) => {
+    const bucket = exoneracionesPorDeportista.get(exoneracion.deportistaId) || []
+    bucket.push(exoneracion)
+    exoneracionesPorDeportista.set(exoneracion.deportistaId, bucket)
   })
 
   return deportistas.map((deportista) => {
@@ -282,6 +315,7 @@ export function attachDeudaStatus<T extends { id: string }>(
           },
           mesesDeudaMensualidad: 0,
           mesesPendientes: [],
+          mesesExonerados: [],
           becado: true,
         },
       }
@@ -292,7 +326,8 @@ export function attachDeudaStatus<T extends { id: string }>(
       deudaStatus: buildDeudaStatusDesdeAlta(
         pagosPorDeportista.get(deportista.id) || [],
         (deportista as T & { createdAt?: Date | string }).createdAt,
-        now
+        now,
+        exoneracionesPorDeportista.get(deportista.id) || []
       ),
     }
   })

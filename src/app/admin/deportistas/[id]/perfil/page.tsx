@@ -226,22 +226,22 @@ export default function PerfilDeportistaPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Link href="/admin/deportistas" className="w-full sm:w-auto">
-          <Button variant="ghost" size="sm">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+        <Link href="/admin/deportistas" className="w-full sm:max-w-xs lg:max-w-none">
+          <Button variant="ghost" size="sm" className="w-full justify-center whitespace-nowrap sm:justify-start lg:w-auto">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver a Deportistas
           </Button>
         </Link>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Link href={`/admin/caja?deportistaId=${id}`} className="w-full sm:w-auto">
-            <Button variant="outline" size="sm" className="w-full sm:w-auto">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap lg:justify-end">
+          <Link href={`/admin/caja?deportistaId=${id}`} className="w-full">
+            <Button variant="outline" size="sm" className="w-full whitespace-nowrap lg:min-w-32">
               <Wallet className="h-4 w-4 mr-2" />
               Ver Caja
             </Button>
           </Link>
-          <Link href={`/admin/deportistas/${id}`} className="w-full sm:w-auto">
-            <Button variant="secondary" size="sm" className="w-full sm:w-auto">
+          <Link href={`/admin/deportistas/${id}`} className="w-full">
+            <Button variant="secondary" size="sm" className="w-full whitespace-nowrap lg:min-w-44">
               <Edit className="h-4 w-4 mr-2" />
               Editar Información
             </Button>

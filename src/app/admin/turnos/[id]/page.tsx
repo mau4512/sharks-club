@@ -24,6 +24,11 @@ interface Turno {
     nombre: string
     apellidos: string
     email: string
+    becado?: boolean
+    deudaStatus?: {
+      tieneDeuda: boolean
+      etiquetas: string[]
+    }
   }>
 }
 
@@ -394,17 +399,43 @@ export default function EditarTurnoPage() {
                 turno.deportistas.map((deportista) => (
                   <div 
                     key={deportista.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    className={`flex flex-col gap-3 rounded-lg p-3 transition-colors sm:flex-row sm:items-start sm:justify-between ${
+                      deportista.deudaStatus?.tieneDeuda
+                        ? 'bg-red-50 hover:bg-red-100'
+                        : 'bg-gray-50 hover:bg-gray-100'
+                    }`}
                   >
-                    <div>
-                      <p className="font-medium text-gray-900">
+                    <div className="min-w-0 flex-1">
+                      <p className={`font-medium ${
+                        deportista.deudaStatus?.tieneDeuda ? 'text-red-700' : 'text-gray-900'
+                      }`}>
                         {deportista.nombre} {deportista.apellidos}
                       </p>
-                      <p className="text-sm text-gray-600">{deportista.email}</p>
+                      <p className="text-sm text-gray-600">{deportista.email || 'Email pendiente'}</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {deportista.becado ? (
+                          <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                            Becado por el club
+                          </span>
+                        ) : deportista.deudaStatus?.tieneDeuda ? (
+                          deportista.deudaStatus.etiquetas.map((etiqueta) => (
+                            <span
+                              key={`${deportista.id}-${etiqueta}`}
+                              className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700"
+                            >
+                              {etiqueta}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
+                            Al día
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <button
                       onClick={() => removerDeportista(deportista.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+                      className="self-end rounded p-2 text-red-600 transition-colors hover:bg-red-50 sm:self-start"
                       title="Remover del turno"
                     >
                       <X className="h-4 w-4" />

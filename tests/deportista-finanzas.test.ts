@@ -141,4 +141,26 @@ describe('deportista finanzas', () => {
     expect(status.mensualidadPendiente).toBe(true)
     expect(status.etiquetas).toContain('mayo de 2026 pendiente (50% cubierto)')
   })
+
+  it('excluye de la deuda los meses exonerados sin mostrarlos como alerta', () => {
+    const status = buildDeudaStatusDesdeAlta(
+      [],
+      new Date('2026-05-01T12:00:00.000Z'),
+      new Date('2026-05-29T12:00:00.000Z'),
+      [
+        {
+          deportistaId: 'dep-1',
+          mes: new Date('2026-05-01T00:00:00.000Z'),
+          motivo: 'lesion',
+        },
+      ]
+    )
+
+    expect(status.mensualidadPendiente).toBe(false)
+    expect(status.mesesDeudaMensualidad).toBe(0)
+    expect(status.mesesPendientes).toEqual([])
+    expect(status.mesesExonerados).toEqual(['2026-05'])
+    expect(status.etiquetas).not.toContain('mayo de 2026 pendiente')
+    expect(status.etiquetas).not.toContain('mayo de 2026 exonerado: lesion')
+  })
 })

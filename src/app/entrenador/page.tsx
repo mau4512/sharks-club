@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import Link from 'next/link'
-import { Users, Calendar, ClipboardCheck, LogOut, Activity, ClipboardList, Trophy, User } from 'lucide-react'
+import { Users, Calendar, ClipboardCheck, Activity, ClipboardList, Trophy, User } from 'lucide-react'
 import NotificationsBell from '@/components/notificaciones/NotificationsBell'
+import { LogoutButton } from '@/components/auth/LogoutButton'
 
 export default function EntrenadorDashboard() {
   const router = useRouter()
@@ -41,11 +42,6 @@ export default function EntrenadorDashboard() {
     } finally {
       setLoading(false)
     }
-  }
-
-  const handleLogout = () => {
-    localStorage.removeItem('entrenador')
-    router.push('/')
   }
 
   if (loading) {
@@ -83,10 +79,7 @@ export default function EntrenadorDashboard() {
                   Perfil
                 </Button>
               </Link>
-              <Button variant="outline" onClick={handleLogout}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Cerrar Sesión
-              </Button>
+              <LogoutButton />
             </div>
           </div>
         </div>

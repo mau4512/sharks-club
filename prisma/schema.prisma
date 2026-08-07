@@ -57,6 +57,7 @@ model Deportista {
   registrosTiro RegistroTiro[]
   sesionesEntrenamiento SesionEntrenamiento[]
   pagos         PagoDeportista[]
+  exoneracionesMensualidad ExoneracionMensualidad[]
   turnoId       String?
   turno         Turno?        @relation(fields: [turnoId], references: [id], onDelete: SetNull)
   
@@ -149,6 +150,8 @@ model EjercicioBiblioteca {
   nombre        String        // Nombre del ejercicio
   descripcion   String?       @db.Text
   categoria     String        // Tiro, Defensa, Físico, Técnico, Táctico, etc.
+  etiqueta      String?
+  tags          String[]      @default([])
   subcategoria  String?       // Más específico: Tiro libre, Triple, Bote, etc.
   objetivos     String?       @db.Text // Qué se busca mejorar
   materiales    String[]      // Array de materiales: ["Balón", "Conos", "Escalera"]
@@ -161,6 +164,11 @@ model EjercicioBiblioteca {
   instrucciones String?       @db.Text // Paso a paso
   videoUrl      String?       // URL de video demostrativo
   imagenUrl     String?       // URL de imagen ilustrativa
+  meta          Json?
+  puntosTiro    Json?
+  tipoRecurso   String?
+  pizarra       Json?
+  pizarras      Json?
   consejos      String[]      // Array de consejos/tips
   variantes     String[]      // Variantes del ejercicio
   esPublico     Boolean       @default(true) // Si otros entrenadores pueden verlo
@@ -360,6 +368,21 @@ model PagoDeportista {
   @@map("pagos_deportistas")
 }
 
+model ExoneracionMensualidad {
+  id            String      @id @default(cuid())
+  deportistaId  String
+  deportista    Deportista  @relation(fields: [deportistaId], references: [id], onDelete: Cascade)
+  mes           DateTime
+  motivo        String
+  observacion   String?     @db.Text
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([deportistaId, mes])
+  @@index([mes])
+  @@map("exoneraciones_mensualidad")
+}
+
 model EgresoCaja {
   id            String    @id @default(cuid())
   categoria     String    // sueldos, alquiler, servicios, prestamos, impuestos, otros
@@ -373,6 +396,22 @@ model EgresoCaja {
 
   @@index([fechaEgreso])
   @@map("egresos_caja")
+}
+
+model GastoFijo {
+  id             String   @id @default(cuid())
+  nombre         String
+  categoria      String
+  metodo         String?
+  monto          Float
+  diaVencimiento Int?
+  activo         Boolean  @default(true)
+  observacion    String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([activo, categoria])
+  @@map("gastos_fijos")
 }
 
 // Plan de Entrenamiento

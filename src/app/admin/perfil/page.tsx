@@ -179,9 +179,11 @@ export default function AdminPerfilPage() {
           {error && <p className="text-sm text-red-600">{error}</p>}
           {success && <p className="text-sm text-green-600">{success}</p>}
 
-          <Button type="submit" disabled={saving}>
-            {saving ? 'Guardando...' : 'Guardar Perfil'}
-          </Button>
+          <div className="flex justify-end pt-2">
+            <Button type="submit" disabled={saving} className="w-full whitespace-nowrap sm:w-auto sm:min-w-40">
+              {saving ? 'Guardando...' : 'Guardar Perfil'}
+            </Button>
+          </div>
         </form>
       </CardContent>
     </Card>

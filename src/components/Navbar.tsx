@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Home, Activity, User, ClipboardList, TrendingUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { LogoutButton } from '@/components/auth/LogoutButton'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -54,6 +55,7 @@ export function Navbar() {
                 </Link>
               )
             })}
+            <LogoutButton className="shrink-0" />
           </div>
         </div>
       </div>

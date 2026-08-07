@@ -2,17 +2,16 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Users, Home, Clock, Calendar, UserCog, LogOut, User, BookOpen, Wallet, ClipboardList } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { Users, Home, Clock, Calendar, UserCog, User, BookOpen, Wallet, ClipboardList } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import NotificationsBell from '@/components/notificaciones/NotificationsBell'
+import { LogoutButton } from '@/components/auth/LogoutButton'
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const router = useRouter()
   const [adminId, setAdminId] = useState<string | undefined>(undefined)
 
   useEffect(() => {
@@ -26,12 +25,6 @@ export default function AdminLayout({
       console.error('Error al leer admin local:', error)
     }
   }, [])
-
-  const cerrarSesion = () => {
-    localStorage.removeItem('isAdmin')
-    localStorage.removeItem('admin')
-    router.push('/')
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -128,13 +121,7 @@ export default function AdminLayout({
             </div>
             
             <div className="flex items-center justify-end">
-              <button
-                onClick={cerrarSesion}
-                className="flex w-full items-center justify-center px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition sm:w-auto"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Cerrar Sesión
-              </button>
+              <LogoutButton className="w-full sm:w-auto" />
             </div>
           </div>
         </div>

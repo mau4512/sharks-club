@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { ArrowLeft, Calendar, CheckCircle, XCircle, User } from 'lucide-react'
+import { ArrowLeft, Calendar, CheckCircle, ChevronDown, ChevronUp, Eye, MessageCircle, XCircle, User } from 'lucide-react'
 import Link from 'next/link'
+import { calcularResumenAsistenciaMensual } from '@/lib/asistencias'
 
 interface Deportista {
   id: string
@@ -13,6 +14,8 @@ interface Deportista {
   apellidos: string
   email: string
   photoUrl: string | null
+  celular?: string | null
+  telefonoApoderado?: string | null
   becado?: boolean
   deudaStatus?: {
     tieneDeuda: boolean
@@ -40,6 +43,8 @@ interface AsistenciaStats {
   nombre: string
   apellidos: string
   email: string
+  celular?: string | null
+  telefonoApoderado?: string | null
   becado?: boolean
   deudaStatus?: {
     tieneDeuda: boolean
@@ -59,10 +64,16 @@ export default function AsistenciasTurnoPage() {
   const [turno, setTurno] = useState<Turno | null>(null)
   const [asistencias, setAsistencias] = useState<Asistencia[]>([])
   const [stats, setStats] = useState<AsistenciaStats[]>([])
+  const [mesSeleccionado, setMesSeleccionado] = useState(() => new Date().toISOString().slice(0, 7))
+  const [detalleAbierto, setDetalleAbierto] = useState<string | null>(null)
 
   useEffect(() => {
     cargarDatos()
   }, [id])
+
+  useEffect(() => {
+    if (turno) calcularEstadisticas(turno.deportistas, asistencias, mesSeleccionado)
+  }, [mesSeleccionado])
 
   const cargarDatos = async () => {
     try {
@@ -79,7 +90,7 @@ export default function AsistenciasTurnoPage() {
         if (asistenciasRes.ok) {
           const asistenciasData = await asistenciasRes.json()
           setAsistencias(asistenciasData)
-          calcularEstadisticas(turnoData.deportistas, asistenciasData)
+          calcularEstadisticas(turnoData.deportistas, asistenciasData, mesSeleccionado)
         }
       }
     } catch (error) {
@@ -89,33 +100,56 @@ export default function AsistenciasTurnoPage() {
     }
   }
 
-  const calcularEstadisticas = (deportistas: Deportista[], asistencias: Asistencia[]) => {
+  const calcularEstadisticas = (deportistas: Deportista[], asistencias: Asistencia[], mes: string) => {
     const estadisticas = deportistas.map((deportista) => {
       const asistenciasDeportista = asistencias.filter(
-        (a) => a.deportistaId === deportista.id
+        (a) => a.deportistaId === deportista.id && a.fecha.slice(0, 7) === mes
       )
       
-      const presentes = asistenciasDeportista.filter((a) => a.presente).length
-      const ausentes = asistenciasDeportista.filter((a) => !a.presente).length
-      const total = asistenciasDeportista.length
-      const porcentaje = total > 0 ? (presentes / total) * 100 : 0
+      const resumen = calcularResumenAsistenciaMensual(asistenciasDeportista, mes)
 
       return {
         deportistaId: deportista.id,
         nombre: deportista.nombre,
         apellidos: deportista.apellidos,
         email: deportista.email,
+        celular: deportista.celular,
+        telefonoApoderado: deportista.telefonoApoderado,
         becado: deportista.becado,
         deudaStatus: deportista.deudaStatus,
-        totalAsistencias: total,
-        presentes,
-        ausentes,
-        porcentaje
+        totalAsistencias: resumen.registros.length,
+        presentes: resumen.presentes.length,
+        ausentes: resumen.ausentes,
+        porcentaje: resumen.porcentaje
       }
     })
 
     setStats(estadisticas)
   }
+
+  const fechasAsistidas = (deportistaId: string) => asistencias
+    .filter((asistencia) =>
+      asistencia.deportistaId === deportistaId &&
+      asistencia.presente &&
+      asistencia.fecha.slice(0, 7) === mesSeleccionado
+    )
+    .sort((a, b) => a.fecha.localeCompare(b.fecha))
+
+  const enlaceWhatsApp = (stat: AsistenciaStats) => {
+    if (!stat.deudaStatus?.tieneDeuda) return null
+    const telefono = stat.telefonoApoderado || stat.celular
+    if (!telefono) return null
+    const digitos = telefono.replace(/\D/g, '').replace(/^00/, '')
+    if (!digitos) return null
+    const numero = digitos.length === 9 ? `51${digitos}` : digitos
+    const deuda = stat.deudaStatus.etiquetas.join(', ') || 'pagos pendientes'
+    const mensaje = `Hola, te escribimos de Sharks Basketball por ${stat.nombre} ${stat.apellidos}. Registramos los siguientes pagos pendientes: ${deuda}. Te solicitamos por favor regularizar el pago a la brevedad. Si ya realizaste el pago, envíanos el comprobante. Gracias.`
+    return `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`
+  }
+
+  const formatearFecha = (fecha: string) => new Intl.DateTimeFormat('es-PE', {
+    weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC'
+  }).format(new Date(fecha))
 
   if (loading) {
     return (
@@ -155,16 +189,16 @@ export default function AsistenciasTurnoPage() {
         {/* Resumen de asistencias */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-xl font-semibold text-gray-900">
                 Resumen de Asistencias por Deportista
               </h2>
-              <Link href={`/admin/turnos/${id}/tomar-asistencia`}>
-                <Button>
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Tomar Asistencia Hoy
-                </Button>
-              </Link>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input type="month" value={mesSeleccionado} onChange={(event) => setMesSeleccionado(event.target.value)} className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900" aria-label="Mes del resumen de asistencias" />
+                <Link href={`/admin/turnos/${id}/tomar-asistencia`}>
+                  <Button className="w-full"><Calendar className="h-4 w-4 mr-2" />Tomar Asistencia Hoy</Button>
+                </Link>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -193,13 +227,14 @@ export default function AsistenciasTurnoPage() {
                           }`} />
                         </div>
                         <div className="min-w-0">
-                          <h3 className={`font-semibold ${
+                          <Link href={`/admin/deportistas/${stat.deportistaId}/perfil`} className={`inline-flex items-center gap-1 font-semibold hover:underline ${
                             stat.deudaStatus?.tieneDeuda ? 'text-red-700' : 'text-gray-900'
                           }`}>
                             {stat.nombre} {stat.apellidos}
-                          </h3>
+                            <Eye className="h-3.5 w-3.5" />
+                          </Link>
                           <p className="text-sm text-gray-600">
-                            Total: {stat.totalAsistencias} registros
+                            Total del mes: {stat.totalAsistencias} registros
                           </p>
                           <p className="text-sm text-gray-600">{stat.email || 'Email pendiente'}</p>
                           <div className="mt-2 flex flex-wrap gap-2">
@@ -219,6 +254,16 @@ export default function AsistenciasTurnoPage() {
                             ) : (
                               <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
                                 Al día
+                              </span>
+                            )}
+                            {stat.deudaStatus?.tieneDeuda && enlaceWhatsApp(stat) && (
+                              <a href={enlaceWhatsApp(stat)!} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-full bg-green-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-green-700">
+                                <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+                              </a>
+                            )}
+                            {stat.deudaStatus?.tieneDeuda && !enlaceWhatsApp(stat) && (
+                              <span title="Registra el celular del deportista o del apoderado" className="inline-flex cursor-not-allowed items-center gap-1 rounded-full bg-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-500">
+                                <MessageCircle className="h-3.5 w-3.5" /> Sin teléfono
                               </span>
                             )}
                           </div>
@@ -242,14 +287,32 @@ export default function AsistenciasTurnoPage() {
                           <p className="text-xs text-gray-500">Ausentes</p>
                         </div>
 
-                        <div className="text-center min-w-[80px]">
+                        <button type="button" onClick={() => setDetalleAbierto(detalleAbierto === stat.deportistaId ? null : stat.deportistaId)} className="min-w-[80px] rounded-md p-1 text-center hover:bg-primary-50" aria-expanded={detalleAbierto === stat.deportistaId}>
                           <div className="text-2xl font-bold text-gray-900">
                             {stat.porcentaje.toFixed(0)}%
                           </div>
-                          <p className="text-xs text-gray-500">Asistencia</p>
-                        </div>
+                          <p className="flex items-center justify-center text-xs text-gray-500">Asistencia {detalleAbierto === stat.deportistaId ? <ChevronUp className="ml-1 h-3 w-3" /> : <ChevronDown className="ml-1 h-3 w-3" />}</p>
+                        </button>
                       </div>
                     </div>
+
+                    {detalleAbierto === stat.deportistaId && (
+                      <div className="mt-3 rounded-lg border border-gray-200 bg-white p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-sm font-semibold text-gray-900">Días asistidos del mes</p>
+                          <Link href={`/admin/deportistas/${stat.deportistaId}/perfil`} className="text-xs font-semibold text-primary-700 hover:underline">Ver perfil completo</Link>
+                        </div>
+                        {fechasAsistidas(stat.deportistaId).length === 0 ? (
+                          <p className="mt-2 text-sm text-gray-500">No tiene asistencias registradas en este mes.</p>
+                        ) : (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {fechasAsistidas(stat.deportistaId).map((asistencia) => (
+                              <span key={asistencia.id} className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium capitalize text-green-700">{formatearFecha(asistencia.fecha)}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Barra de progreso */}
                     <div className="mt-3">

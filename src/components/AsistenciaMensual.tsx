@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Calendar, CheckCircle, Clock } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
+import { calcularResumenAsistenciaMensual } from '@/lib/asistencias'
 
 interface RegistroAsistencia {
   id: string
@@ -24,8 +25,6 @@ const mesActual = () => {
   const hoy = new Date()
   return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`
 }
-
-const claveMes = (fecha: string) => fecha.slice(0, 7)
 
 export function AsistenciaMensual({ deportistaId, asistencias: asistenciasIniciales }: AsistenciaMensualProps) {
   const [mes, setMes] = useState(mesActual)
@@ -49,14 +48,13 @@ export function AsistenciaMensual({ deportistaId, asistencias: asistenciasInicia
       .finally(() => setLoading(false))
   }, [deportistaId, asistenciasIniciales])
 
-  const registrosDelMes = useMemo(
-    () => asistencias.filter((registro) => claveMes(registro.fecha) === mes),
+  const resumenMensual = useMemo(
+    () => calcularResumenAsistenciaMensual(asistencias, mes),
     [asistencias, mes]
   )
-  const diasAsistidos = registrosDelMes.filter((registro) => registro.presente)
-  const porcentaje = registrosDelMes.length
-    ? Math.round((diasAsistidos.length / registrosDelMes.length) * 100)
-    : 0
+  const registrosDelMes = resumenMensual.registros
+  const diasAsistidos = resumenMensual.presentes
+  const porcentaje = resumenMensual.porcentaje
   const nombreMes = new Intl.DateTimeFormat('es-PE', { month: 'long', year: 'numeric' })
     .format(new Date(`${mes}-01T12:00:00`))
 

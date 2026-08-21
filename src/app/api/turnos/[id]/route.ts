@@ -17,6 +17,8 @@ export async function GET(
             nombre: true,
             apellidos: true,
             email: true,
+            celular: true,
+            telefonoApoderado: true,
             createdAt: true,
             becado: true,
             photoUrl: true,

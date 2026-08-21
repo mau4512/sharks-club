@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input'
 import Link from 'next/link'
 import { ArrowLeft, Save, User, Lock } from 'lucide-react'
 import { toast } from 'sonner'
+import { AsistenciaMensual } from '@/components/AsistenciaMensual'
 
 export default function PerfilPage() {
   const router = useRouter()
@@ -181,6 +182,10 @@ export default function PerfilPage() {
             </div>
           </CardContent>
         </Card>
+
+        <div className="mb-6">
+          <AsistenciaMensual deportistaId={deportista?.id} />
+        </div>
 
         <Card className="mb-6">
           <CardHeader>

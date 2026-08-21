@@ -60,9 +60,18 @@ export default function DeportistaDetailPage({ params }: { params: { id: string 
   }
 
   const calcularAsistencia = () => {
-    if (asistencias.length === 0) return 0
-    const presentes = asistencias.filter(a => a.presente).length
-    return Math.round((presentes / asistencias.length) * 100)
+    const hoy = new Date()
+    const mesActual = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`
+    const asistenciasDelMes = asistencias.filter(a => a.fecha?.slice(0, 7) === mesActual)
+    if (asistenciasDelMes.length === 0) return 0
+    const presentes = asistenciasDelMes.filter(a => a.presente).length
+    return Math.round((presentes / asistenciasDelMes.length) * 100)
+  }
+
+  const asistenciasDelMes = () => {
+    const hoy = new Date()
+    const mesActual = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`
+    return asistencias.filter(a => a.fecha?.slice(0, 7) === mesActual)
   }
 
   if (loading) {
@@ -82,6 +91,7 @@ export default function DeportistaDetailPage({ params }: { params: { id: string 
   }
 
   const porcentajeAsistencia = calcularAsistencia()
+  const registrosMes = asistenciasDelMes()
   const partidos = estadisticas?.partidos
   const formatLimaTime = (value: string) =>
     new Date(value).toLocaleTimeString('es-PE', {
@@ -177,7 +187,7 @@ export default function DeportistaDetailPage({ params }: { params: { id: string 
 
                 <div className="pt-4 border-t">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">Asistencia</span>
+                    <span className="text-sm font-medium text-gray-700">Asistencia del mes</span>
                     <span className="text-2xl font-bold text-primary-600">{porcentajeAsistencia}%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
@@ -187,7 +197,7 @@ export default function DeportistaDetailPage({ params }: { params: { id: string 
                     />
                   </div>
                   <p className="text-xs text-gray-600 mt-2">
-                    {asistencias.filter(a => a.presente).length} de {asistencias.length} sesiones
+                    {registrosMes.filter(a => a.presente).length} de {registrosMes.length} sesiones del mes
                   </p>
                 </div>
               </CardContent>
@@ -207,8 +217,8 @@ export default function DeportistaDetailPage({ params }: { params: { id: string 
                       <Trophy className="h-5 w-5 text-blue-600" />
                       <h3 className="font-semibold text-gray-900">Sesiones</h3>
                     </div>
-                    <p className="text-3xl font-bold text-blue-600">{asistencias.length}</p>
-                    <p className="text-sm text-gray-600 mt-1">Total registradas</p>
+                    <p className="text-3xl font-bold text-blue-600">{registrosMes.length}</p>
+                    <p className="text-sm text-gray-600 mt-1">Registradas este mes</p>
                   </div>
 
                   <div className="bg-green-50 p-4 rounded-lg">
@@ -217,9 +227,9 @@ export default function DeportistaDetailPage({ params }: { params: { id: string 
                       <h3 className="font-semibold text-gray-900">Presentes</h3>
                     </div>
                     <p className="text-3xl font-bold text-green-600">
-                      {asistencias.filter(a => a.presente).length}
+                      {registrosMes.filter(a => a.presente).length}
                     </p>
-                    <p className="text-sm text-gray-600 mt-1">Asistencias confirmadas</p>
+                    <p className="text-sm text-gray-600 mt-1">Confirmadas este mes</p>
                   </div>
 
                   <div className="bg-primary-50 p-4 rounded-lg">
@@ -230,7 +240,7 @@ export default function DeportistaDetailPage({ params }: { params: { id: string 
                     <p className="text-3xl font-bold text-primary-600">
                       {porcentajeAsistencia}%
                     </p>
-                    <p className="text-sm text-gray-600 mt-1">Tasa de asistencia</p>
+                    <p className="text-sm text-gray-600 mt-1">Tasa del mes actual</p>
                   </div>
                 </div>
               </CardContent>

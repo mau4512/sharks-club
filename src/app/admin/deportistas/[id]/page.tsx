@@ -30,6 +30,10 @@ interface DeportistaData {
   turnoId: string
   becado: boolean
   activo: boolean
+  tarifaAnio: string
+  tarifaTipo: string
+  tarifaMonto: string
+  tarifaObservacion: string
   password?: string
   confirmPassword?: string
 }
@@ -67,7 +71,11 @@ export default function EditarDeportistaPage() {
     planSesiones: '12',
     turnoId: '',
     becado: false,
-    activo: true
+    activo: true,
+    tarifaAnio: String(new Date().getFullYear()),
+    tarifaTipo: 'regular',
+    tarifaMonto: '180',
+    tarifaObservacion: ''
   })
 
   useEffect(() => {
@@ -92,13 +100,18 @@ export default function EditarDeportistaPage() {
   const fetchDeportista = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/deportistas/${id}`)
+      const [response, tarifaResponse] = await Promise.all([
+        fetch(`/api/deportistas/${id}`),
+        fetch(`/api/tarifas-mensuales?deportistaId=${id}&anio=${new Date().getFullYear()}`),
+      ])
       
       if (!response.ok) {
         throw new Error('Deportista no encontrado')
       }
       
       const data = await response.json()
+      const tarifas = tarifaResponse.ok ? await tarifaResponse.json() : []
+      const tarifaActual = Array.isArray(tarifas) ? tarifas[0] : null
       
       // Formatear fecha para input date
       const fechaNacimiento = data.fechaNacimiento
@@ -122,7 +135,11 @@ export default function EditarDeportistaPage() {
         planSesiones: data.planSesiones?.toString() || '12',
         turnoId: data.turnoId || '',
         becado: data.becado === true,
-        activo: data.activo
+        activo: data.activo,
+        tarifaAnio: String(new Date().getFullYear()),
+        tarifaTipo: tarifaActual?.tipo || (data.becado ? 'apoyo' : 'regular'),
+        tarifaMonto: String(tarifaActual?.monto ?? (data.becado ? 0 : data.planSesiones === 8 ? 120 : data.planSesiones === 4 ? 60 : 180)),
+        tarifaObservacion: tarifaActual?.observacion || ''
       })
     } catch (err: any) {
       console.error('Error:', err)
@@ -151,7 +168,7 @@ export default function EditarDeportistaPage() {
 
     try {
       // Crear objeto sin los campos de confirmación
-      const { confirmPassword, ...dataToSend } = formData
+      const { confirmPassword, tarifaAnio, tarifaTipo, tarifaMonto, tarifaObservacion, ...dataToSend } = formData
       
       // Si no se ingresó contraseña, no enviarla
       if (!dataToSend.password) {
@@ -167,6 +184,16 @@ export default function EditarDeportistaPage() {
       if (!response.ok) {
         const error = await response.json()
         throw new Error(error.error || 'Error al actualizar deportista')
+      }
+
+      const tarifaResponse = await fetch('/api/tarifas-mensuales', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deportistaId: id, anio: tarifaAnio, tipo: tarifaTipo, monto: tarifaMonto, observacion: tarifaObservacion }),
+      })
+      if (!tarifaResponse.ok) {
+        const tarifaError = await tarifaResponse.json()
+        throw new Error(tarifaError.error || 'El perfil se guardó, pero no se pudo guardar la tarifa')
       }
       
       toast.success('Deportista actualizado exitosamente')
@@ -409,6 +436,30 @@ export default function EditarDeportistaPage() {
               <p className="text-sm text-gray-600 mt-2">
                 Selecciona el plan de entrenamiento y turno para este deportista
               </p>
+            </div>
+
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Tarifa mensual</h2>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <Input label="Año" name="tarifaAnio" type="number" value={formData.tarifaAnio} onChange={handleChange} required />
+                <Select
+                  label="Tipo de tarifa"
+                  name="tarifaTipo"
+                  value={formData.tarifaTipo}
+                  onChange={handleChange}
+                  options={[
+                    { value: 'regular', label: 'Regular' },
+                    { value: 'hermanos', label: 'Hermanos' },
+                    { value: 'apoyo', label: 'Apoyo del club' },
+                    { value: 'personalizado', label: 'Personalizada' },
+                  ]}
+                />
+                <Input label="Monto mensual (S/)" name="tarifaMonto" type="number" min="0" step="0.01" value={formData.tarifaMonto} onChange={handleChange} required />
+              </div>
+              <div className="mt-4">
+                <Input label="Motivo u observación" name="tarifaObservacion" value={formData.tarifaObservacion} onChange={handleChange} placeholder="Ej: descuento por hermanos durante todo el año" />
+              </div>
+              <p className="mt-2 text-sm text-gray-600">Esta tarifa se usa para la meta de todos los meses del año. Un pago completo con monto especial solo prorratea los meses que cubre.</p>
             </div>
 
             {/* Estado */}

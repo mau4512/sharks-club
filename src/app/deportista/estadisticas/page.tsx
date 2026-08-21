@@ -46,9 +46,12 @@ export default function EstadisticasPage() {
   }
 
   const calcularAsistencia = () => {
-    if (asistencias.length === 0) return 0
-    const presentes = asistencias.filter(a => a.presente).length
-    return Math.round((presentes / asistencias.length) * 100)
+    const hoy = new Date()
+    const mesActual = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`
+    const asistenciasDelMes = asistencias.filter(a => a.fecha?.slice(0, 7) === mesActual)
+    if (asistenciasDelMes.length === 0) return 0
+    const presentes = asistenciasDelMes.filter(a => a.presente).length
+    return Math.round((presentes / asistenciasDelMes.length) * 100)
   }
 
   const formatearFecha = (fecha: string) => {
@@ -138,7 +141,7 @@ export default function EstadisticasPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Asistencia</p>
+                  <p className="text-sm text-gray-600 mb-1">Asistencia del mes</p>
                   <p className="text-3xl font-bold text-purple-600">{porcentajeAsistencia}%</p>
                 </div>
                 <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">

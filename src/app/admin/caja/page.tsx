@@ -68,6 +68,14 @@ interface ExoneracionMensualidad {
   deportista: Deportista
 }
 
+interface TarifaMensualHistorica {
+  id: string
+  deportistaId: string
+  anio: number
+  monto: number
+  tipo: string
+}
+
 interface IngresoFormData {
   deportistaId: string
   concepto: string
@@ -161,6 +169,7 @@ function CajaPageContent() {
   const [egresos, setEgresos] = useState<Egreso[]>([])
   const [gastosFijos, setGastosFijos] = useState<GastoFijo[]>([])
   const [exoneraciones, setExoneraciones] = useState<ExoneracionMensualidad[]>([])
+  const [tarifasMensuales, setTarifasMensuales] = useState<TarifaMensualHistorica[]>([])
   const [loading, setLoading] = useState(true)
   const [isSubmittingIngreso, setIsSubmittingIngreso] = useState(false)
   const [isSubmittingCarrito, setIsSubmittingCarrito] = useState(false)
@@ -287,12 +296,13 @@ function CajaPageContent() {
     try {
       setLoading(true)
 
-      const [deportistasRes, pagosRes, egresosRes, gastosFijosRes, exoneracionesRes] = await Promise.all([
+      const [deportistasRes, pagosRes, egresosRes, gastosFijosRes, exoneracionesRes, tarifasRes] = await Promise.all([
         fetch('/api/deportistas'),
         fetch(deportistaId ? `/api/pagos?deportistaId=${deportistaId}` : '/api/pagos'),
         deportistaId ? Promise.resolve(null) : fetch('/api/egresos'),
         deportistaId ? Promise.resolve(null) : fetch('/api/gastos-fijos'),
         fetch(deportistaId ? `/api/exoneraciones-mensualidad?deportistaId=${deportistaId}` : '/api/exoneraciones-mensualidad'),
+        fetch(deportistaId ? `/api/tarifas-mensuales?deportistaId=${deportistaId}` : '/api/tarifas-mensuales'),
       ])
 
       const deportistasData = await deportistasRes.json()
@@ -300,12 +310,14 @@ function CajaPageContent() {
       const egresosData = egresosRes ? await egresosRes.json() : []
       const gastosFijosData = gastosFijosRes ? await gastosFijosRes.json() : []
       const exoneracionesData = await exoneracionesRes.json()
+      const tarifasData = tarifasRes ? await tarifasRes.json() : []
 
       setDeportistas(Array.isArray(deportistasData) ? deportistasData : [])
       setPagos(Array.isArray(pagosData) ? pagosData : [])
       setEgresos(Array.isArray(egresosData) ? egresosData : [])
       setGastosFijos(Array.isArray(gastosFijosData) ? gastosFijosData : [])
       setExoneraciones(Array.isArray(exoneracionesData) ? exoneracionesData : [])
+      setTarifasMensuales(Array.isArray(tarifasData) ? tarifasData : [])
     } catch (error) {
       console.error('Error al cargar caja:', error)
       setDeportistas([])
@@ -313,6 +325,7 @@ function CajaPageContent() {
       setEgresos([])
       setGastosFijos([])
       setExoneraciones([])
+      setTarifasMensuales([])
     } finally {
       setLoading(false)
     }
@@ -478,8 +491,31 @@ function CajaPageContent() {
     )
 
     return deportistas.reduce((acc, deportista) => {
-      if (exonerados.has(deportista.id)) return acc
-      return acc + getExpectedMonthlyFee(deportista)
+      if (exonerados.has(deportista.id) || deportista.becado || deportista.activo === false) return acc
+
+      // Si el mes tuvo un prorrateo o monto especial, el monto esperado del pago
+      // congela la obligación histórica de ese periodo.
+      const pagoDelMes = pagos
+        .filter((pago) => {
+          if (pago.deportista.id !== deportista.id) return false
+          if (pago.concepto !== 'mensualidad' && pago.concepto !== 'anualidad') return false
+          const inicio = getMonthKey(pago.mesCoberturaInicio) || getMonthKey(pago.fechaPago)
+          const fin = getMonthKey(pago.mesCoberturaFin) || inicio
+          return month >= inicio && month <= fin && Boolean(pago.montoEsperado)
+        })
+        .sort((a, b) => new Date(b.fechaPago).getTime() - new Date(a.fechaPago).getTime())[0]
+
+      if (pagoDelMes?.montoEsperado) {
+        const inicio = getMonthKey(pagoDelMes.mesCoberturaInicio) || month
+        const fin = getMonthKey(pagoDelMes.mesCoberturaFin) || inicio
+        return acc + pagoDelMes.montoEsperado / getRecurringMonthsCount(inicio, fin)
+      }
+
+      const anio = Number(month.slice(0, 4))
+      const tarifaHistorica = tarifasMensuales.find(
+        (tarifa) => tarifa.deportistaId === deportista.id && tarifa.anio === anio
+      )
+      return acc + (tarifaHistorica?.monto ?? getExpectedMonthlyFee(deportista))
     }, 0)
   }
 
@@ -647,19 +683,37 @@ function CajaPageContent() {
       conceptosChart,
       egresosChart,
     }
-  }, [currentMonth, deportistas, egresos, exoneraciones, gastosFijos, mesSeleccionado, metaMargen, pagos])
+  }, [currentMonth, deportistas, egresos, exoneraciones, gastosFijos, mesSeleccionado, metaMargen, pagos, tarifasMensuales])
 
   const deportistaSeleccionado = deportistas.find((deportista) => deportista.id === ingresoData.deportistaId)
 
+  const tarifaHistoricaSeleccionada = useMemo(() => {
+    const anio = Number(ingresoData.mesCoberturaInicio.slice(0, 4))
+    return tarifasMensuales.find(
+      (tarifa) => tarifa.deportistaId === ingresoData.deportistaId && tarifa.anio === anio
+    )
+  }, [ingresoData.deportistaId, ingresoData.mesCoberturaInicio, tarifasMensuales])
+
   const montoEsperadoSugerido = useMemo(
-    () =>
-      inferExpectedAmount({
+    () => {
+      if (
+        (ingresoData.concepto === 'mensualidad' || ingresoData.concepto === 'anualidad') &&
+        tarifaHistoricaSeleccionada
+      ) {
+        return tarifaHistoricaSeleccionada.monto * getRecurringMonthsCount(
+          ingresoData.mesCoberturaInicio,
+          ingresoData.mesCoberturaFin
+        )
+      }
+
+      return inferExpectedAmount({
         concepto: ingresoData.concepto,
         mesCoberturaInicio: ingresoData.mesCoberturaInicio,
         mesCoberturaFin: ingresoData.mesCoberturaFin,
         tarifaMensual: ingresoData.tarifaMensual as TarifaMensual,
-      }),
-    [ingresoData.concepto, ingresoData.mesCoberturaFin, ingresoData.mesCoberturaInicio, ingresoData.tarifaMensual]
+      })
+    },
+    [ingresoData.concepto, ingresoData.mesCoberturaFin, ingresoData.mesCoberturaInicio, ingresoData.tarifaMensual, tarifaHistoricaSeleccionada]
   )
 
   const montoEsperado = useMemo(() => {

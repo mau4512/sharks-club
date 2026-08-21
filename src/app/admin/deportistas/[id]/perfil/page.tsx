@@ -24,6 +24,7 @@ import {
 import { formatDate, formatOptionalDate, formatOptionalText, calculateIMC } from '@/lib/utils'
 import Image from 'next/image'
 import { toast } from 'sonner'
+import { AsistenciaMensual } from '@/components/AsistenciaMensual'
 
 interface Deportista {
   id: string
@@ -490,6 +491,8 @@ export default function PerfilDeportistaPage() {
           </Card>
         </div>
       </div>
+
+      <AsistenciaMensual deportistaId={id} />
 
       <Card>
         <CardHeader>

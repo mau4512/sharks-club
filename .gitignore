@@ -39,7 +39,9 @@ yarn-error.log*
 next-env.d.ts
 
 # prisma
-/prisma/migrations
+/prisma/migrations/*
+!/prisma/migrations/20260821113000_add_tarifas_mensuales_deportistas/
+!/prisma/migrations/20260821113000_add_tarifas_mensuales_deportistas/migration.sql
 
 # uploads
 /public/uploads

@@ -10,6 +10,7 @@ import Image from 'next/image'
 import { toast } from 'sonner'
 import { getPizarrasEjercicio, type PizarraEjercicio } from '@/lib/ejercicio-pizarras'
 import { LogoutButton } from '@/components/auth/LogoutButton'
+import { AsistenciaMensual } from '@/components/AsistenciaMensual'
 
 interface EjercicioPlan {
   id: string
@@ -125,12 +126,6 @@ export default function DeportistaDashboard() {
     } finally {
       setUploadingPhoto(false)
     }
-  }
-
-  const calcularAsistencia = () => {
-    if (asistencias.length === 0) return 0
-    const presentes = asistencias.filter(a => a.presente).length
-    return Math.round((presentes / asistencias.length) * 100)
   }
 
   const togglePlanExpandido = (planId: string) => {
@@ -256,28 +251,8 @@ export default function DeportistaDashboard() {
               </CardContent>
             </Card>
 
-            {/* Estadísticas de Asistencia */}
-            <Card>
-              <CardHeader>
-                <h2 className="text-lg font-semibold text-gray-900">Asistencia</h2>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-primary-600 mb-2">
-                    {calcularAsistencia()}%
-                  </div>
-                  <p className="text-sm text-gray-600 mb-4">
-                    {asistencias.filter(a => a.presente).length} de {asistencias.length} sesiones
-                  </p>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-primary-600 h-2 rounded-full transition-all"
-                      style={{ width: `${calcularAsistencia()}%` }}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Estadísticas y detalle de Asistencia */}
+            <AsistenciaMensual asistencias={asistencias} />
           </div>
 
           {/* Columna Derecha: Sesiones y Acciones */}

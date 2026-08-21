@@ -57,6 +57,7 @@ model Deportista {
   registrosTiro RegistroTiro[]
   sesionesEntrenamiento SesionEntrenamiento[]
   pagos         PagoDeportista[]
+  tarifasMensuales TarifaMensualDeportista[]
   exoneracionesMensualidad ExoneracionMensualidad[]
   turnoId       String?
   turno         Turno?        @relation(fields: [turnoId], references: [id], onDelete: SetNull)
@@ -366,6 +367,23 @@ model PagoDeportista {
 
   @@index([deportistaId, fechaPago])
   @@map("pagos_deportistas")
+}
+
+// Tarifa mensual acordada por deportista. Se conserva por año para no alterar metas históricas.
+model TarifaMensualDeportista {
+  id            String      @id @default(cuid())
+  deportistaId  String
+  deportista    Deportista  @relation(fields: [deportistaId], references: [id], onDelete: Cascade)
+  anio          Int
+  monto         Float
+  tipo          String      @default("regular") // regular, hermanos, apoyo, personalizado
+  observacion   String?     @db.Text
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([deportistaId, anio])
+  @@index([anio])
+  @@map("tarifas_mensuales_deportistas")
 }
 
 model ExoneracionMensualidad {

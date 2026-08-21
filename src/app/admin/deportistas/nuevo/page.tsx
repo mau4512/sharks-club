@@ -42,6 +42,10 @@ export default function NuevoDeportistaPage() {
     planSesiones: '12',
     turnoId: '',
     becado: false,
+    tarifaAnio: String(new Date().getFullYear()),
+    tarifaTipo: 'regular',
+    tarifaMonto: '180',
+    tarifaObservacion: '',
   })
 
   useEffect(() => {
@@ -81,7 +85,7 @@ export default function NuevoDeportistaPage() {
 
     try {
       // Remover confirmPassword antes de enviar
-      const { confirmPassword, ...dataToSend } = formData
+      const { confirmPassword, tarifaAnio, tarifaTipo, tarifaMonto, tarifaObservacion, ...dataToSend } = formData
       
       const response = await fetch('/api/deportistas', {
         method: 'POST',
@@ -92,6 +96,16 @@ export default function NuevoDeportistaPage() {
       if (!response.ok) {
         const error = await response.json()
         throw new Error(error.error || 'Error al registrar deportista')
+      }
+
+      const deportista = await response.json()
+      const tarifaResponse = await fetch('/api/tarifas-mensuales', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deportistaId: deportista.id, anio: tarifaAnio, tipo: tarifaTipo, monto: tarifaMonto, observacion: tarifaObservacion }),
+      })
+      if (!tarifaResponse.ok) {
+        throw new Error('El deportista fue creado, pero no se pudo registrar su tarifa anual')
       }
       
       toast.success('Deportista registrado exitosamente')
@@ -294,6 +308,25 @@ export default function NuevoDeportistaPage() {
 
             <div>
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Condición económica</h2>
+              <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+                <Input label="Año" name="tarifaAnio" type="number" value={formData.tarifaAnio} onChange={handleChange} required />
+                <Select
+                  label="Tipo de tarifa"
+                  name="tarifaTipo"
+                  value={formData.tarifaTipo}
+                  onChange={handleChange}
+                  options={[
+                    { value: 'regular', label: 'Regular' },
+                    { value: 'hermanos', label: 'Hermanos' },
+                    { value: 'apoyo', label: 'Apoyo del club' },
+                    { value: 'personalizado', label: 'Personalizada' },
+                  ]}
+                />
+                <Input label="Monto mensual (S/)" name="tarifaMonto" type="number" min="0" step="0.01" value={formData.tarifaMonto} onChange={handleChange} required />
+              </div>
+              <div className="mb-4">
+                <Input label="Motivo u observación" name="tarifaObservacion" value={formData.tarifaObservacion} onChange={handleChange} placeholder="Ej: descuento por hermanos durante todo el año" />
+              </div>
               <label className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
                 <input
                   type="checkbox"

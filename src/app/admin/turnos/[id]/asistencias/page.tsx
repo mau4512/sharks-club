@@ -1,5 +1,7 @@
 'use client'
 
+import { toast } from 'sonner'
+import { confirmDialog } from '@/components/ui/confirm-dialog'
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
@@ -16,6 +18,7 @@ interface Deportista {
   photoUrl: string | null
   celular?: string | null
   telefonoApoderado?: string | null
+  activo: boolean
   becado?: boolean
   deudaStatus?: {
     tieneDeuda: boolean
@@ -45,6 +48,7 @@ interface AsistenciaStats {
   email: string
   celular?: string | null
   telefonoApoderado?: string | null
+  activo: boolean
   becado?: boolean
   deudaStatus?: {
     tieneDeuda: boolean
@@ -60,6 +64,8 @@ export default function AsistenciasTurnoPage() {
   const params = useParams()
   const id = params.id as string
 
+  const [procesando, setProcesando] = useState<string | null>(null)
+  const [filtroEstado, setFiltroEstado] = useState('todos')
   const [loading, setLoading] = useState(true)
   const [turno, setTurno] = useState<Turno | null>(null)
   const [asistencias, setAsistencias] = useState<Asistencia[]>([])
@@ -116,6 +122,7 @@ export default function AsistenciasTurnoPage() {
         celular: deportista.celular,
         telefonoApoderado: deportista.telefonoApoderado,
         becado: deportista.becado,
+        activo: deportista.activo !== false,
         deudaStatus: deportista.deudaStatus,
         totalAsistencias: resumen.registros.length,
         presentes: resumen.presentes.length,
@@ -125,6 +132,39 @@ export default function AsistenciasTurnoPage() {
     })
 
     setStats(estadisticas)
+  }
+
+  const gestionarDeportista = async (stat: AsistenciaStats, eliminar = false) => {
+    if (procesando) return
+    setProcesando(stat.deportistaId)
+    try {
+      const confirmado = await confirmDialog({
+        title: eliminar ? 'Eliminar deportista' : stat.activo ? 'Marcar como inactivo' : 'Reactivar deportista',
+        description: eliminar
+          ? `¿Eliminar definitivamente a ${stat.nombre} ${stat.apellidos}? Se eliminarán también sus asistencias, pagos y demás registros asociados. Esta acción no se puede deshacer.`
+          : stat.activo
+            ? `¿Marcar a ${stat.nombre} ${stat.apellidos} como inactivo? El plan regular se cobrará por las sesiones de lunes, miércoles y viernes durante el periodo activo, hasta 12 al mes. Martes y jueves no suman cobro. La suspensión comienza hoy. Los meses completos de inactividad no generarán deuda. Las deudas anteriores se conservarán.`
+            : `¿Reactivar a ${stat.nombre} ${stat.apellidos}? La mensualidad se retomará desde hoy. En el plan regular se cuentan las sesiones de lunes, miércoles y viernes durante el periodo activo, hasta 12 al mes; martes y jueves no suman cobro. Se conservarán los periodos de inactividad anteriores.`,
+        confirmText: eliminar ? 'Eliminar definitivamente' : stat.activo ? 'Marcar inactivo' : 'Reactivar',
+        variant: eliminar ? 'danger' : 'primary',
+      })
+      if (!confirmado) return
+      const response = await fetch(`/api/deportistas/${stat.deportistaId}`, {
+        method: eliminar ? 'DELETE' : 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        ...(eliminar ? {} : { body: JSON.stringify({ activo: !stat.activo }) }),
+      })
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'No se pudo actualizar el deportista')
+      }
+      toast.success(eliminar ? 'Deportista eliminado' : stat.activo ? 'Deportista inactivo' : 'Deportista reactivado')
+      await cargarDatos()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No se pudo completar la acción')
+    } finally {
+      setProcesando(null)
+    }
   }
 
   const fechasAsistidas = (deportistaId: string) => asistencias
@@ -202,13 +242,18 @@ export default function AsistenciasTurnoPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {stats.length === 0 ? (
+            <div className="mb-4 flex gap-2" aria-label="Filtrar deportistas por estado">
+              {[['todos', 'Todos'], ['activos', 'Activos'], ['inactivos', 'Inactivos']].map(([valor, etiqueta]) => (
+                <Button key={valor} variant={filtroEstado === valor ? 'primary' : 'outline'} onClick={() => setFiltroEstado(valor)} aria-pressed={filtroEstado === valor}>{etiqueta}</Button>
+              ))}
+            </div>
+            {stats.filter((stat) => filtroEstado === 'todos' || (filtroEstado === 'activos' ? stat.activo : !stat.activo)).length === 0 ? (
               <p className="text-center text-gray-500 py-8">
-                No hay deportistas en este turno
+                No hay deportistas con este filtro
               </p>
             ) : (
               <div className="space-y-4">
-                {stats.map((stat) => (
+                {stats.filter((stat) => filtroEstado === 'todos' || (filtroEstado === 'activos' ? stat.activo : !stat.activo)).map((stat) => (
                   <div
                     key={stat.deportistaId}
                     className={`rounded-lg p-4 transition-colors ${
@@ -238,6 +283,7 @@ export default function AsistenciasTurnoPage() {
                           </p>
                           <p className="text-sm text-gray-600">{stat.email || 'Email pendiente'}</p>
                           <div className="mt-2 flex flex-wrap gap-2">
+                            {!stat.activo && <span className="rounded-full bg-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-700">Inactivo · Mensualidad suspendida</span>}
                             {stat.becado ? (
                               <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                                 Becado por el club
@@ -314,6 +360,12 @@ export default function AsistenciasTurnoPage() {
                       </div>
                     )}
 
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button variant="outline" disabled={procesando !== null} onClick={() => gestionarDeportista(stat)}>
+                        {stat.activo ? 'Marcar inactivo' : 'Reactivar'}
+                      </Button>
+                      <Button variant="danger" disabled={procesando !== null} onClick={() => gestionarDeportista(stat, true)}>Eliminar</Button>
+                    </div>
                     {/* Barra de progreso */}
                     <div className="mt-3">
                       <div className="w-full bg-gray-200 rounded-full h-2">

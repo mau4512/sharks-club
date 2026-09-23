@@ -49,6 +49,8 @@ model Deportista {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   
+  periodosInactividad Json    @default("[]")
+
   // Relaciones
   sesiones      Sesion[]
   mediciones    Medicion[]

@@ -106,7 +106,8 @@ export async function POST(request: Request) {
         planSesiones: body.planSesiones ? parseInt(body.planSesiones) : 12,
         turnoId: body.turnoId || null,
         becado: body.becado === true,
-        activo: body.activo !== false
+        activo: body.activo !== false,
+        periodosInactividad: body.activo === false ? [{ inicio: new Date().toISOString(), fin: null }] : []
       }
     })
 

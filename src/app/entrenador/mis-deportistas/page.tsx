@@ -15,8 +15,11 @@ import {
   User,
   UserCheck,
   UserX,
+  Trash2,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { InactivarDeportistaDialog } from '@/components/InactivarDeportistaDialog'
+import { leerPeriodosInactividad } from '@/lib/inactividad'
 import { confirmDialog } from '@/components/ui/confirm-dialog'
 
 type Turno = {
@@ -41,6 +44,7 @@ type Deportista = {
   turnoId?: string | null
   createdAt?: string | null
   becado?: boolean
+  periodosInactividad?: unknown
   activo: boolean
   turno?: Turno
   deudaStatus?: DeudaStatus
@@ -85,6 +89,8 @@ export default function MisDeportistasPage() {
   const [turnoSeleccionado, setTurnoSeleccionado] = useState('todos')
   const [estadoSeleccionado, setEstadoSeleccionado] = useState<EstadoFiltro>('todos')
   const [actualizandoId, setActualizandoId] = useState<string | null>(null)
+  const [inactivando, setInactivando] = useState<Deportista | null>(null)
+  const [entrenadorId, setEntrenadorId] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -95,6 +101,7 @@ export default function MisDeportistasPage() {
     }
 
     const entrenador = JSON.parse(entrenadorData)
+    setEntrenadorId(entrenador.id)
     fetchDeportistas(entrenador.id)
   }, [router])
 
@@ -120,8 +127,11 @@ export default function MisDeportistasPage() {
               turno: misTurnos.find((turno) => turno.id === deportista.turnoId),
             }))
         )
+      } else {
+        throw new Error('No se pudo actualizar la lista de deportistas')
       }
     } catch (error) {
+      toast.error('No se pudo actualizar la lista. Recarga para ver los datos actuales.')
       console.error('Error al cargar deportistas:', error)
     } finally {
       setLoading(false)
@@ -147,36 +157,64 @@ export default function MisDeportistasPage() {
     })
   }, [busqueda, deportistas, estadoSeleccionado, orden, turnoSeleccionado])
 
-  const cambiarEstado = async (deportista: Deportista) => {
-    const nuevoEstado = !deportista.activo
-    const confirmed = await confirmDialog({
-      title: nuevoEstado ? 'Reactivar deportista' : 'Desactivar deportista',
-      description: nuevoEstado
-        ? `${deportista.nombre} volverá a aparecer en las listas de asistencia.`
-        : `${deportista.nombre} dejará de aparecer en las listas de asistencia hasta que se reactive.`,
-      confirmText: nuevoEstado ? 'Reactivar' : 'Desactivar',
-      variant: nuevoEstado ? 'primary' : 'danger',
-    })
-
-    if (!confirmed) return
-
+  const guardarEstado = async (deportista: Deportista, motivoInactividad?: string) => {
+    if (actualizandoId) return
+    setInactivando(null)
+    setActualizandoId(deportista.id)
     try {
-      setActualizandoId(deportista.id)
       const response = await fetch(`/api/deportistas/${deportista.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ activo: nuevoEstado }),
+        body: JSON.stringify({ activo: !deportista.activo, ...(motivoInactividad ? { motivoInactividad } : {}) }),
       })
-
-      if (!response.ok) throw new Error('No se pudo actualizar el deportista')
-
-      setDeportistas((actuales) =>
-        actuales.map((actual) => actual.id === deportista.id ? { ...actual, activo: nuevoEstado } : actual)
-      )
-      toast.success(nuevoEstado ? 'Deportista reactivado' : 'Deportista desactivado')
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'No se pudo actualizar el deportista')
+      setDeportistas((actuales) => actuales.map((actual) => actual.id === deportista.id ? { ...actual, ...data } : actual))
+      await fetchDeportistas(entrenadorId)
+      toast.success(deportista.activo ? 'Deportista marcado como inactivo' : 'Deportista reactivado')
     } catch (error) {
-      console.error('Error al actualizar el estado del deportista:', error)
-      toast.error('No se pudo actualizar el estado del deportista')
+      toast.error(error instanceof Error ? error.message : 'No se pudo actualizar el estado')
+    } finally {
+      setActualizandoId(null)
+    }
+  }
+
+  const cambiarEstado = async (deportista: Deportista) => {
+    if (actualizandoId) return
+    if (deportista.activo) {
+      setInactivando(deportista)
+      return
+    }
+    setActualizandoId(deportista.id)
+    const confirmed = await confirmDialog({
+      title: 'Reactivar deportista',
+      description: `${deportista.nombre} volverá a aparecer en las listas de asistencia. El cobro de sesiones regulares se retoma desde hoy y se conserva el periodo de inactividad.`,
+      confirmText: 'Reactivar',
+    })
+    setActualizandoId(null)
+    if (confirmed) await guardarEstado(deportista)
+  }
+
+  const eliminarDeportista = async (deportista: Deportista) => {
+    if (actualizandoId) return
+    setActualizandoId(deportista.id)
+    try {
+      const confirmed = await confirmDialog({
+        title: 'Eliminar deportista',
+        description: `¿Eliminar definitivamente a ${deportista.nombre} ${deportista.apellidos}? También se borrarán sus pagos, asistencias y demás registros asociados del club. Esta acción no se puede deshacer.`,
+        confirmText: 'Eliminar definitivamente',
+        variant: 'danger',
+      })
+      if (!confirmed) return
+      const response = await fetch(`/api/deportistas/${deportista.id}`, { method: 'DELETE' })
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'No se pudo eliminar el deportista')
+      }
+      setDeportistas((actuales) => actuales.filter((actual) => actual.id !== deportista.id))
+      toast.success('Deportista eliminado')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No se pudo eliminar el deportista')
     } finally {
       setActualizandoId(null)
     }
@@ -192,6 +230,7 @@ export default function MisDeportistasPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {inactivando && <InactivarDeportistaDialog nombre={`${inactivando.nombre} ${inactivando.apellidos}`} onCancel={() => setInactivando(null)} onConfirm={(motivo) => guardarEstado(inactivando, motivo)} />}
       <header className="border-b border-gray-200 bg-white">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
           <Link href="/entrenador" className="mb-2 inline-flex items-center text-gray-600 hover:text-gray-900">
@@ -310,6 +349,7 @@ export default function MisDeportistasPage() {
                         }`}>
                           {deportista.activo ? 'Activo' : 'Inactivo'}
                         </span>
+                        {!deportista.activo && <p className="mt-1 text-xs text-gray-600">{leerPeriodosInactividad(deportista.periodosInactividad).find((periodo) => periodo.fin === null)?.motivo || 'Motivo no registrado'}</p>}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
                         <p className="truncate">{deportista.email || 'Email pendiente'}</p>
@@ -353,7 +393,7 @@ export default function MisDeportistasPage() {
                           <button
                             type="button"
                             onClick={() => cambiarEstado(deportista)}
-                            disabled={actualizandoId === deportista.id}
+                            disabled={actualizandoId !== null || inactivando !== null}
                             title={deportista.activo ? 'Desactivar deportista' : 'Reactivar deportista'}
                             className={`inline-flex h-9 w-9 items-center justify-center rounded-md disabled:cursor-wait disabled:opacity-50 ${
                               deportista.activo
@@ -371,6 +411,10 @@ export default function MisDeportistasPage() {
                             <span className="sr-only">
                               {deportista.activo ? 'Desactivar' : 'Reactivar'} a {deportista.nombre} {deportista.apellidos}
                             </span>
+                          </button>
+                          <button type="button" onClick={() => eliminarDeportista(deportista)} disabled={actualizandoId !== null || inactivando !== null} title="Eliminar deportista" className="inline-flex h-9 w-9 items-center justify-center rounded-md text-red-700 hover:bg-red-50 disabled:opacity-50">
+                            <Trash2 className="h-5 w-5" />
+                            <span className="sr-only">Eliminar a {deportista.nombre} {deportista.apellidos}</span>
                           </button>
                         </div>
                       </td>

@@ -164,3 +164,37 @@ describe('deportista finanzas', () => {
     expect(status.etiquetas).not.toContain('mayo de 2026 exonerado: lesion')
   })
 })
+
+describe('mensualidades durante inactividad', () => {
+  const calcular = (periodos: unknown) => buildDeudaStatusDesdeAlta(
+    [], '2026-01-10T12:00:00Z', new Date('2026-06-20T12:00:00Z'), [], periodos
+  )
+
+  it('conserva deuda previa y suspende los meses de un periodo abierto', () => {
+    expect(calcular([{ inicio: '2026-03-15T12:00:00Z', fin: null }]).mesesPendientes)
+      .toEqual(['2026-01', '2026-02', '2026-03'])
+  })
+
+  it('conserva exclusiones tras reactivar y admite varios periodos', () => {
+    expect(calcular([
+      { inicio: '2026-02-15T12:00:00Z', fin: '2026-03-10T12:00:00Z' },
+      { inicio: '2026-05-01T05:00:00Z', fin: '2026-06-01T05:00:00Z' },
+    ]).mesesPendientes).toEqual(['2026-01', '2026-02', '2026-03', '2026-04', '2026-06'])
+  })
+
+  it('usa el mes peruano en los límites de UTC', () => {
+    expect(calcular([{ inicio: '2026-04-01T02:00:00Z', fin: null }]).mesesPendientes)
+      .toEqual(['2026-01', '2026-02', '2026-03'])
+  })
+})
+
+
+it('cobra las sesiones regulares activas y reconoce un abono que cubre el prorrateo', () => {
+  const status = buildDeudaStatusDesdeAlta([{
+    deportistaId: 'dep', concepto: 'mensualidad', monto: 90, montoEsperado: 180,
+    fechaPago: '2026-04-10T12:00:00Z',
+  }], '2026-04-01T12:00:00Z', new Date('2026-04-30T12:00:00Z'), [], [
+    { inicio: '2026-04-15T12:00:00Z', fin: null },
+  ])
+  expect(status.mesesPendientes).toEqual([]) // 6 sesiones (1, 3, 6, 8, 10 y 13 de abril) × 15 = 90
+})

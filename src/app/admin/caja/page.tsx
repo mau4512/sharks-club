@@ -1,5 +1,6 @@
 'use client'
 
+import { proporcionActivaDelMes } from '@/lib/inactividad'
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -19,6 +20,7 @@ interface Deportista {
   documentoIdentidad?: string | null
   planSesiones?: number | null
   becado?: boolean
+  periodosInactividad?: unknown
   activo?: boolean
 }
 
@@ -265,7 +267,7 @@ function CajaPageContent() {
     getMonthKey(value) === month
 
   const getExpectedMonthlyFee = (deportista: Deportista) => {
-    if (deportista.becado || deportista.activo === false) return 0
+    if (deportista.becado) return 0
 
     switch (deportista.planSesiones) {
       case 8:
@@ -491,7 +493,8 @@ function CajaPageContent() {
     )
 
     return deportistas.reduce((acc, deportista) => {
-      if (exonerados.has(deportista.id) || deportista.becado || deportista.activo === false) return acc
+      const proporcionActiva = proporcionActivaDelMes(deportista.periodosInactividad, month, deportista.planSesiones ?? 12)
+      if (exonerados.has(deportista.id) || deportista.becado || proporcionActiva === 0) return acc
 
       // Si el mes tuvo un prorrateo o monto especial, el monto esperado del pago
       // congela la obligación histórica de ese periodo.
@@ -508,14 +511,14 @@ function CajaPageContent() {
       if (pagoDelMes?.montoEsperado) {
         const inicio = getMonthKey(pagoDelMes.mesCoberturaInicio) || month
         const fin = getMonthKey(pagoDelMes.mesCoberturaFin) || inicio
-        return acc + pagoDelMes.montoEsperado / getRecurringMonthsCount(inicio, fin)
+        return acc + Math.round(pagoDelMes.montoEsperado / getRecurringMonthsCount(inicio, fin) * proporcionActiva * 100) / 100
       }
 
       const anio = Number(month.slice(0, 4))
       const tarifaHistorica = tarifasMensuales.find(
         (tarifa) => tarifa.deportistaId === deportista.id && tarifa.anio === anio
       )
-      return acc + (tarifaHistorica?.monto ?? getExpectedMonthlyFee(deportista))
+      return acc + Math.round((tarifaHistorica?.monto ?? getExpectedMonthlyFee(deportista)) * proporcionActiva * 100) / 100
     }, 0)
   }
 

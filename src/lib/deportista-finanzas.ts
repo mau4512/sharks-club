@@ -1,3 +1,4 @@
+import { proporcionActivaDelMes } from '@/lib/inactividad'
 import { PAYMENT_DEFAULTS } from '@/lib/pagos-config'
 
 type PagoLite = {
@@ -149,7 +150,9 @@ export function buildDeudaStatusDesdeAlta(
   pagos: PagoLite[],
   fechaAlta: Date | string | null | undefined,
   now = new Date(),
-  exoneraciones: ExoneracionLite[] = []
+  exoneraciones: ExoneracionLite[] = [],
+  periodosInactividad: unknown = [],
+  planSesiones = 12
 ) {
   const baseStatus = buildDeudaStatus(pagos, now)
   const exoneracionesPorMes = new Map(
@@ -225,6 +228,11 @@ export function buildDeudaStatusDesdeAlta(
   const mesesExonerados: Array<{ date: Date; motivo?: string | null }> = []
 
   while (cursor <= currentMonthStart) {
+    const proporcionActiva = proporcionActivaDelMes(periodosInactividad, getMonthKey(cursor), planSesiones)
+    if (proporcionActiva === 0) {
+      cursor = getNextMonthStart(cursor)
+      continue
+    }
     const exoneracion = exoneracionesPorMes.get(getMonthKey(cursor))
     if (exoneracion) {
       mesesExonerados.push({ date: cursor, motivo: exoneracion.motivo })
@@ -233,7 +241,7 @@ export function buildDeudaStatusDesdeAlta(
     }
 
     const bucket = mensualidadesPorMes.get(getMonthKey(cursor))
-    const expected = bucket?.expected ?? DEFAULT_MONTHLY_EXPECTED
+    const expected = Math.round((bucket?.expected ?? DEFAULT_MONTHLY_EXPECTED) * proporcionActiva * 100) / 100
     const paid = bucket?.paid ?? 0
 
     if (paid + 0.01 < expected) {
@@ -327,7 +335,9 @@ export function attachDeudaStatus<T extends { id: string }>(
         pagosPorDeportista.get(deportista.id) || [],
         (deportista as T & { createdAt?: Date | string }).createdAt,
         now,
-        exoneracionesPorDeportista.get(deportista.id) || []
+        exoneracionesPorDeportista.get(deportista.id) || [],
+        (deportista as T & { periodosInactividad?: unknown }).periodosInactividad,
+        (deportista as T & { planSesiones?: number }).planSesiones
       ),
     }
   })

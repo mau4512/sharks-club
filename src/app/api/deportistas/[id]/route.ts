@@ -1,3 +1,4 @@
+import { leerPeriodosInactividad } from '@/lib/inactividad'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/password'
@@ -73,6 +74,13 @@ export async function PUT(
   try {
     const body = await request.json()
     
+    if (body.motivoInactividad !== undefined && (
+      body.activo !== false || typeof body.motivoInactividad !== 'string' ||
+      !body.motivoInactividad.trim() || body.motivoInactividad.trim().length > 300
+    )) {
+      return NextResponse.json({ error: 'Indica un motivo de inactividad de hasta 300 caracteres' }, { status: 400 })
+    }
+
     // Preparar data con campos opcionales
     const updateData: any = {}
     
@@ -126,7 +134,30 @@ export async function PUT(
     if ('numeroCamiseta' in body) updateData.numeroCamiseta = body.numeroCamiseta || null
     if (body.planSesiones !== undefined) updateData.planSesiones = parseInt(body.planSesiones)
     if (body.becado !== undefined) updateData.becado = body.becado === true
-    if (body.activo !== undefined) updateData.activo = body.activo
+    if (body.activo !== undefined) {
+      if (typeof body.activo !== 'boolean') {
+        return NextResponse.json({ error: 'El estado activo debe ser booleano' }, { status: 400 })
+      }
+      const actual = await prisma.deportista.findUnique({ where: { id: params.id } })
+      if (!actual) return NextResponse.json({ error: 'Deportista no encontrado' }, { status: 404 })
+      updateData.activo = body.activo
+      if (actual.activo !== body.activo) {
+        const ahora = new Date().toISOString()
+        const periodos = leerPeriodosInactividad(actual.periodosInactividad)
+        updateData.periodosInactividad = body.activo
+          ? periodos.map((periodo) => periodo.fin === null ? { ...periodo, fin: ahora } : periodo)
+          : [...periodos, { inicio: ahora, fin: null, ...(body.motivoInactividad !== undefined ? { motivo: body.motivoInactividad.trim() } : {}) }]
+      }
+      // Comparación optimista: no sobrescribir un cambio concurrente de estado o historial.
+      const resultado = await prisma.deportista.updateMany({
+        where: { id: params.id, updatedAt: actual.updatedAt },
+        data: updateData,
+      })
+      if (!resultado.count) {
+        return NextResponse.json({ error: 'El deportista cambió. Recarga e intenta nuevamente.' }, { status: 409 })
+      }
+      return NextResponse.json(await prisma.deportista.findUnique({ where: { id: params.id } }))
+    }
     
     const deportista = await prisma.deportista.update({
       where: {

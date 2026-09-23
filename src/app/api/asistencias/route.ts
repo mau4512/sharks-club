@@ -73,13 +73,27 @@ export async function POST(request: Request) {
       )
     }
 
+    const deportistaIds = asistencias
+      .map((asistencia: any) => asistencia?.deportistaId)
+      .filter((id: unknown): id is string => typeof id === 'string' && Boolean(id))
+    const deportistasActivos = await prisma.deportista.findMany({
+      where: {
+        id: { in: deportistaIds },
+        turnoId,
+        activo: true,
+      },
+      select: { id: true },
+    })
+    const idsPermitidos = new Set(deportistasActivos.map((deportista) => deportista.id))
+    const asistenciasValidas = asistencias.filter((asistencia: any) => idsPermitidos.has(asistencia?.deportistaId))
+
     // Fecha del día (sin hora)
     const fechaAsistencia = fecha ? new Date(fecha) : new Date()
     fechaAsistencia.setHours(0, 0, 0, 0)
 
     // Registrar cada asistencia
     const resultados = await Promise.all(
-      asistencias.map(async (asistencia: any) => {
+      asistenciasValidas.map(async (asistencia: any) => {
         return await prisma.asistencia.upsert({
           where: {
             deportistaId_turnoId_fecha: {

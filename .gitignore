@@ -43,5 +43,8 @@ next-env.d.ts
 !/prisma/migrations/20260821113000_add_tarifas_mensuales_deportistas/
 !/prisma/migrations/20260821113000_add_tarifas_mensuales_deportistas/migration.sql
 
+!/prisma/migrations/20260923120000_add_periodos_inactividad/
+!/prisma/migrations/20260923120000_add_periodos_inactividad/migration.sql
+
 # uploads
 /public/uploads

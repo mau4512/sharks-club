@@ -5,8 +5,11 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import Link from 'next/link'
-import { ArrowLeft, Calendar, CheckCircle, Clock, Save, Users, XCircle } from 'lucide-react'
+import { ArrowLeft, Calendar, CheckCircle, Clock, Loader2, Save, Trash2, UserCheck, UserX, Users, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import { confirmDialog } from '@/components/ui/confirm-dialog'
+import { InactivarDeportistaDialog } from '@/components/InactivarDeportistaDialog'
+import { leerPeriodosInactividad } from '@/lib/inactividad'
 
 export default function AsistenciasEntrenadorPage() {
   const router = useRouter()
@@ -19,6 +22,9 @@ export default function AsistenciasEntrenadorPage() {
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [actualizandoId, setActualizandoId] = useState<string | null>(null)
+  const [inactivando, setInactivando] = useState<any | null>(null)
+  const [mostrarInactivos, setMostrarInactivos] = useState(false)
 
   const getDebtNameClass = (deportista: any) => {
     return deportista.deudaStatus?.tieneDeuda ? 'text-red-700' : 'text-gray-900'
@@ -68,7 +74,7 @@ export default function AsistenciasEntrenadorPage() {
       const response = await fetch('/api/deportistas')
       if (response.ok) {
         const allDeportistas = await response.json()
-        const deportistasDelTurno = allDeportistas.filter((d: any) => d.turnoId === turnoSeleccionado && d.activo)
+        const deportistasDelTurno = allDeportistas.filter((d: any) => d.turnoId === turnoSeleccionado)
         setDeportistas(deportistasDelTurno)
       }
     } catch (error) {
@@ -100,6 +106,84 @@ export default function AsistenciasEntrenadorPage() {
   }
 
   const turnoActual = turnos.find((turno) => turno.id === turnoSeleccionado)
+  const deportistasActivos = deportistas.filter((deportista) => deportista.activo)
+  const deportistasVisibles = mostrarInactivos ? deportistas : deportistasActivos
+
+  const guardarEstado = async (deportista: any, motivoInactividad?: string) => {
+    if (actualizandoId) return
+    setInactivando(null)
+    setActualizandoId(deportista.id)
+    try {
+      const response = await fetch(`/api/deportistas/${deportista.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          activo: !deportista.activo,
+          ...(motivoInactividad ? { motivoInactividad } : {}),
+        }),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'No se pudo actualizar el deportista')
+      setDeportistas((actuales) =>
+        actuales.map((actual) => actual.id === deportista.id ? { ...actual, ...data } : actual)
+      )
+      setAsistencias((actuales) => {
+        const siguientes = { ...actuales }
+        if (deportista.activo) delete siguientes[deportista.id]
+        return siguientes
+      })
+      toast.success(deportista.activo ? 'Deportista marcado como inactivo' : 'Deportista reactivado')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No se pudo actualizar el estado')
+    } finally {
+      setActualizandoId(null)
+    }
+  }
+
+  const cambiarEstado = async (deportista: any) => {
+    if (actualizandoId) return
+    if (deportista.activo) {
+      setInactivando(deportista)
+      return
+    }
+    const confirmed = await confirmDialog({
+      title: 'Reactivar deportista',
+      description: `${deportista.nombre} volverá a la lista para tomar asistencia y su cobro de sesiones se retomará desde hoy.`,
+      confirmText: 'Reactivar',
+    })
+    if (confirmed) await guardarEstado(deportista)
+  }
+
+  const eliminarDeportista = async (deportista: any) => {
+    if (actualizandoId) return
+    const confirmed = await confirmDialog({
+      title: 'Eliminar deportista',
+      description: `¿Eliminar definitivamente a ${deportista.nombre} ${deportista.apellidos}? También se borrarán sus pagos, asistencias y demás registros asociados. Esta acción no se puede deshacer.`,
+      confirmText: 'Eliminar definitivamente',
+      variant: 'danger',
+    })
+    if (!confirmed) return
+
+    setActualizandoId(deportista.id)
+    try {
+      const response = await fetch(`/api/deportistas/${deportista.id}`, { method: 'DELETE' })
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'No se pudo eliminar el deportista')
+      }
+      setDeportistas((actuales) => actuales.filter((actual) => actual.id !== deportista.id))
+      setAsistencias((actuales) => {
+        const siguientes = { ...actuales }
+        delete siguientes[deportista.id]
+        return siguientes
+      })
+      toast.success('Deportista eliminado')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No se pudo eliminar el deportista')
+    } finally {
+      setActualizandoId(null)
+    }
+  }
 
   const guardarAsistencias = async () => {
     if (!turnoSeleccionado) {
@@ -109,7 +193,7 @@ export default function AsistenciasEntrenadorPage() {
 
     setSaving(true)
     try {
-      const asistenciasArray = deportistas.map(deportista => ({
+      const asistenciasArray = deportistasActivos.map(deportista => ({
         deportistaId: deportista.id,
         presente: asistencias[deportista.id] || false
       }))
@@ -147,6 +231,13 @@ export default function AsistenciasEntrenadorPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {inactivando && (
+        <InactivarDeportistaDialog
+          nombre={`${inactivando.nombre} ${inactivando.apellidos}`}
+          onCancel={() => setInactivando(null)}
+          onConfirm={(motivo) => guardarEstado(inactivando, motivo)}
+        />
+      )}
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Link href="/entrenador" className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-2">
@@ -248,22 +339,31 @@ export default function AsistenciasEntrenadorPage() {
               {deportistas.length > 0 && (
                 <>
                   <div className="border-t pt-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                      Lista de Deportistas ({deportistas.length})
-                    </h3>
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Lista de Deportistas ({deportistasActivos.length} activos)
+                      </h3>
+                      <Button variant="outline" size="sm" onClick={() => setMostrarInactivos((valor) => !valor)}>
+                        {mostrarInactivos ? 'Ocultar inactivos' : `Ver inactivos (${deportistas.length - deportistasActivos.length})`}
+                      </Button>
+                    </div>
                     <div className="space-y-2">
-                      {deportistas.map(deportista => (
+                      {deportistasVisibles.map(deportista => (
                         <div
                           key={deportista.id}
-                          onClick={() => toggleAsistencia(deportista.id)}
-                          className={`flex items-center justify-between p-4 border-2 rounded-lg cursor-pointer transition ${
-                            asistencias[deportista.id]
+                          onClick={() => deportista.activo && toggleAsistencia(deportista.id)}
+                          className={`flex items-center justify-between gap-4 p-4 border-2 rounded-lg transition ${
+                            !deportista.activo
+                              ? 'border-gray-200 bg-gray-100 opacity-80'
+                              : asistencias[deportista.id]
                               ? 'border-green-500 bg-green-50'
-                              : 'border-gray-200 hover:border-gray-300'
+                              : 'cursor-pointer border-gray-200 hover:border-gray-300'
                           }`}
                         >
                           <div className="flex items-center gap-3">
-                            {asistencias[deportista.id] ? (
+                            {!deportista.activo ? (
+                              <UserX className="h-6 w-6 text-gray-500" />
+                            ) : asistencias[deportista.id] ? (
                               <CheckCircle className="h-6 w-6 text-green-600" />
                             ) : (
                               <XCircle className="h-6 w-6 text-gray-400" />
@@ -281,15 +381,30 @@ export default function AsistenciasEntrenadorPage() {
                                   {deportista.deudaStatus.etiquetas.join(' · ')}
                                 </p>
                               )}
+                              {!deportista.activo && (
+                                <p className="mt-1 text-xs font-medium text-gray-600">
+                                  Inactivo · {leerPeriodosInactividad(deportista.periodosInactividad).find((periodo) => periodo.fin === null)?.motivo || 'Motivo no registrado'}
+                                </p>
+                              )}
                             </div>
                           </div>
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                            asistencias[deportista.id]
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-600'
-                          }`}>
-                            {asistencias[deportista.id] ? 'Presente' : 'Ausente'}
-                          </span>
+                          <div className="flex shrink-0 items-center gap-2" onClick={(event) => event.stopPropagation()}>
+                            {deportista.activo && (
+                              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                asistencias[deportista.id] ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                              }`}>
+                                {asistencias[deportista.id] ? 'Presente' : 'Ausente'}
+                              </span>
+                            )}
+                            <button type="button" onClick={() => cambiarEstado(deportista)} disabled={actualizandoId !== null || inactivando !== null} title={deportista.activo ? 'Marcar como inactivo' : 'Reactivar deportista'} className={`inline-flex h-9 w-9 items-center justify-center rounded-md disabled:opacity-50 ${deportista.activo ? 'text-amber-700 hover:bg-amber-50' : 'text-green-700 hover:bg-green-50'}`}>
+                              {actualizandoId === deportista.id ? <Loader2 className="h-5 w-5 animate-spin" /> : deportista.activo ? <UserX className="h-5 w-5" /> : <UserCheck className="h-5 w-5" />}
+                              <span className="sr-only">{deportista.activo ? 'Marcar como inactivo' : 'Reactivar'} a {deportista.nombre} {deportista.apellidos}</span>
+                            </button>
+                            <button type="button" onClick={() => eliminarDeportista(deportista)} disabled={actualizandoId !== null || inactivando !== null} title="Eliminar deportista" className="inline-flex h-9 w-9 items-center justify-center rounded-md text-red-700 hover:bg-red-50 disabled:opacity-50">
+                              <Trash2 className="h-5 w-5" />
+                              <span className="sr-only">Eliminar a {deportista.nombre} {deportista.apellidos}</span>
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -298,7 +413,7 @@ export default function AsistenciasEntrenadorPage() {
                   <div className="flex gap-4 pt-4 border-t">
                     <Button
                       onClick={guardarAsistencias}
-                      disabled={saving}
+                      disabled={saving || deportistasActivos.length === 0}
                       className="flex-1"
                     >
                       <Save className="h-4 w-4 mr-2" />

@@ -1872,7 +1872,7 @@ function CajaPageContent() {
         <Card>
           <CardHeader>
             <h2 className="text-xl font-semibold text-gray-900">Ingresos y saldos por turno</h2>
-            <p className="mt-1 text-sm text-gray-600">{mesSeleccionado} · Agrupado por el turno actual de cada deportista. Cobrado incluye todos los conceptos según la fecha de pago; el saldo por cobrar corresponde a las mensualidades del mes.</p>
+            <p className="mt-1 text-sm text-gray-600">{mesSeleccionado} · Agrupado por el turno actual de cada deportista. Los ingresos recibidos incluyen todos los conceptos cobrados durante el mes. Las mensualidades pagadas corresponden al período seleccionado, aunque se hayan cobrado antes o después; el saldo por cobrar es lo que falta de esas mensualidades.</p>
           </CardHeader>
           <CardContent>
             {!loading && !turnosError && deportistasSinTurno.length > 0 && (
@@ -1907,9 +1907,9 @@ function CajaPageContent() {
                     <tr>
                       <th scope="col" className="p-3 whitespace-nowrap">Turno</th>
                       <th scope="col" className="p-3 whitespace-nowrap">Deportistas</th>
-                      <th scope="col" className="p-3 whitespace-nowrap">Cobrado en el mes</th>
+                      <th scope="col" className="p-3 whitespace-nowrap">Ingresos recibidos este mes</th>
                       <th scope="col" className={`p-3 whitespace-nowrap ${coloresColumnasTurno.esperado}`}>Mensualidad esperada</th>
-                      <th scope="col" className={`p-3 whitespace-nowrap ${coloresColumnasTurno.cubierto}`}>Mensualidad cubierta</th>
+                      <th scope="col" className={`p-3 whitespace-nowrap ${coloresColumnasTurno.cubierto}`}>Mensualidades pagadas de este período</th>
                       <th scope="col" className={`p-3 whitespace-nowrap ${coloresColumnasTurno.pendiente}`}>Saldo por cobrar</th>
                     </tr>
                   </thead>

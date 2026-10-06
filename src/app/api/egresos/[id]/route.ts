@@ -1,3 +1,4 @@
+import { validarObligacion } from '@/lib/egreso-obligacion'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
@@ -16,7 +17,7 @@ export async function PATCH(
 
     if (body.monto !== undefined) {
       const monto = Number(body.monto)
-      if (Number.isNaN(monto) || monto <= 0) {
+      if (!Number.isFinite(monto) || monto <= 0) {
         return NextResponse.json(
           { error: 'El monto debe ser mayor a 0' },
           { status: 400 }
@@ -36,9 +37,18 @@ export async function PATCH(
       data.fechaEgreso = fechaEgreso
     }
 
+    let obligacion = {}
+    if (body.gastoFijoId !== undefined || body.mesObligacion !== undefined) {
+      try {
+        obligacion = await validarObligacion(body.gastoFijoId, body.mesObligacion)
+      } catch (error) {
+        return NextResponse.json({ error: (error as Error).message }, { status: 400 })
+      }
+    }
+
     const egreso = await prisma.egresoCaja.update({
       where: { id: params.id },
-      data,
+      data: { ...data, ...obligacion },
     })
 
     return NextResponse.json(egreso)

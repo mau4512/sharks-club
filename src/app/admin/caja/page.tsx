@@ -1,5 +1,6 @@
 'use client'
 
+import { saldoGastoFijo } from '@/lib/caja-gastos'
 import { proporcionActivaDelMes } from '@/lib/inactividad'
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
@@ -7,6 +8,7 @@ import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { SelectEditable } from '@/components/ui/SelectEditable'
 import { ArrowDownCircle, ArrowUpCircle, Banknote, CalendarDays, CreditCard, FileText, Pencil, PlusCircle, Repeat, Search, ShoppingCart, Target, Trash2, Wallet } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { toast } from 'sonner'
@@ -18,6 +20,7 @@ interface Deportista {
   nombre: string
   apellidos: string
   documentoIdentidad?: string | null
+  turnoId?: string | null
   planSesiones?: number | null
   becado?: boolean
   periodosInactividad?: unknown
@@ -39,6 +42,8 @@ interface Pago {
 }
 
 interface Egreso {
+  gastoFijoId?: string | null
+  mesObligacion?: string | null
   id: string
   categoria: string
   metodo: string
@@ -167,6 +172,8 @@ function CajaPageContent() {
   const currentMonth = new Date().toISOString().slice(0, 7)
 
   const [deportistas, setDeportistas] = useState<Deportista[]>([])
+  const [turnos, setTurnos] = useState<{ id: string; nombre: string; hora: string }[]>([])
+  const [turnosError, setTurnosError] = useState(false)
   const [pagos, setPagos] = useState<Pago[]>([])
   const [egresos, setEgresos] = useState<Egreso[]>([])
   const [gastosFijos, setGastosFijos] = useState<GastoFijo[]>([])
@@ -206,6 +213,8 @@ function CajaPageContent() {
     monto: '',
     fechaEgreso: new Date().toISOString().split('T')[0],
     observacion: '',
+    gastoFijoId: '',
+    mesObligacion: '',
     recurrente: false,
   })
   const [gastoFijoData, setGastoFijoData] = useState({
@@ -298,15 +307,19 @@ function CajaPageContent() {
     try {
       setLoading(true)
 
-      const [deportistasRes, pagosRes, egresosRes, gastosFijosRes, exoneracionesRes, tarifasRes] = await Promise.all([
+      const [deportistasRes, pagosRes, egresosRes, gastosFijosRes, exoneracionesRes, tarifasRes, turnosRes] = await Promise.all([
         fetch('/api/deportistas'),
         fetch(deportistaId ? `/api/pagos?deportistaId=${deportistaId}` : '/api/pagos'),
         deportistaId ? Promise.resolve(null) : fetch('/api/egresos'),
         deportistaId ? Promise.resolve(null) : fetch('/api/gastos-fijos'),
         fetch(deportistaId ? `/api/exoneraciones-mensualidad?deportistaId=${deportistaId}` : '/api/exoneraciones-mensualidad'),
         fetch(deportistaId ? `/api/tarifas-mensuales?deportistaId=${deportistaId}` : '/api/tarifas-mensuales'),
+        deportistaId ? Promise.resolve(null) : fetch('/api/turnos').catch(() => null),
       ])
 
+      setTurnosError(!deportistaId && !turnosRes?.ok)
+      const turnosData = turnosRes?.ok ? await turnosRes.json() : []
+      setTurnos(Array.isArray(turnosData) ? turnosData : [])
       const deportistasData = await deportistasRes.json()
       const pagosData = await pagosRes.json()
       const egresosData = egresosRes ? await egresosRes.json() : []
@@ -485,14 +498,14 @@ function CajaPageContent() {
         return acc + pago.monto / months
       }, 0)
 
-  const getIngresoMetaMensual = (month: string) => {
+  const getIngresoMetaMensual = (month: string, integrantes = deportistas) => {
     const exonerados = new Set(
       exoneraciones
         .filter((exoneracion) => belongsToMonth(exoneracion.mes, month))
         .map((exoneracion) => exoneracion.deportistaId)
     )
 
-    return deportistas.reduce((acc, deportista) => {
+    return integrantes.reduce((acc, deportista) => {
       const proporcionActiva = proporcionActivaDelMes(deportista.periodosInactividad, month, deportista.planSesiones ?? 12)
       if (exonerados.has(deportista.id) || deportista.becado || proporcionActiva === 0) return acc
 
@@ -521,6 +534,33 @@ function CajaPageContent() {
       return acc + Math.round((tarifaHistorica?.monto ?? getExpectedMonthlyFee(deportista)) * proporcionActiva * 100) / 100
     }, 0)
   }
+
+  const resumenTurnos = (() => {
+    const grupos = new Map<string, { nombre: string; ingresos: number; esperado: number; cubierto: number; pendiente: number; integrantes: number }>()
+    turnos.forEach((turno) => grupos.set(turno.id, { nombre: `${turno.nombre} · ${turno.hora}`, ingresos: 0, esperado: 0, cubierto: 0, pendiente: 0, integrantes: 0 }))
+    const grupoDe = (deportista?: Deportista) => {
+      const key = deportista?.turnoId || 'sin-turno'
+      if (!grupos.has(key)) grupos.set(key, { nombre: key === 'sin-turno' ? 'Sin turno asignado' : 'Turno no disponible', ingresos: 0, esperado: 0, cubierto: 0, pendiente: 0, integrantes: 0 })
+      return grupos.get(key)!
+    }
+    deportistas.forEach((deportista) => {
+      const grupo = grupoDe(deportista)
+      const esperado = getIngresoMetaMensual(mesSeleccionado, [deportista])
+      const cubierto = pagos.filter((pago) => pago.deportista.id === deportista.id && (pago.concepto === 'mensualidad' || pago.concepto === 'anualidad')).reduce((total, pago) => {
+        const inicio = getMonthKey(pago.mesCoberturaInicio) || getMonthKey(pago.fechaPago)
+        const fin = getMonthKey(pago.mesCoberturaFin) || inicio
+        return mesSeleccionado >= inicio && mesSeleccionado <= fin ? total + pago.monto / getRecurringMonthsCount(inicio, fin) : total
+      }, 0)
+      grupo.integrantes += 1
+      grupo.esperado += esperado
+      grupo.cubierto += cubierto
+      grupo.pendiente += Math.max(0, Math.round((esperado - cubierto) * 100) / 100)
+    })
+    pagos.filter((pago) => belongsToMonth(pago.fechaPago, mesSeleccionado)).forEach((pago) => {
+      grupoDe(deportistas.find((deportista) => deportista.id === pago.deportista.id)).ingresos += pago.monto
+    })
+    return Array.from(grupos, ([id, grupo]) => ({ id, ...grupo }))
+  })()
 
   const resumen = useMemo(() => {
     const previousMonth = getPreviousMonth(mesSeleccionado)
@@ -1006,6 +1046,8 @@ function CajaPageContent() {
       monto: String(egreso.monto),
       fechaEgreso: egreso.fechaEgreso.slice(0, 10),
       observacion: egreso.observacion || '',
+      gastoFijoId: egreso.gastoFijoId || '',
+      mesObligacion: egreso.mesObligacion || '',
       recurrente: false,
     })
   }
@@ -1019,6 +1061,8 @@ function CajaPageContent() {
       monto: '',
       fechaEgreso: new Date().toISOString().split('T')[0],
       observacion: '',
+      gastoFijoId: '',
+      mesObligacion: '',
       recurrente: false,
     })
   }
@@ -1364,20 +1408,6 @@ function CajaPageContent() {
 
   return (
     <div className="space-y-6">
-      <datalist id="categorias-egreso">
-        {categoriasEgresoOptions.map((categoria) => (
-          <option key={categoria.value} value={categoria.value}>
-            {categoria.label}
-          </option>
-        ))}
-      </datalist>
-      <datalist id="conceptos-ingreso">
-        {conceptosIngresoOptions.map((concepto) => (
-          <option key={concepto.value} value={concepto.value}>
-            {concepto.label}
-          </option>
-        ))}
-      </datalist>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -1828,11 +1858,36 @@ function CajaPageContent() {
       {!pagoDirecto && (
         <Card>
           <CardHeader>
+            <h2 className="text-xl font-semibold text-gray-900">Ingresos y saldos por turno</h2>
+            <p className="mt-1 text-sm text-gray-600">{mesSeleccionado} · Agrupado por el turno actual de cada deportista. Cobrado incluye todos los conceptos según la fecha de pago; el saldo por cobrar corresponde a las mensualidades del mes.</p>
+          </CardHeader>
+          <CardContent>
+            {turnosError ? <p role="alert" className="text-red-700">No se pudieron cargar los turnos. Recarga la página para consultar el reporte.</p> : loading ? <p>Cargando turnos...</p> : resumenTurnos.length === 0 ? <p className="text-gray-600">No hay turnos ni ingresos registrados.</p> : <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-gray-50 text-gray-700"><tr>{['Turno', 'Deportistas', 'Cobrado en el mes', 'Mensualidad esperada', 'Mensualidad cubierta', 'Saldo por cobrar'].map((label) => <th key={label} className="p-3 whitespace-nowrap">{label}</th>)}</tr></thead>
+                <tbody>{resumenTurnos.map((turno) => <tr key={turno.id} className="border-t border-gray-100">
+                  <td className="p-3 font-medium text-gray-900">{turno.nombre}</td><td className="p-3">{turno.integrantes}</td><td className="p-3 text-green-700">{formatCurrency(turno.ingresos)}</td><td className="p-3">{formatCurrency(turno.esperado)}</td><td className="p-3">{formatCurrency(turno.cubierto)}</td><td className={`p-3 font-semibold ${turno.pendiente > 0 ? 'text-amber-700' : 'text-green-700'}`}>{formatCurrency(turno.pendiente)}</td>
+                </tr>)}</tbody>
+                <tfoot className="border-t font-semibold"><tr><td className="p-3">Total</td><td className="p-3">{resumenTurnos.reduce((total, turno) => total + turno.integrantes, 0)}</td>{(['ingresos', 'esperado', 'cubierto', 'pendiente'] as const).map((campo) => <td key={campo} className="p-3">{formatCurrency(resumenTurnos.reduce((total, turno) => total + turno[campo], 0))}</td>)}</tr></tfoot>
+              </table>
+            </div>}
+          </CardContent>
+        </Card>
+      )}
+
+      {!pagoDirecto && (
+        <Card>
+          <details>
+          <summary className="cursor-pointer px-6 py-4 font-semibold text-gray-900">
+            Gastos fijos · Pendiente {formatCurrency(getGastosFijosAplicables(mesSeleccionado).reduce((total, gasto) => total + saldoGastoFijo(gasto, mesSeleccionado, egresos).pendiente, 0))}
+            <span className="ml-2 text-sm font-normal text-gray-500">Ver obligaciones de {mesSeleccionado}</span>
+          </summary>
+          <CardHeader>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">Gastos fijos</h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  Define obligaciones mensuales para proyectar equilibrio, metas y presión de caja.
+                  Registra abonos y consulta el saldo de cada obligación mensual.
                 </p>
               </div>
               <div className="rounded-lg bg-slate-900 px-4 py-3 text-white">
@@ -1842,7 +1897,7 @@ function CajaPageContent() {
             </div>
           </CardHeader>
           <CardContent className="space-y-5">
-            <details className="rounded-lg border border-gray-200 bg-gray-50">
+            <details open={editingGastoFijoId ? true : undefined} className="rounded-lg border border-gray-200 bg-gray-50">
               <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 font-semibold text-gray-900">
                 <span>{editingGastoFijoId ? 'Editar gasto fijo' : 'Agregar gasto fijo recurrente'}</span>
                 <PlusCircle className="h-5 w-5 text-primary-700" />
@@ -1857,17 +1912,7 @@ function CajaPageContent() {
                 required
                 placeholder="Ej: Alquiler cancha"
               />
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
-                <input
-                  name="categoria"
-                  list="categorias-egreso"
-                  value={gastoFijoData.categoria}
-                  onChange={handleGastoFijoChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
-                  placeholder="Ej: alquiler, servicios"
-                />
-              </div>
+              <SelectEditable label="Categoría" name="categoria" value={gastoFijoData.categoria} onChange={handleGastoFijoChange} options={categoriasEgresoOptions} />
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Método</label>
                 <select
@@ -1936,14 +1981,17 @@ function CajaPageContent() {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                {gastosFijos.map((gasto) => (
-                  <div key={gasto.id} className={`rounded-lg border p-4 ${gasto.activo ? 'border-gray-200 bg-white' : 'border-gray-200 bg-gray-50 opacity-75'}`}>
+                {gastosFijos.map((gasto) => {
+                  const saldo = saldoGastoFijo(gasto, mesSeleccionado, egresos)
+                  const aplicable = isGastoFijoAplicableAlMes(gasto, mesSeleccionado)
+                  return (
+                  <div key={gasto.id} className={`rounded-lg border p-4 ${aplicable ? saldo.pendiente === 0 ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50' : 'border-gray-200 bg-gray-50 opacity-75'}`}>
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="font-semibold text-gray-900">{gasto.nombre}</p>
-                          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${gasto.activo ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
-                            {gasto.activo ? 'Activo' : 'Inactivo'}
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${aplicable ? saldo.pendiente === 0 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-800' : 'bg-gray-200 text-gray-600'}`}>
+                            {aplicable ? saldo.estado : 'No aplica al mes'}
                           </span>
                         </div>
                         <div className="mt-1 flex flex-col gap-1 text-sm text-gray-600 sm:flex-row sm:flex-wrap sm:gap-3">
@@ -1956,7 +2004,16 @@ function CajaPageContent() {
                         )}
                       </div>
                       <div className="flex flex-col gap-2 sm:items-end">
-                        <p className="text-xl font-bold text-slate-900">S/ {gasto.monto.toFixed(2)}</p>
+                        <p className="text-xl font-bold text-slate-900">Saldo: {formatCurrency(saldo.pendiente)}</p>
+                        <p className="text-sm text-gray-600">Total: {formatCurrency(gasto.monto)} · Pagado: {formatCurrency(saldo.pagado)}</p>
+                        {aplicable && saldo.pendiente > 0 && (
+                          <Button type="button" size="sm" onClick={() => {
+                            setTipoMovimiento('egreso')
+                            setEditingEgresoId(null)
+                            setEgresoData({ categoria: gasto.categoria, metodo: gasto.metodo || 'transferencia', beneficiario: gasto.nombre, monto: String(saldo.pendiente), fechaEgreso: new Date().toISOString().slice(0, 10), observacion: '', recurrente: false, gastoFijoId: gasto.id, mesObligacion: mesSeleccionado })
+                            setTimeout(() => document.getElementById('form-egreso')?.scrollIntoView?.({ behavior: 'smooth', block: 'center' }), 0)
+                          }}>Registrar abono / pago</Button>
+                        )}
                         <div className="flex flex-wrap gap-2">
                           <Button type="button" variant="outline" size="sm" onClick={() => toggleGastoFijo(gasto)}>
                             {gasto.activo ? 'Desactivar' : 'Activar'}
@@ -1973,10 +2030,11 @@ function CajaPageContent() {
                       </div>
                     </div>
                   </div>
-                ))}
+                )})}
               </div>
             )}
           </CardContent>
+        </details>
         </Card>
       )}
 
@@ -2007,17 +2065,7 @@ function CajaPageContent() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Concepto</label>
-                  <input
-                    name="concepto"
-                    list="conceptos-ingreso"
-                    value={ingresoData.concepto}
-                    onChange={handleIngresoChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
-                    placeholder="Ej: mensualidad, uniforme, prenda"
-                  />
-                </div>
+                <SelectEditable label="Concepto" name="concepto" value={ingresoData.concepto} onChange={handleIngresoChange} options={conceptosIngresoOptions} />
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Método</label>
@@ -2266,17 +2314,7 @@ function CajaPageContent() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Concepto</label>
-                  <input
-                    name="concepto"
-                    list="conceptos-ingreso"
-                    value={ingresoData.concepto}
-                    onChange={handleIngresoChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
-                    placeholder="Ej: mensualidad, uniforme, prenda"
-                  />
-                </div>
+                <SelectEditable label="Concepto" name="concepto" value={ingresoData.concepto} onChange={handleIngresoChange} options={conceptosIngresoOptions} />
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Método</label>
@@ -2481,24 +2519,26 @@ function CajaPageContent() {
             <h2 className="text-xl font-semibold text-gray-900">Registrar Egreso</h2>
           </CardHeader>
           <CardContent>
-            <details open={Boolean(editingEgresoId)} className="rounded-lg border border-gray-200 bg-gray-50">
+            <details open={Boolean(editingEgresoId || egresoData.gastoFijoId)} className="rounded-lg border border-gray-200 bg-gray-50">
               <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 font-semibold text-gray-900">
                 <span>{editingEgresoId ? 'Editar egreso puntual' : 'Agregar egreso puntual o recurrente'}</span>
                 <Repeat className="h-5 w-5 text-primary-700" />
               </summary>
-            <form onSubmit={handleEgresoSubmit} className="space-y-4 border-t border-gray-200 bg-white p-4">
+            <form id="form-egreso" onSubmit={handleEgresoSubmit} className="space-y-4 border-t border-gray-200 bg-white p-4">
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 space-y-3">
+                <label className="block text-sm font-medium text-gray-900" htmlFor="egreso-gasto-fijo">Aplicar a gasto fijo</label>
+                <select id="egreso-gasto-fijo" className="w-full rounded-lg border p-2 text-gray-900" value={egresoData.gastoFijoId} onChange={(e) => setEgresoData((prev) => ({ ...prev, gastoFijoId: e.target.value, mesObligacion: e.target.value ? prev.mesObligacion || mesSeleccionado : '', recurrente: false }))}>
+                  <option value="">Sin vincular</option>
+                  {gastosFijos.map((gasto) => <option key={gasto.id} value={gasto.id}>{gasto.nombre}</option>)}
+                </select>
+                {egresoData.gastoFijoId && <>
+                  <Input label="Mes de la obligación" name="mesObligacion" type="month" value={egresoData.mesObligacion} onChange={handleEgresoChange} required />
+                  <p className="text-sm text-blue-900">El monto ingresado se descontará del saldo de este gasto. Para un adelanto, escribe solo el importe que estás pagando.</p>
+                </>}
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
-                  <input
-                    name="categoria"
-                    list="categorias-egreso"
-                    value={egresoData.categoria}
-                    onChange={handleEgresoChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900"
-                    placeholder="Ej: sueldos, servicios"
-                  />
-                </div>
+                <SelectEditable label="Categoría" name="categoria" value={egresoData.categoria} onChange={handleEgresoChange} options={categoriasEgresoOptions} />
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Método</label>
@@ -2566,6 +2606,7 @@ function CajaPageContent() {
                   <input
                     type="checkbox"
                     name="recurrente"
+                    disabled={Boolean(egresoData.gastoFijoId)}
                     checked={egresoData.recurrente}
                     onChange={handleEgresoChange}
                     className="mt-1 h-4 w-4 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500"

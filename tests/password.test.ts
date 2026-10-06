@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest'
 import { hashPassword, isBcryptHash, verifyPassword } from '@/lib/password'
 
 describe('password utils', () => {

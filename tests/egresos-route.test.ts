@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
+    gastoFijo: { findUnique: vi.fn() },
     egresoCaja: {
       findMany: vi.fn(),
       create: vi.fn(),
@@ -21,6 +22,8 @@ describe('/api/egresos', () => {
     prismaMock.egresoCaja.findMany.mockReset()
     prismaMock.egresoCaja.create.mockReset()
   })
+
+  beforeEach(() => prismaMock.gastoFijo.findUnique.mockReset())
 
   it('returns expenses ordered by date', async () => {
     prismaMock.egresoCaja.findMany.mockResolvedValue([{ id: 'egreso-1' }])
@@ -70,4 +73,18 @@ describe('/api/egresos', () => {
     expect(payload.observacion).toBe('abril')
     expect(payload.monto).toBe(300)
   })
+  it('links an advance to a specific obligation month', async () => {
+    prismaMock.gastoFijo.findUnique.mockResolvedValue({ id: 'profesor' })
+    prismaMock.egresoCaja.create.mockResolvedValue({ id: 'abono' })
+    const response = await POST(new NextRequest('http://localhost/api/egresos', { method: 'POST', body: JSON.stringify({ categoria: 'sueldos', metodo: 'yape', beneficiario: 'Profesor', monto: 200, gastoFijoId: 'profesor', mesObligacion: '2026-10' }) }))
+    expect(response.status).toBe(201)
+    expect(prismaMock.egresoCaja.create.mock.calls[0][0].data).toMatchObject({ monto: 200, gastoFijoId: 'profesor', mesObligacion: '2026-10' })
+  })
+
+  it.each(['2026-13', '', 'octubre'])('rejects an invalid obligation month %s', async (mesObligacion) => {
+    const response = await POST(new NextRequest('http://localhost/api/egresos', { method: 'POST', body: JSON.stringify({ categoria: 'sueldos', metodo: 'yape', beneficiario: 'Profesor', monto: 200, gastoFijoId: 'profesor', mesObligacion }) }))
+    expect(response.status).toBe(400)
+    expect(prismaMock.egresoCaja.create).not.toHaveBeenCalled()
+  })
+
 })

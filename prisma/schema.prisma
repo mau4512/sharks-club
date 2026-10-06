@@ -405,6 +405,9 @@ model ExoneracionMensualidad {
 
 model EgresoCaja {
   id            String    @id @default(cuid())
+  gastoFijoId   String?
+  gastoFijo     GastoFijo? @relation(fields: [gastoFijoId], references: [id], onDelete: SetNull)
+  mesObligacion String? // YYYY-MM del compromiso que se cancela
   categoria     String    // sueldos, alquiler, servicios, prestamos, impuestos, otros
   metodo        String    // efectivo, transferencia, yape, plin, otro
   beneficiario  String
@@ -414,11 +417,13 @@ model EgresoCaja {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  @@index([gastoFijoId, mesObligacion])
   @@index([fechaEgreso])
   @@map("egresos_caja")
 }
 
 model GastoFijo {
+  egresos        EgresoCaja[]
   id             String   @id @default(cuid())
   nombre         String
   categoria      String

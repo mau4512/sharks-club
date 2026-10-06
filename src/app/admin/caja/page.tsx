@@ -535,6 +535,19 @@ function CajaPageContent() {
     }, 0)
   }
 
+  const deportistasSinTurno = useMemo(
+    () => deportistas.filter((deportista) => !deportista.turnoId)
+      .sort((a, b) => `${a.apellidos} ${a.nombre}`.localeCompare(`${b.apellidos} ${b.nombre}`, 'es')),
+    [deportistas]
+  )
+
+  const coloresColumnasTurno = {
+    ingresos: 'text-green-800',
+    esperado: 'bg-blue-50 text-blue-800',
+    cubierto: 'bg-green-50 text-green-800',
+    pendiente: 'bg-red-50 text-red-800',
+  }
+
   const resumenTurnos = (() => {
     const grupos = new Map<string, { nombre: string; ingresos: number; esperado: number; cubierto: number; pendiente: number; integrantes: number }>()
     turnos.forEach((turno) => grupos.set(turno.id, { nombre: `${turno.nombre} · ${turno.hora}`, ingresos: 0, esperado: 0, cubierto: 0, pendiente: 0, integrantes: 0 }))
@@ -1862,15 +1875,79 @@ function CajaPageContent() {
             <p className="mt-1 text-sm text-gray-600">{mesSeleccionado} · Agrupado por el turno actual de cada deportista. Cobrado incluye todos los conceptos según la fecha de pago; el saldo por cobrar corresponde a las mensualidades del mes.</p>
           </CardHeader>
           <CardContent>
-            {turnosError ? <p role="alert" className="text-red-700">No se pudieron cargar los turnos. Recarga la página para consultar el reporte.</p> : loading ? <p>Cargando turnos...</p> : resumenTurnos.length === 0 ? <p className="text-gray-600">No hay turnos ni ingresos registrados.</p> : <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="bg-gray-50 text-gray-700"><tr>{['Turno', 'Deportistas', 'Cobrado en el mes', 'Mensualidad esperada', 'Mensualidad cubierta', 'Saldo por cobrar'].map((label) => <th key={label} className="p-3 whitespace-nowrap">{label}</th>)}</tr></thead>
-                <tbody>{resumenTurnos.map((turno) => <tr key={turno.id} className="border-t border-gray-100">
-                  <td className="p-3 font-medium text-gray-900">{turno.nombre}</td><td className="p-3">{turno.integrantes}</td><td className="p-3 text-green-700">{formatCurrency(turno.ingresos)}</td><td className="p-3">{formatCurrency(turno.esperado)}</td><td className="p-3">{formatCurrency(turno.cubierto)}</td><td className={`p-3 font-semibold ${turno.pendiente > 0 ? 'text-amber-700' : 'text-green-700'}`}>{formatCurrency(turno.pendiente)}</td>
-                </tr>)}</tbody>
-                <tfoot className="border-t font-semibold"><tr><td className="p-3">Total</td><td className="p-3">{resumenTurnos.reduce((total, turno) => total + turno.integrantes, 0)}</td>{(['ingresos', 'esperado', 'cubierto', 'pendiente'] as const).map((campo) => <td key={campo} className="p-3">{formatCurrency(resumenTurnos.reduce((total, turno) => total + turno[campo], 0))}</td>)}</tr></tfoot>
-              </table>
-            </div>}
+            {!loading && !turnosError && deportistasSinTurno.length > 0 && (
+              <div id="deportistas-sin-turno" role="status" className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4">
+                <h3 className="font-semibold text-red-900">Deportistas sin turno: {deportistasSinTurno.length}</h3>
+                <p className="mt-1 text-sm text-red-800">Revisa su perfil y asigna un turno para completar el reporte.</p>
+                <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {deportistasSinTurno.map((deportista) => (
+                    <li key={deportista.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 text-sm">
+                      <Link href={`/admin/deportistas/${deportista.id}/perfil`} className="font-medium text-gray-900 underline decoration-gray-300 underline-offset-2 hover:text-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">
+                        {deportista.nombre} {deportista.apellidos}
+                        {deportista.activo === false && <span className="ml-2 text-xs font-normal text-gray-500">Inactivo</span>}
+                      </Link>
+                      <Link href={`/admin/deportistas/${deportista.id}`} aria-label={`Asignar turno a ${deportista.nombre} ${deportista.apellidos}`} className="font-semibold text-blue-800 underline underline-offset-2 hover:text-blue-950">
+                        Asignar turno
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {turnosError ? (
+              <p role="alert" className="text-red-700">No se pudieron cargar los turnos. Recarga la página para consultar el reporte.</p>
+            ) : loading ? (
+              <p>Cargando turnos...</p>
+            ) : resumenTurnos.length === 0 ? (
+              <p className="text-gray-600">No hay turnos ni ingresos registrados.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-gray-50 text-gray-700">
+                    <tr>
+                      <th scope="col" className="p-3 whitespace-nowrap">Turno</th>
+                      <th scope="col" className="p-3 whitespace-nowrap">Deportistas</th>
+                      <th scope="col" className="p-3 whitespace-nowrap">Cobrado en el mes</th>
+                      <th scope="col" className={`p-3 whitespace-nowrap ${coloresColumnasTurno.esperado}`}>Mensualidad esperada</th>
+                      <th scope="col" className={`p-3 whitespace-nowrap ${coloresColumnasTurno.cubierto}`}>Mensualidad cubierta</th>
+                      <th scope="col" className={`p-3 whitespace-nowrap ${coloresColumnasTurno.pendiente}`}>Saldo por cobrar</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {resumenTurnos.map((turno) => (
+                      <tr key={turno.id} className="border-t border-gray-100">
+                        <th scope="row" className="p-3 font-medium text-gray-900">
+                          {turnos.some((item) => item.id === turno.id) ? (
+                            <Link href={`/admin/turnos/${turno.id}`} className="text-blue-800 underline underline-offset-2 hover:text-blue-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">
+                              {turno.nombre}
+                            </Link>
+                          ) : turno.id === 'sin-turno' && deportistasSinTurno.length > 0 ? (
+                            <a href="#deportistas-sin-turno" className="text-red-800 underline underline-offset-2">{turno.nombre} · Revisar deportistas</a>
+                          ) : turno.nombre}
+                        </th>
+                        <td className="p-3">{turno.integrantes}</td>
+                        {(['ingresos', 'esperado', 'cubierto', 'pendiente'] as const).map((campo) => (
+                          <td key={campo} className={`p-3 tabular-nums ${coloresColumnasTurno[campo]} ${campo === 'pendiente' ? 'font-semibold' : ''}`}>
+                            {formatCurrency(turno[campo])}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="border-t font-semibold">
+                    <tr>
+                      <th scope="row" className="p-3">Total</th>
+                      <td className="p-3">{resumenTurnos.reduce((total, turno) => total + turno.integrantes, 0)}</td>
+                      {(['ingresos', 'esperado', 'cubierto', 'pendiente'] as const).map((campo) => (
+                        <td key={campo} className={`p-3 tabular-nums ${coloresColumnasTurno[campo]}`}>
+                          {formatCurrency(resumenTurnos.reduce((total, turno) => total + turno[campo], 0))}
+                        </td>
+                      ))}
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

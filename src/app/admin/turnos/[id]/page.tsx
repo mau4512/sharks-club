@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { DescargarListaTurno } from '@/components/DescargarListaTurno'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { ArrowLeft, Save, Loader2, UserPlus, X, Calendar } from 'lucide-react'
@@ -343,6 +344,10 @@ export default function EditarTurnoPage() {
             </div>
           </CardHeader>
           <CardContent>
+            <div className="mb-4 space-y-2">
+              <p className="text-sm text-gray-600">Descarga la lista de nombres y apellidos de los deportistas asignados.</p>
+              <DescargarListaTurno turnoId={turno.id} nombre={turno.nombre} />
+            </div>
             {showAddDeportista && deportistasDisponibles.length > 0 && (
               <div className="mb-4 p-4 bg-gray-50 rounded-lg">
                 <label className="block text-sm font-medium text-gray-700 mb-2">

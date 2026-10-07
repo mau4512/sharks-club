@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { DescargarListaTurno } from '@/components/DescargarListaTurno'
 import Link from 'next/link'
 import { Clock, Users, Plus, Edit, Trash2, Sun, Moon } from 'lucide-react'
 import { getTurnoModalidadLabel } from '@/lib/pagos-config'
@@ -185,6 +186,10 @@ export default function TurnosPage() {
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
+                </div>
+                <div className="mt-3 border-t border-gray-100 pt-3">
+                  <p className="mb-2 text-xs text-gray-600">Lista de nombres y apellidos</p>
+                  <DescargarListaTurno turnoId={turno.id} nombre={turno.nombre} />
                 </div>
               </CardContent>
             </Card>

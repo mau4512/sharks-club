@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { DescargarListaTurno } from '@/components/DescargarListaTurno'
 import { Input } from '@/components/ui/Input'
 import { SelectEditable } from '@/components/ui/SelectEditable'
 import { ArrowDownCircle, ArrowUpCircle, Banknote, CalendarDays, CreditCard, FileText, Pencil, PlusCircle, Repeat, Search, ShoppingCart, Target, Trash2, Wallet } from 'lucide-react'
@@ -1911,6 +1912,7 @@ function CajaPageContent() {
                       <th scope="col" className={`p-3 whitespace-nowrap ${coloresColumnasTurno.esperado}`}>Mensualidad esperada</th>
                       <th scope="col" className={`p-3 whitespace-nowrap ${coloresColumnasTurno.cubierto}`}>Mensualidades pagadas de este período</th>
                       <th scope="col" className={`p-3 whitespace-nowrap ${coloresColumnasTurno.pendiente}`}>Saldo por cobrar</th>
+                      <th scope="col" className="p-3 whitespace-nowrap">Lista del turno</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1931,6 +1933,9 @@ function CajaPageContent() {
                             {formatCurrency(turno[campo])}
                           </td>
                         ))}
+                        <td className="p-3">
+                          {turnos.some((item) => item.id === turno.id) && <DescargarListaTurno turnoId={turno.id} nombre={turno.nombre} />}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -1943,6 +1948,7 @@ function CajaPageContent() {
                           {formatCurrency(resumenTurnos.reduce((total, turno) => total + turno[campo], 0))}
                         </td>
                       ))}
+                      <td />
                     </tr>
                   </tfoot>
                 </table>
